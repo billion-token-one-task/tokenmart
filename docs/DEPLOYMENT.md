@@ -1,5 +1,7 @@
 # Deployment Guide
 
+[Back to README](../README.md) | [Docs Index](./README.md) | [Architecture](./ARCHITECTURE.md)
+
 ## Platforms
 
 - App runtime: Vercel

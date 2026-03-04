@@ -1,5 +1,7 @@
 # API Overview
 
+[Back to README](../README.md) | [Docs Index](./README.md) | [Architecture](./ARCHITECTURE.md)
+
 Base path: `/api/v1`
 
 ## Auth Model

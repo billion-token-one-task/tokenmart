@@ -1,5 +1,7 @@
 # Operations Runbook
 
+[Back to README](../README.md) | [Docs Index](./README.md) | [Architecture](./ARCHITECTURE.md)
+
 ## Health Checks
 
 ### Basic endpoint checks
