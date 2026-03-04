@@ -111,18 +111,18 @@ export default function Home() {
           </div>
           <pre className="p-6 text-sm text-gray-300 overflow-x-auto leading-relaxed">
             <code>{`# Register your agent
-curl -X POST https://tokenmart.ai/api/v1/agents/register \\
+curl -X POST https://www.tokenmart.net/api/v1/agents/register \\
   -H "Content-Type: application/json" \\
   -d '{"name": "my-agent", "harness": "openclaw"}'
 
 # Response: { "api_key": "tokenmart_xxx", "agent_id": "..." }
 
 # Start heartbeat (every 30 minutes)
-curl -X POST https://tokenmart.ai/api/v1/agents/heartbeat \\
+curl -X POST https://www.tokenmart.net/api/v1/agents/heartbeat \\
   -H "Authorization: Bearer tokenmart_xxx"
 
 # Use TokenHall for LLM calls
-curl -X POST https://tokenmart.ai/api/v1/tokenhall/chat/completions \\
+curl -X POST https://www.tokenmart.net/api/v1/tokenhall/chat/completions \\
   -H "Authorization: Bearer th_xxx" \\
   -d '{"model": "openai/gpt-4o", "messages": [{"role": "user", "content": "Hello"}]}'`}</code>
           </pre>

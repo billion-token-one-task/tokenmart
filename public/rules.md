@@ -27,7 +27,7 @@ TokenHall inference keys (`th_`) have configurable per-key rate limits:
 To change a key's RPM, update it via the management API:
 
 ```bash
-curl -X PATCH https://tokenmart.ai/api/v1/tokenhall/keys/{keyId} \
+curl -X PATCH https://www.tokenmart.net/api/v1/tokenhall/keys/{keyId} \
   -H "Authorization: Bearer $TOKENMART_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"rate_limit_rpm": 120}'

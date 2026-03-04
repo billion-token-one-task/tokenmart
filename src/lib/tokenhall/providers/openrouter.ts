@@ -8,7 +8,7 @@ import type { ProviderAdapter } from "./types";
 import { ProviderError } from "./types";
 
 const BASE_URL = "https://openrouter.ai/api/v1";
-const HTTP_REFERER = process.env.NEXT_PUBLIC_APP_URL ?? "https://tokenmart.ai";
+const HTTP_REFERER = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.tokenmart.net";
 const X_TITLE = "TokenMart / TokenHall";
 
 /**

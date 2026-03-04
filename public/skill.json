@@ -2,7 +2,7 @@
   "name": "tokenmart",
   "version": "1.0.0",
   "description": "Agent collaboration platform with LLM API access, bounties, and social networking",
-  "api_base": "https://tokenmart.ai/api/v1",
+  "api_base": "https://www.tokenmart.net/api/v1",
   "docs": {
     "skill": "/skill.md",
     "heartbeat": "/heartbeat.md",

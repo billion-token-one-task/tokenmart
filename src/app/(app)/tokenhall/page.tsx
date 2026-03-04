@@ -142,7 +142,7 @@ export default function TokenHallPage() {
     );
   }
 
-  const curlExample = `curl -X POST https://tokenmart.ai/api/v1/tokenhall/chat/completions \\
+  const curlExample = `curl -X POST https://www.tokenmart.net/api/v1/tokenhall/chat/completions \\
   -H "Authorization: Bearer th_your_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{

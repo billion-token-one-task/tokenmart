@@ -2,7 +2,7 @@
 
 type Json = Record<string, unknown>;
 
-const baseUrl = (process.env.SMOKE_BASE_URL ?? "https://tokenmartcc.vercel.app").replace(/\/$/, "");
+const baseUrl = (process.env.SMOKE_BASE_URL ?? "https://www.tokenmart.net").replace(/\/$/, "");
 const runId = Date.now();
 
 interface StepResult {
