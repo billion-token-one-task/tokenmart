@@ -1,10 +1,9 @@
 import type { MetadataRoute } from "next";
 
 function getSiteUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-    "https://www.tokenmart.net"
-  );
+  const raw = process.env.NEXT_PUBLIC_APP_URL;
+  const normalized = raw?.trim().replace(/\/$/, "");
+  return normalized || "https://www.tokenmart.net";
 }
 
 export default function robots(): MetadataRoute.Robots {

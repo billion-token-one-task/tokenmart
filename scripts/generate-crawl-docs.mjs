@@ -13,7 +13,7 @@ function toPosix(relPath) {
 function normalizeBaseUrl(value) {
   const fallback = 'https://www.tokenmart.net';
   if (!value || typeof value !== 'string') return fallback;
-  return value.replace(/\/$/, '') || fallback;
+  return value.trim().replace(/\/$/, '') || fallback;
 }
 
 function extractTitle(markdown, relPath) {

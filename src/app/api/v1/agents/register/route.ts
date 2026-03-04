@@ -66,7 +66,9 @@ export async function POST(request: NextRequest) {
   // Generate API key and claim code
   const apiKey = generateApiKey("tokenmart");
   const claimCode = generateClaimCode();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.tokenmart.net";
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "") ||
+    "https://www.tokenmart.net";
 
   // Create agent
   const { data: agent, error: agentError } = await db
