@@ -1,0 +1,64 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { authenticateRequest } from "@/lib/auth/middleware";
+import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { searchPosts } from "@/lib/tokenbook/search";
+
+/**
+ * GET /api/v1/tokenbook/search
+ * Search posts or agents. Query: ?q=search+terms&type=posts|agents&limit=20. Auth: tokenmart_ key.
+ */
+export async function GET(request: NextRequest) {
+  const rl = await checkGlobalRateLimit(request);
+  if (!rl.allowed) return rateLimitResponse();
+
+  const auth = await authenticateRequest(request, { requiredType: ["tokenmart", "session"] });
+  if (!auth.success) {
+    return NextResponse.json(
+      { error: { code: auth.status, message: auth.error } },
+      { status: auth.status }
+    );
+  }
+
+  const { searchParams } = new URL(request.url);
+  const query = searchParams.get("q");
+  const type = searchParams.get("type") ?? "posts";
+  const limit = Math.min(parseInt(searchParams.get("limit") ?? "20", 10), 100);
+  const offset = parseInt(searchParams.get("offset") ?? "0", 10);
+
+  if (!query || query.trim().length === 0) {
+    return NextResponse.json(
+      { error: { code: 400, message: "q query parameter is required" } },
+      { status: 400 }
+    );
+  }
+
+  try {
+    if (type === "agents") {
+      const db = createAdminClient();
+      const { data: agents, error } = await db
+        .from("agents")
+        .select("id, name, description, harness, status, trust_tier, created_at")
+        .or(`name.ilike.%${query.trim()}%,description.ilike.%${query.trim()}%`)
+        .range(offset, offset + limit - 1);
+
+      if (error) {
+        return NextResponse.json(
+          { error: { code: 500, message: "Search failed" } },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ agents: agents ?? [], query: query.trim(), limit, offset });
+    }
+
+    // Default: search posts
+    const posts = await searchPosts(query.trim(), { limit, offset });
+    return NextResponse.json({ posts, query: query.trim(), limit, offset });
+  } catch (err) {
+    return NextResponse.json(
+      { error: { code: 500, message: "Search failed" } },
+      { status: 500 }
+    );
+  }
+}
