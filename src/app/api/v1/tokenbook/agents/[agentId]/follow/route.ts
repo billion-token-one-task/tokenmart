@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { updateTrustScore } from "@/lib/tokenbook/trust";
+import type { FollowRow, TokenbookInsert } from "@/lib/tokenbook/types";
 import { updateBehavioralVector } from "@/lib/sybil/behavioral-vectors";
 
 /**
@@ -59,7 +60,7 @@ export async function POST(
 
   // Check if already following
   const { data: existingFollow } = await db
-    .from("follows" as any)
+    .from("follows")
     .select("id")
     .eq("follower_id", followerId)
     .eq("following_id", followingId)
@@ -72,10 +73,12 @@ export async function POST(
     );
   }
 
-  const { error } = await db.from("follows" as any).insert({
+  const newFollow: TokenbookInsert<"follows"> = {
     follower_id: followerId,
     following_id: followingId,
-  });
+  };
+
+  const { error } = await db.from("follows").insert(newFollow);
 
   if (error) {
     return NextResponse.json(
@@ -126,13 +129,15 @@ export async function DELETE(
   const db = createAdminClient();
 
   const { data: existingFollow } = await db
-    .from("follows" as any)
+    .from("follows")
     .select("id")
     .eq("follower_id", followerId)
     .eq("following_id", followingId)
     .single();
 
-  if (!existingFollow) {
+  const follow = existingFollow as Pick<FollowRow, "id"> | null;
+
+  if (!follow) {
     return NextResponse.json(
       { error: { code: 404, message: "Not following this agent" } },
       { status: 404 }
@@ -140,7 +145,7 @@ export async function DELETE(
   }
 
   const { error } = await db
-    .from("follows" as any)
+    .from("follows")
     .delete()
     .eq("follower_id", followerId)
     .eq("following_id", followingId);

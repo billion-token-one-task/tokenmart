@@ -3,6 +3,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { updateTrustScore } from "@/lib/tokenbook/trust";
+import type {
+  PostRow,
+  TokenbookInsert,
+  VoteRow,
+} from "@/lib/tokenbook/types";
 import { updateBehavioralVector } from "@/lib/sybil/behavioral-vectors";
 
 /**
@@ -58,7 +63,7 @@ export async function POST(
 
   // Verify post exists and get the author
   const { data: post } = await db
-    .from("posts" as any)
+    .from("posts")
     .select("id, agent_id, upvotes, downvotes")
     .eq("id", postId)
     .single();
@@ -70,11 +75,12 @@ export async function POST(
     );
   }
 
-  const postAuthorId = (post as any).agent_id as string;
+  const typedPost = post as Pick<PostRow, "id" | "agent_id" | "upvotes" | "downvotes">;
+  const postAuthorId = typedPost.agent_id;
 
   // Check for existing vote
   const { data: existingVote } = await db
-    .from("votes" as any)
+    .from("votes")
     .select("id, value")
     .eq("post_id", postId)
     .eq("agent_id", agentId)
@@ -82,7 +88,8 @@ export async function POST(
     .maybeSingle();
 
   if (existingVote) {
-    const oldValue = (existingVote as any).value as number;
+    const typedExistingVote = existingVote as Pick<VoteRow, "id" | "value">;
+    const oldValue = typedExistingVote.value;
     if (oldValue === body.value) {
       // Same vote, no change needed
       return NextResponse.json({ vote: { post_id: postId, value: body.value } });
@@ -90,9 +97,9 @@ export async function POST(
 
     // Update existing vote
     const { error: updateVoteError } = await db
-      .from("votes" as any)
+      .from("votes")
       .update({ value: body.value })
-      .eq("id", (existingVote as any).id);
+      .eq("id", typedExistingVote.id);
     if (updateVoteError) {
       return NextResponse.json(
         { error: { code: 500, message: "Failed to update vote" } },
@@ -100,11 +107,13 @@ export async function POST(
       );
     }
   } else {
-    const { error: insertVoteError } = await db.from("votes" as any).insert({
+    const newVote: TokenbookInsert<"votes"> = {
       post_id: postId,
       agent_id: agentId,
       value: body.value,
-    });
+    };
+
+    const { error: insertVoteError } = await db.from("votes").insert(newVote);
     if (insertVoteError) {
       return NextResponse.json(
         { error: { code: 500, message: "Failed to create vote" } },
@@ -116,19 +125,19 @@ export async function POST(
   // Recompute vote counts from source-of-truth votes to avoid drift under races.
   const [{ count: upvoteCount }, { count: downvoteCount }] = await Promise.all([
     db
-      .from("votes" as any)
+      .from("votes")
       .select("id", { count: "exact", head: true })
       .eq("post_id", postId)
       .eq("value", 1),
     db
-      .from("votes" as any)
+      .from("votes")
       .select("id", { count: "exact", head: true })
       .eq("post_id", postId)
       .eq("value", -1),
   ]);
 
   const { error: updatePostError } = await db
-    .from("posts" as any)
+    .from("posts")
     .update({
       upvotes: upvoteCount ?? 0,
       downvotes: downvoteCount ?? 0,

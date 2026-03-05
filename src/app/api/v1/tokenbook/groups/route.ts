@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import type {
+  GroupRowWithMemberCount,
+  TokenbookInsert,
+  TokenbookUpdate,
+} from "@/lib/tokenbook/types";
 import { updateBehavioralVector } from "@/lib/sybil/behavioral-vectors";
 
 /**
@@ -27,7 +32,7 @@ export async function GET(request: NextRequest) {
   const offset = parseInt(searchParams.get("offset") ?? "0", 10);
 
   let query = db
-    .from("groups" as any)
+    .from("groups")
     .select("*")
     .eq("is_public", true)
     .order("created_at", { ascending: false })
@@ -46,15 +51,15 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const mappedGroups = (groups ?? []).map((g: any) => ({
-    id: g.id,
-    name: g.name,
-    description: g.description,
-    is_public: g.is_public,
-    max_members: g.max_members,
-    member_count: g.member_count ?? 0,
-    created_by: g.owner_id ?? g.created_by,
-    created_at: g.created_at,
+  const mappedGroups = ((groups ?? []) as GroupRowWithMemberCount[]).map((group) => ({
+    id: group.id,
+    name: group.name,
+    description: group.description,
+    is_public: group.is_public,
+    max_members: group.max_members,
+    member_count: group.member_count ?? 0,
+    created_by: group.owner_id ?? group.created_by,
+    created_at: group.created_at,
   }));
 
   return NextResponse.json({ groups: mappedGroups, limit, offset });
@@ -124,16 +129,17 @@ export async function POST(request: NextRequest) {
 
   const db = createAdminClient();
 
+  const newGroup = {
+    name: body.name.trim(),
+    description: body.description ?? null,
+    is_public: body.is_public ?? true,
+    max_members: body.max_members ?? 100,
+    owner_id: agentId,
+  } as TokenbookInsert<"groups">;
+
   const { data: group, error: groupError } = await db
-    .from("groups" as any)
-    .insert({
-      name: body.name.trim(),
-      description: body.description ?? null,
-      is_public: body.is_public ?? true,
-      max_members: body.max_members ?? 100,
-      owner_id: agentId,
-      member_count: 1,
-    })
+    .from("groups")
+    .insert(newGroup)
     .select("*")
     .single();
 
@@ -145,40 +151,50 @@ export async function POST(request: NextRequest) {
   }
 
   // Auto-join creator as admin
-  const { error: memberError } = await db.from("group_members" as any).insert({
-    group_id: (group as any).id,
+  const typedGroup = group as GroupRowWithMemberCount;
+  const creatorMembership: TokenbookInsert<"group_members"> = {
+    group_id: typedGroup.id,
     agent_id: agentId,
     role: "admin",
-  });
+  };
+  const { error: memberError } = await db.from("group_members").insert(creatorMembership);
 
   if (memberError) {
     // Rollback group creation
     await db
-      .from("groups" as any)
+      .from("groups")
       .delete()
-      .eq("id", (group as any).id);
+      .eq("id", typedGroup.id);
     return NextResponse.json(
       { error: { code: 500, message: "Failed to add creator as group admin" } },
       { status: 500 }
     );
   }
 
+  const { count: memberCount } = await db
+    .from("group_members")
+    .select("id", { count: "exact", head: true })
+    .eq("group_id", typedGroup.id);
+  const nextMemberCount = memberCount ?? 1;
+  const groupCountUpdate = { member_count: nextMemberCount } as TokenbookUpdate<"groups">;
+  await db.from("groups").update(groupCountUpdate).eq("id", typedGroup.id);
+
   // Behavioral vector tracking (fire and forget)
   updateBehavioralVector(agentId, "tokenbook_group_create", {
-    group_id: (group as any).id,
+    group_id: typedGroup.id,
   }).catch(() => {});
 
   return NextResponse.json(
     {
       group: {
-        id: (group as any).id,
-        name: (group as any).name,
-        description: (group as any).description,
-        is_public: (group as any).is_public,
-        max_members: (group as any).max_members,
-        member_count: 1,
-        created_by: (group as any).owner_id ?? (group as any).created_by,
-        created_at: (group as any).created_at,
+        id: typedGroup.id,
+        name: typedGroup.name,
+        description: typedGroup.description,
+        is_public: typedGroup.is_public,
+        max_members: typedGroup.max_members,
+        member_count: nextMemberCount,
+        created_by: typedGroup.owner_id ?? typedGroup.created_by,
+        created_at: typedGroup.created_at,
       },
     },
     { status: 201 }

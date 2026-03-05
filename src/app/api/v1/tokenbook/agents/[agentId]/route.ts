@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import type {
+  AgentProfileRow,
+  FollowRow,
+  PostRow,
+} from "@/lib/tokenbook/types";
 
 /**
  * GET /api/v1/tokenbook/agents/[agentId]
@@ -42,7 +47,7 @@ export async function GET(
 
   // Fetch agent_profile
   const { data: profile } = await db
-    .from("agent_profiles" as any)
+    .from("agent_profiles")
     .select("*")
     .eq("agent_id", agentId)
     .single();
@@ -56,7 +61,7 @@ export async function GET(
 
   // Fetch recent posts (last 10)
   const { data: recentPosts } = await db
-    .from("posts" as any)
+    .from("posts")
     .select("id, type, title, upvotes, downvotes, comment_count, created_at")
     .eq("agent_id", agentId)
     .order("created_at", { ascending: false })
@@ -65,25 +70,32 @@ export async function GET(
   // Fetch follower and following counts
   const [followerCountResult, followingCountResult, postCountResult] = await Promise.all([
     db
-      .from("follows" as any)
+      .from("follows")
       .select("id", { count: "exact", head: true })
       .eq("following_id", agentId),
     db
-      .from("follows" as any)
+      .from("follows")
       .select("id", { count: "exact", head: true })
       .eq("follower_id", agentId),
     db
-      .from("posts" as any)
+      .from("posts")
       .select("id", { count: "exact", head: true })
       .eq("agent_id", agentId),
   ]);
 
+  const typedProfile = profile as AgentProfileRow | null;
+  const typedRecentPosts = (recentPosts ?? []) as Pick<
+    PostRow,
+    "id" | "type" | "title" | "upvotes" | "downvotes" | "comment_count" | "created_at"
+  >[];
+  void (followerCountResult.data as Pick<FollowRow, "id">[] | null);
+
   const profileData = profile
     ? {
-        trust_score: (profile as any).trust_score ?? 0,
-        karma: (profile as any).karma ?? 0,
-        bio: (profile as any).bio ?? null,
-        avatar_url: (profile as any).avatar_url ?? null,
+        trust_score: typedProfile?.trust_score ?? 0,
+        karma: typedProfile?.karma ?? 0,
+        bio: typedProfile?.bio ?? null,
+        avatar_url: typedProfile?.avatar_url ?? null,
       }
     : { trust_score: 0, karma: 0, bio: null, avatar_url: null };
 
@@ -118,16 +130,16 @@ export async function GET(
           updated_at: daemonScore.updated_at,
         }
       : null,
-    recent_posts: (recentPosts ?? []).map((p: any) => ({
-      id: p.id,
-      type: p.type,
-      post_type: p.type,
-      title: p.title,
-      upvotes: p.upvotes ?? 0,
-      downvotes: p.downvotes ?? 0,
-      vote_count: (p.upvotes ?? 0) - (p.downvotes ?? 0),
-      comment_count: p.comment_count ?? 0,
-      created_at: p.created_at,
+    recent_posts: typedRecentPosts.map((post) => ({
+      id: post.id,
+      type: post.type,
+      post_type: post.type,
+      title: post.title,
+      upvotes: post.upvotes ?? 0,
+      downvotes: post.downvotes ?? 0,
+      vote_count: (post.upvotes ?? 0) - (post.downvotes ?? 0),
+      comment_count: post.comment_count ?? 0,
+      created_at: post.created_at,
     })),
   });
 }

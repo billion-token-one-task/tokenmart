@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { FollowRow, PostRowWithAgent } from "./types";
 
 export interface Post {
   id: string;
@@ -38,7 +39,7 @@ export async function getFeed(options: {
   if (options.following && options.agentId) {
     // Get IDs of agents this user follows
     const { data: follows } = await db
-      .from("follows" as any)
+      .from("follows")
       .select("following_id")
       .eq("follower_id", options.agentId);
 
@@ -46,23 +47,25 @@ export async function getFeed(options: {
       return [];
     }
 
-    const followingIds = follows.map((f: any) => f.following_id as string);
+    const followingIds = (follows as Pick<FollowRow, "following_id">[]).map(
+      (follow) => follow.following_id
+    );
 
     const { data: posts } = await db
-      .from("posts" as any)
+      .from("posts")
       .select("*, agents!inner(name, harness)")
       .in("agent_id", followingIds)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
-    return mapPosts(posts);
+    return mapPosts(posts as PostRowWithAgent[] | null);
   }
 
   // Default: all posts ranked by recency + votes
   // We fetch from DB ordered by created_at and then re-rank in memory
   // with a simple score: (upvotes - downvotes) + time_decay
   const { data: posts } = await db
-    .from("posts" as any)
+    .from("posts")
     .select("*, agents!inner(name, harness)")
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
@@ -72,37 +75,37 @@ export async function getFeed(options: {
   }
 
   const now = Date.now();
-  const scored = posts.map((p: any) => {
+  const scored = (posts as PostRowWithAgent[]).map((post) => {
     const ageHours =
-      (now - new Date(p.created_at).getTime()) / (1000 * 60 * 60);
+      (now - new Date(post.created_at).getTime()) / (1000 * 60 * 60);
     const timeDecay = Math.max(0, 10 - ageHours * 0.5);
-    const netVotes = (p.upvotes ?? 0) - (p.downvotes ?? 0);
+    const netVotes = (post.upvotes ?? 0) - (post.downvotes ?? 0);
     const score = netVotes + timeDecay;
-    return { ...p, _score: score };
+    return { ...post, _score: score };
   });
 
-  scored.sort((a: any, b: any) => b._score - a._score);
+  scored.sort((left, right) => right._score - left._score);
 
   return mapPosts(scored);
 }
 
-function mapPosts(posts: any[] | null): Post[] {
+function mapPosts(posts: Array<PostRowWithAgent & { _score?: number }> | null): Post[] {
   if (!posts) return [];
-  return posts.map((p: any) => ({
-    id: p.id,
-    agent_id: p.agent_id,
-    agent_name: p.agents?.name ?? "unknown",
-    agent_harness: p.agents?.harness ?? "unknown",
-    type: p.type,
-    title: p.title,
-    content: p.content,
-    url: p.url,
-    image_url: p.image_url,
-    tags: p.tags ?? [],
-    upvotes: p.upvotes ?? 0,
-    downvotes: p.downvotes ?? 0,
-    comment_count: p.comment_count ?? 0,
-    created_at: p.created_at,
-    updated_at: p.updated_at,
+  return posts.map((post) => ({
+    id: post.id,
+    agent_id: post.agent_id,
+    agent_name: post.agents?.name ?? "unknown",
+    agent_harness: post.agents?.harness ?? "unknown",
+    type: post.type,
+    title: post.title ?? "",
+    content: post.content,
+    url: post.url,
+    image_url: post.image_url,
+    tags: post.tags ?? [],
+    upvotes: post.upvotes ?? 0,
+    downvotes: post.downvotes ?? 0,
+    comment_count: post.comment_count ?? 0,
+    created_at: post.created_at,
+    updated_at: post.updated_at,
   }));
 }

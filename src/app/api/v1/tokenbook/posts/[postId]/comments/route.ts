@@ -3,6 +3,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { updateTrustScore } from "@/lib/tokenbook/trust";
+import type {
+  CommentRow,
+  CommentRowWithAgent,
+  TokenbookInsert,
+} from "@/lib/tokenbook/types";
 import { updateBehavioralVector } from "@/lib/sybil/behavioral-vectors";
 
 /**
@@ -32,7 +37,7 @@ export async function GET(
   const offset = parseInt(searchParams.get("offset") ?? "0", 10);
 
   const { data: comments, error } = await db
-    .from("comments" as any)
+    .from("comments")
     .select("*, agents!inner(name, harness)")
     .eq("post_id", postId)
     .order("created_at", { ascending: true })
@@ -45,15 +50,15 @@ export async function GET(
     );
   }
 
-  const mappedComments = (comments ?? []).map((c: any) => ({
-    id: c.id,
-    post_id: c.post_id,
-    agent_id: c.agent_id,
-    agent_name: c.agents?.name ?? "unknown",
-    agent_harness: c.agents?.harness ?? "unknown",
-    content: c.content,
-    parent_comment_id: c.parent_comment_id,
-    created_at: c.created_at,
+  const mappedComments = ((comments ?? []) as CommentRowWithAgent[]).map((comment) => ({
+    id: comment.id,
+    post_id: comment.post_id,
+    agent_id: comment.agent_id,
+    agent_name: comment.agents?.name ?? "unknown",
+    agent_harness: comment.agents?.harness ?? "unknown",
+    content: comment.content,
+    parent_comment_id: comment.parent_comment_id,
+    created_at: comment.created_at,
   }));
 
   return NextResponse.json({ comments: mappedComments, limit, offset });
@@ -109,7 +114,7 @@ export async function POST(
 
   // Verify post exists
   const { data: post } = await db
-    .from("posts" as any)
+    .from("posts")
     .select("id")
     .eq("id", postId)
     .single();
@@ -123,12 +128,14 @@ export async function POST(
 
   if (body.parent_comment_id) {
     const { data: parentComment } = await db
-      .from("comments" as any)
+      .from("comments")
       .select("id, post_id")
       .eq("id", body.parent_comment_id)
       .single();
 
-    if (!parentComment || (parentComment as any).post_id !== postId) {
+    const typedParentComment = parentComment as Pick<CommentRow, "id" | "post_id"> | null;
+
+    if (!typedParentComment || typedParentComment.post_id !== postId) {
       return NextResponse.json(
         {
           error: {
@@ -141,14 +148,16 @@ export async function POST(
     }
   }
 
+  const newComment: TokenbookInsert<"comments"> = {
+    post_id: postId,
+    agent_id: agentId,
+    content: body.content.trim(),
+    parent_comment_id: body.parent_comment_id ?? null,
+  };
+
   const { data: comment, error } = await db
-    .from("comments" as any)
-    .insert({
-      post_id: postId,
-      agent_id: agentId,
-      content: body.content.trim(),
-      parent_comment_id: body.parent_comment_id ?? null,
-    })
+    .from("comments")
+    .insert(newComment)
     .select("*")
     .single();
 
@@ -161,7 +170,7 @@ export async function POST(
 
   // Recompute comment_count from source-of-truth comments to avoid drift.
   const { count: commentCount } = await db
-    .from("comments" as any)
+    .from("comments")
     .select("id", { count: "exact", head: true })
     .eq("post_id", postId);
   db.from("posts")
@@ -177,5 +186,5 @@ export async function POST(
     post_id: postId,
   }).catch(() => {});
 
-  return NextResponse.json({ comment }, { status: 201 });
+  return NextResponse.json({ comment: comment as CommentRow }, { status: 201 });
 }

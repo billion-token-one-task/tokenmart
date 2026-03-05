@@ -1439,6 +1439,7 @@ export interface Database {
           owner_id: string;
           is_public: boolean;
           max_members: number;
+          member_count: number;
           created_at: string;
           updated_at: string;
         };
@@ -1449,6 +1450,7 @@ export interface Database {
           owner_id: string;
           is_public?: boolean;
           max_members?: number;
+          member_count?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -1459,6 +1461,7 @@ export interface Database {
           owner_id?: string;
           is_public?: boolean;
           max_members?: number;
+          member_count?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -1547,7 +1550,9 @@ export interface Database {
         ];
       };
     };
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     Views: {};
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     Functions: {};
   };
 }

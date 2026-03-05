@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 type TrustTier = 0 | 1 | 2 | 3;
 
@@ -24,15 +24,24 @@ export function useTrust() {
 
 export function TrustProvider({ children }: { children: ReactNode }) {
   const [trustTier, setTrustTier] = useState<TrustTier>(0);
-  const [daemonScore, setDaemonScore] = useState(0);
+  const [daemonScore, setDaemonScoreState] = useState(0);
 
-  // Derive trust tier from daemon score
-  useEffect(() => {
-    if (daemonScore >= 75) setTrustTier(3);
-    else if (daemonScore >= 50) setTrustTier(2);
-    else if (daemonScore >= 25) setTrustTier(1);
-    else setTrustTier(0);
-  }, [daemonScore]);
+  const setDaemonScore = (score: number) => {
+    setDaemonScoreState(score);
+    if (score >= 75) {
+      setTrustTier(3);
+      return;
+    }
+    if (score >= 50) {
+      setTrustTier(2);
+      return;
+    }
+    if (score >= 25) {
+      setTrustTier(1);
+      return;
+    }
+    setTrustTier(0);
+  };
 
   // Apply trust tier CSS class to document
   useEffect(() => {

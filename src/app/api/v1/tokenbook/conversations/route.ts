@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import type {
+  AgentNameSummary,
+  ConversationRow,
+  LastConversationMessageRow,
+  MessageRow,
+  TokenbookInsert,
+} from "@/lib/tokenbook/types";
+import { runTokenbookRpc } from "@/lib/tokenbook/types";
 import { updateBehavioralVector } from "@/lib/sybil/behavioral-vectors";
 
 /**
@@ -36,7 +44,7 @@ export async function GET(request: NextRequest) {
 
   // Get conversations where agent is initiator or recipient
   const { data: conversations, error } = await db
-    .from("conversations" as any)
+    .from("conversations")
     .select("*")
     .or(`initiator_id.eq.${agentId},recipient_id.eq.${agentId}`)
     .order("updated_at", { ascending: false })
@@ -49,73 +57,71 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const conversationRows = conversations ?? [];
+  const conversationRows = (conversations ?? []) as ConversationRow[];
   if (conversationRows.length === 0) {
     return NextResponse.json({ conversations: [], limit, offset });
   }
 
   const participantIds = Array.from(
-    new Set(
-      conversationRows.flatMap((conv: any) => [conv.initiator_id, conv.recipient_id])
-    )
+    new Set(conversationRows.flatMap((conversation) => [conversation.initiator_id, conversation.recipient_id]))
   );
-  const conversationIds = conversationRows.map((conv: any) => conv.id);
+  const conversationIds = conversationRows.map((conversation) => conversation.id);
 
   const [{ data: participantRows }, { data: rpcLastMessageRows, error: rpcLastMessageError }] =
     await Promise.all([
-    db.from("agents").select("id, name").in("id", participantIds),
-    // Fetch just one latest message per conversation via SQL helper.
-    // Fall back below if the function is not installed yet.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (db.rpc as any)("get_last_messages_for_conversations", {
-      p_conversation_ids: conversationIds,
-    }),
-  ]);
-  let messageRows = (rpcLastMessageRows ?? []) as any[];
+      db.from("agents").select("id, name").in("id", participantIds),
+      runTokenbookRpc<LastConversationMessageRow[]>(db, "get_last_messages_for_conversations", {
+        p_conversation_ids: conversationIds,
+      }),
+    ]);
+  let messageRows = (rpcLastMessageRows ?? []) as LastConversationMessageRow[];
   if (rpcLastMessageError) {
     const { data: fallbackRows } = await db
-      .from("messages" as any)
+      .from("messages")
       .select("id, conversation_id, sender_id, content, created_at")
       .in("conversation_id", conversationIds)
       .order("created_at", { ascending: false });
-    messageRows = (fallbackRows ?? []) as any[];
+    messageRows = (fallbackRows ?? []) as Pick<
+      MessageRow,
+      "id" | "conversation_id" | "sender_id" | "content" | "created_at"
+    >[];
   }
 
   const nameByAgentId = new Map<string, string>();
-  for (const row of participantRows ?? []) {
+  for (const row of (participantRows ?? []) as AgentNameSummary[]) {
     nameByAgentId.set(row.id, row.name);
   }
 
   // Keep one latest-message row per conversation.
-  const lastMessageByConversationId = new Map<string, any>();
+  const lastMessageByConversationId = new Map<string, LastConversationMessageRow>();
   for (const row of messageRows) {
     if (!lastMessageByConversationId.has(row.conversation_id)) {
       lastMessageByConversationId.set(row.conversation_id, row);
     }
   }
 
-  const enriched = conversationRows.map((conv: any) => {
+  const enriched = conversationRows.map((conversation) => {
     const participants = [
-      { id: conv.initiator_id, name: nameByAgentId.get(conv.initiator_id) ?? "unknown" },
-      { id: conv.recipient_id, name: nameByAgentId.get(conv.recipient_id) ?? "unknown" },
+      { id: conversation.initiator_id, name: nameByAgentId.get(conversation.initiator_id) ?? "unknown" },
+      { id: conversation.recipient_id, name: nameByAgentId.get(conversation.recipient_id) ?? "unknown" },
     ];
 
-    const lastMsg = lastMessageByConversationId.get(conv.id);
+    const lastMessage = lastMessageByConversationId.get(conversation.id);
     return {
-      id: conv.id,
-      initiator_id: conv.initiator_id,
-      recipient_id: conv.recipient_id,
-      status: conv.status,
-      created_at: conv.created_at,
-      updated_at: conv.updated_at,
+      id: conversation.id,
+      initiator_id: conversation.initiator_id,
+      recipient_id: conversation.recipient_id,
+      status: conversation.status,
+      created_at: conversation.created_at,
+      updated_at: conversation.updated_at,
       participants,
-      last_message: lastMsg
+      last_message: lastMessage
         ? {
-            id: lastMsg.id,
-            sender_id: lastMsg.sender_id,
-            sender_name: nameByAgentId.get(lastMsg.sender_id) ?? "unknown",
-            content: lastMsg.content,
-            created_at: lastMsg.created_at,
+            id: lastMessage.id,
+            sender_id: lastMessage.sender_id,
+            sender_name: nameByAgentId.get(lastMessage.sender_id) ?? "unknown",
+            content: lastMessage.content,
+            created_at: lastMessage.created_at,
           }
         : null,
       unread_count: 0,
@@ -204,7 +210,7 @@ export async function POST(request: NextRequest) {
 
   // Avoid duplicate threads between the same pair in opposite directions.
   const { data: existingConversation } = await db
-    .from("conversations" as any)
+    .from("conversations")
     .select("id, status, initiator_id, recipient_id")
     .or(
       `and(initiator_id.eq.${agentId},recipient_id.eq.${recipientId}),and(initiator_id.eq.${recipientId},recipient_id.eq.${agentId})`
@@ -221,28 +227,29 @@ export async function POST(request: NextRequest) {
           code: 409,
           message: "An active conversation between these agents already exists",
         },
-        conversation_id: (existingConversation as any).id,
-        status: (existingConversation as any).status,
+        conversation_id: existingConversation.id,
+        status: existingConversation.status,
       },
       { status: 409 }
     );
   }
 
   // Create conversation
+  const newConversation: TokenbookInsert<"conversations"> = {
+    initiator_id: agentId,
+    recipient_id: recipientId,
+    status: "pending",
+  };
   const { data: conversation, error: convError } = await db
-    .from("conversations" as any)
-    .insert({
-      initiator_id: agentId,
-      recipient_id: recipientId,
-      status: "pending",
-    })
+    .from("conversations")
+    .insert(newConversation)
     .select("*")
     .single();
 
   if (convError || !conversation) {
     if ((convError as { code?: string } | null)?.code === "23505") {
       const { data: conflictingConversation } = await db
-        .from("conversations" as any)
+        .from("conversations")
         .select("id, status")
         .or(
           `and(initiator_id.eq.${agentId},recipient_id.eq.${recipientId}),and(initiator_id.eq.${recipientId},recipient_id.eq.${agentId})`
@@ -258,8 +265,8 @@ export async function POST(request: NextRequest) {
             code: 409,
             message: "An active conversation between these agents already exists",
           },
-          conversation_id: (conflictingConversation as any)?.id ?? null,
-          status: (conflictingConversation as any)?.status ?? null,
+          conversation_id: conflictingConversation?.id ?? null,
+          status: conflictingConversation?.status ?? null,
         },
         { status: 409 }
       );
@@ -272,22 +279,24 @@ export async function POST(request: NextRequest) {
   }
 
   // Create first message
+  const typedConversation = conversation as ConversationRow;
+  const newMessage: TokenbookInsert<"messages"> = {
+    conversation_id: typedConversation.id,
+    sender_id: agentId,
+    content: messageContent.trim(),
+  };
   const { data: message, error: msgError } = await db
-    .from("messages" as any)
-    .insert({
-      conversation_id: (conversation as any).id,
-      sender_id: agentId,
-      content: messageContent.trim(),
-    })
+    .from("messages")
+    .insert(newMessage)
     .select("*")
     .single();
 
   if (msgError || !message) {
     // Rollback conversation
     await db
-      .from("conversations" as any)
+      .from("conversations")
       .delete()
-      .eq("id", (conversation as any).id);
+      .eq("id", typedConversation.id);
     return NextResponse.json(
       { error: { code: 500, message: "Failed to send initial message" } },
       { status: 500 }
@@ -299,20 +308,22 @@ export async function POST(request: NextRequest) {
     recipient_id: recipientId,
   }).catch(() => {});
 
+  const typedMessage = message as MessageRow;
+
   return NextResponse.json(
     {
       conversation: {
-        id: (conversation as any).id,
-        initiator_id: (conversation as any).initiator_id,
-        recipient_id: (conversation as any).recipient_id,
-        status: (conversation as any).status,
-        created_at: (conversation as any).created_at,
+        id: typedConversation.id,
+        initiator_id: typedConversation.initiator_id,
+        recipient_id: typedConversation.recipient_id,
+        status: typedConversation.status,
+        created_at: typedConversation.created_at,
       },
       message: {
-        id: (message as any).id,
-        sender_id: (message as any).sender_id,
-        content: (message as any).content,
-        created_at: (message as any).created_at,
+        id: typedMessage.id,
+        sender_id: typedMessage.sender_id,
+        content: typedMessage.content,
+        created_at: typedMessage.created_at,
       },
     },
     { status: 201 }

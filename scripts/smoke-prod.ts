@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-
 import { resolveSmokeBaseUrl, shouldRequireCorsAgentHeader } from "./lib/smoke-targets";
 
 type Json = Record<string, unknown>;

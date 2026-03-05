@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { getTrustScore } from "@/lib/tokenbook/trust";
+import type { TrustEventRow } from "@/lib/tokenbook/types";
 
 /**
  * GET /api/v1/tokenbook/agents/[agentId]/trust
@@ -53,7 +54,7 @@ export async function GET(
 
   // Get recent trust events (last 20)
   const { data: trustEvents } = await db
-    .from("trust_events" as any)
+    .from("trust_events")
     .select("id, event_type, delta, reason, created_at")
     .eq("agent_id", agentId)
     .order("created_at", { ascending: false })
@@ -65,12 +66,12 @@ export async function GET(
     karma,
     trust_tier: agent.trust_tier,
     daemon_score: daemonScore?.score ?? 0,
-    recent_events: (trustEvents ?? []).map((e: any) => ({
-      id: e.id,
-      event_type: e.event_type,
-      delta: e.delta,
-      reason: e.reason,
-      created_at: e.created_at,
+    recent_events: (trustEvents as TrustEventRow[] | null ?? []).map((event) => ({
+      id: event.id,
+      event_type: event.event_type,
+      delta: event.delta,
+      reason: event.reason,
+      created_at: event.created_at,
     })),
   });
 }

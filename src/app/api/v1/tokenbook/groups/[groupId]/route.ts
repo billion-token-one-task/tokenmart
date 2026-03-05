@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import type {
+  GroupMemberRowWithAgent,
+  GroupMutationRpcRow,
+  GroupRowWithMemberCount,
+  TokenbookInsert,
+  TokenbookUpdate,
+} from "@/lib/tokenbook/types";
+import { runTokenbookRpc } from "@/lib/tokenbook/types";
 import { updateBehavioralVector } from "@/lib/sybil/behavioral-vectors";
 
 function isMissingRpcFunction(
@@ -35,7 +43,7 @@ export async function GET(
   const db = createAdminClient();
 
   const { data: group } = await db
-    .from("groups" as any)
+    .from("groups")
     .select("*")
     .eq("id", groupId)
     .single();
@@ -49,29 +57,31 @@ export async function GET(
 
   // Fetch members with agent info
   const { data: members } = await db
-    .from("group_members" as any)
+    .from("group_members")
     .select("*, agents!inner(id, name, harness)")
     .eq("group_id", groupId)
     .order("joined_at", { ascending: true });
 
-  const mappedMembers = (members ?? []).map((m: any) => ({
-    agent_id: m.agent_id,
-    agent_name: m.agents?.name ?? "unknown",
-    agent_harness: m.agents?.harness ?? "unknown",
-    role: m.role,
-    joined_at: m.joined_at ?? m.created_at,
+  const mappedMembers = ((members ?? []) as GroupMemberRowWithAgent[]).map((member) => ({
+    agent_id: member.agent_id,
+    agent_name: member.agents?.name ?? "unknown",
+    agent_harness: member.agents?.harness ?? "unknown",
+    role: member.role,
+    joined_at: member.joined_at ?? member.created_at,
   }));
+
+  const typedGroup = group as GroupRowWithMemberCount;
 
   return NextResponse.json({
     group: {
-      id: (group as any).id,
-      name: (group as any).name,
-      description: (group as any).description,
-      is_public: (group as any).is_public,
-      max_members: (group as any).max_members,
-      member_count: (group as any).member_count ?? mappedMembers.length,
-      created_by: (group as any).owner_id ?? (group as any).created_by,
-      created_at: (group as any).created_at,
+      id: typedGroup.id,
+      name: typedGroup.name,
+      description: typedGroup.description,
+      is_public: typedGroup.is_public,
+      max_members: typedGroup.max_members,
+      member_count: typedGroup.member_count ?? mappedMembers.length,
+      created_by: typedGroup.owner_id ?? typedGroup.created_by,
+      created_at: typedGroup.created_at,
     },
     members: mappedMembers,
   });
@@ -118,11 +128,14 @@ export async function POST(
 
   if (body.action === "leave") {
     // Prefer atomic leave path when RPC is available.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rpcResult = await (db.rpc as any)("leave_group_atomic", {
-      p_group_id: groupId,
-      p_agent_id: agentId,
-    });
+    const rpcResult = await runTokenbookRpc<GroupMutationRpcRow | GroupMutationRpcRow[]>(
+      db,
+      "leave_group_atomic",
+      {
+        p_group_id: groupId,
+        p_agent_id: agentId,
+      }
+    );
 
     if (!rpcResult.error) {
       const row = Array.isArray(rpcResult.data) ? rpcResult.data[0] : rpcResult.data;
@@ -156,16 +169,18 @@ export async function POST(
     if (!isMissingRpcFunction(rpcResult.error, "leave_group_atomic")) {
       // Fall back to legacy path if RPC exists but fails at runtime.
       // This keeps group leave functional during transient SQL/RPC issues.
-      // eslint-disable-next-line no-console
       console.error("leave_group_atomic failed, falling back to legacy path", rpcResult.error);
     }
   } else {
     // Prefer atomic join path when RPC is available.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rpcResult = await (db.rpc as any)("join_group_atomic", {
-      p_group_id: groupId,
-      p_agent_id: agentId,
-    });
+    const rpcResult = await runTokenbookRpc<GroupMutationRpcRow | GroupMutationRpcRow[]>(
+      db,
+      "join_group_atomic",
+      {
+        p_group_id: groupId,
+        p_agent_id: agentId,
+      }
+    );
 
     if (!rpcResult.error) {
       const row = Array.isArray(rpcResult.data) ? rpcResult.data[0] : rpcResult.data;
@@ -219,14 +234,13 @@ export async function POST(
     if (!isMissingRpcFunction(rpcResult.error, "join_group_atomic")) {
       // Fall back to legacy path if RPC exists but fails at runtime.
       // This keeps group join functional during transient SQL/RPC issues.
-      // eslint-disable-next-line no-console
       console.error("join_group_atomic failed, falling back to legacy path", rpcResult.error);
     }
   }
 
   // Legacy fallback path for environments that don't have atomic RPCs yet.
   const { data: group } = await db
-    .from("groups" as any)
+    .from("groups")
     .select("*")
     .eq("id", groupId)
     .single();
@@ -238,12 +252,12 @@ export async function POST(
     );
   }
 
-  const g = group as any;
+  const g = group as GroupRowWithMemberCount;
 
   // Handle leave action via POST
   if (body.action === "leave") {
     const { data: membership } = await db
-      .from("group_members" as any)
+      .from("group_members")
       .select("id, role")
       .eq("group_id", groupId)
       .eq("agent_id", agentId)
@@ -257,7 +271,7 @@ export async function POST(
     }
 
     const { error: leaveError } = await db
-      .from("group_members" as any)
+      .from("group_members")
       .delete()
       .eq("group_id", groupId)
       .eq("agent_id", agentId);
@@ -271,10 +285,11 @@ export async function POST(
 
     // Recompute member_count to avoid drift under concurrent joins/leaves.
     const { count } = await db
-      .from("group_members" as any)
+      .from("group_members")
       .select("id", { count: "exact", head: true })
       .eq("group_id", groupId);
-    await db.from("groups" as any).update({ member_count: count ?? 0 }).eq("id", groupId);
+    const groupCountUpdate = { member_count: count ?? 0 } as TokenbookUpdate<"groups">;
+    await db.from("groups").update(groupCountUpdate).eq("id", groupId);
 
     return NextResponse.json({ left: true, group_id: groupId });
   }
@@ -299,7 +314,7 @@ export async function POST(
 
   // Check if already a member
   const { data: existingMember } = await db
-    .from("group_members" as any)
+    .from("group_members")
     .select("id")
     .eq("group_id", groupId)
     .eq("agent_id", agentId)
@@ -312,11 +327,12 @@ export async function POST(
     );
   }
 
-  const { error } = await db.from("group_members" as any).insert({
+  const newMembership: TokenbookInsert<"group_members"> = {
     group_id: groupId,
     agent_id: agentId,
     role: "member",
-  });
+  };
+  const { error } = await db.from("group_members").insert(newMembership);
 
   if (error) {
     return NextResponse.json(
@@ -327,10 +343,11 @@ export async function POST(
 
   // Recompute member_count to avoid drift under concurrent joins/leaves.
   const { count } = await db
-    .from("group_members" as any)
+    .from("group_members")
     .select("id", { count: "exact", head: true })
     .eq("group_id", groupId);
-  await db.from("groups" as any).update({ member_count: count ?? 0 }).eq("id", groupId);
+  const groupCountUpdate = { member_count: count ?? 0 } as TokenbookUpdate<"groups">;
+  await db.from("groups").update(groupCountUpdate).eq("id", groupId);
 
   // Behavioral vector tracking (fire and forget)
   updateBehavioralVector(agentId, "tokenbook_group_join", {
@@ -375,7 +392,7 @@ export async function DELETE(
 
   // Check membership
   const { data: membership } = await db
-    .from("group_members" as any)
+    .from("group_members")
     .select("id, role")
     .eq("group_id", groupId)
     .eq("agent_id", agentId)
@@ -389,7 +406,7 @@ export async function DELETE(
   }
 
   const { error } = await db
-    .from("group_members" as any)
+    .from("group_members")
     .delete()
     .eq("group_id", groupId)
     .eq("agent_id", agentId);
@@ -402,10 +419,11 @@ export async function DELETE(
   }
 
   const { count } = await db
-    .from("group_members" as any)
+    .from("group_members")
     .select("id", { count: "exact", head: true })
     .eq("group_id", groupId);
-  await db.from("groups" as any).update({ member_count: count ?? 0 }).eq("id", groupId);
+  const groupCountUpdate = { member_count: count ?? 0 } as TokenbookUpdate<"groups">;
+  await db.from("groups").update(groupCountUpdate).eq("id", groupId);
 
   return NextResponse.json({ left: true, group_id: groupId });
 }

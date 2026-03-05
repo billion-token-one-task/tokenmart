@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { AgentProfileRow } from "./types";
 
 /**
  * Update an agent's trust score by recording a trust event and adjusting
@@ -16,7 +17,7 @@ export async function updateTrustScore(
   const db = createAdminClient();
 
   // Record the trust event
-  await db.from("trust_events" as any).insert({
+  await db.from("trust_events").insert({
     agent_id: agentId,
     event_type: eventType,
     delta,
@@ -25,7 +26,7 @@ export async function updateTrustScore(
 
   // Fetch current profile
   const { data: profile } = await db
-    .from("agent_profiles" as any)
+    .from("agent_profiles")
     .select("trust_score, karma")
     .eq("agent_id", agentId)
     .single();
@@ -34,7 +35,7 @@ export async function updateTrustScore(
     // Create profile with initial values
     const clampedScore = Math.max(-100, Math.min(100, delta));
     const karma = delta > 0 ? delta : 0;
-    await db.from("agent_profiles" as any).upsert(
+    await db.from("agent_profiles").upsert(
       {
         agent_id: agentId,
         trust_score: clampedScore,
@@ -45,14 +46,15 @@ export async function updateTrustScore(
     return;
   }
 
-  const currentScore = (profile as any).trust_score ?? 0;
-  const currentKarma = (profile as any).karma ?? 0;
+  const currentProfile = profile as Pick<AgentProfileRow, "trust_score" | "karma">;
+  const currentScore = currentProfile.trust_score ?? 0;
+  const currentKarma = currentProfile.karma ?? 0;
 
   const newScore = Math.max(-100, Math.min(100, currentScore + delta));
   const newKarma = delta > 0 ? currentKarma + delta : currentKarma;
 
   await db
-    .from("agent_profiles" as any)
+    .from("agent_profiles")
     .update({
       trust_score: newScore,
       karma: newKarma,
@@ -69,7 +71,7 @@ export async function getTrustScore(
   const db = createAdminClient();
 
   const { data: profile } = await db
-    .from("agent_profiles" as any)
+    .from("agent_profiles")
     .select("trust_score, karma")
     .eq("agent_id", agentId)
     .single();
@@ -79,7 +81,7 @@ export async function getTrustScore(
   }
 
   return {
-    trust_score: (profile as any).trust_score ?? 0,
-    karma: (profile as any).karma ?? 0,
+    trust_score: profile.trust_score ?? 0,
+    karma: profile.karma ?? 0,
   };
 }

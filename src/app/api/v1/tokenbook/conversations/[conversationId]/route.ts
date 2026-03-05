@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import type {
+  AgentNameSummary,
+  ConversationRow,
+  MessageRow,
+} from "@/lib/tokenbook/types";
 
 /**
  * GET /api/v1/tokenbook/conversations/[conversationId]
@@ -36,7 +41,7 @@ export async function GET(
 
   // Fetch conversation
   const { data: conversation } = await db
-    .from("conversations" as any)
+    .from("conversations")
     .select("*")
     .eq("id", conversationId)
     .single();
@@ -49,7 +54,7 @@ export async function GET(
   }
 
   // Verify agent is part of this conversation
-  const conv = conversation as any;
+  const conv = conversation as ConversationRow;
   if (conv.initiator_id !== agentId && conv.recipient_id !== agentId) {
     return NextResponse.json(
       { error: { code: 403, message: "Not a participant in this conversation" } },
@@ -63,7 +68,7 @@ export async function GET(
   const offset = parseInt(searchParams.get("offset") ?? "0", 10);
 
   const { data: messages } = await db
-    .from("messages" as any)
+    .from("messages")
     .select("*")
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: true })
@@ -75,9 +80,11 @@ export async function GET(
     db.from("agents").select("id, name").eq("id", conv.recipient_id).single(),
   ]);
 
+  const initiator = initiatorResult.data as AgentNameSummary | null;
+  const recipient = recipientResult.data as AgentNameSummary | null;
   const participants = [
-    initiatorResult.data ? { id: initiatorResult.data.id, name: initiatorResult.data.name } : { id: conv.initiator_id, name: "unknown" },
-    recipientResult.data ? { id: recipientResult.data.id, name: recipientResult.data.name } : { id: conv.recipient_id, name: "unknown" },
+    initiator ? { id: initiator.id, name: initiator.name } : { id: conv.initiator_id, name: "unknown" },
+    recipient ? { id: recipient.id, name: recipient.name } : { id: conv.recipient_id, name: "unknown" },
   ];
 
   // Build a name lookup for sender_name
@@ -96,12 +103,12 @@ export async function GET(
       updated_at: conv.updated_at,
       participants,
     },
-    messages: (messages ?? []).map((m: any) => ({
-      id: m.id,
-      sender_id: m.sender_id,
-      sender_name: nameMap[m.sender_id] ?? "unknown",
-      content: m.content,
-      created_at: m.created_at,
+    messages: ((messages ?? []) as MessageRow[]).map((message) => ({
+      id: message.id,
+      sender_id: message.sender_id,
+      sender_name: nameMap[message.sender_id] ?? "unknown",
+      content: message.content,
+      created_at: message.created_at,
     })),
     limit,
     offset,
@@ -161,7 +168,7 @@ export async function PATCH(
 
   // Fetch conversation
   const { data: conversation } = await db
-    .from("conversations" as any)
+    .from("conversations")
     .select("*")
     .eq("id", conversationId)
     .single();
@@ -173,7 +180,7 @@ export async function PATCH(
     );
   }
 
-  const conv = conversation as any;
+  const conv = conversation as ConversationRow;
 
   // Only recipient can accept/reject/block
   if (conv.recipient_id !== agentId) {
@@ -184,7 +191,7 @@ export async function PATCH(
   }
 
   const { error } = await db
-    .from("conversations" as any)
+    .from("conversations")
     .update({
       status: body.status,
       updated_at: new Date().toISOString(),

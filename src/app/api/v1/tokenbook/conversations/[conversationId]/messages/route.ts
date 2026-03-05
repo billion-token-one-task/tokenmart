@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import type {
+  ConversationRow,
+  MessageRow,
+  TokenbookInsert,
+} from "@/lib/tokenbook/types";
 import { updateBehavioralVector } from "@/lib/sybil/behavioral-vectors";
 
 /**
@@ -36,7 +41,7 @@ export async function GET(
 
   // Verify agent is part of this conversation
   const { data: conversation } = await db
-    .from("conversations" as any)
+    .from("conversations")
     .select("initiator_id, recipient_id")
     .eq("id", conversationId)
     .single();
@@ -48,7 +53,7 @@ export async function GET(
     );
   }
 
-  const conv = conversation as any;
+  const conv = conversation as Pick<ConversationRow, "initiator_id" | "recipient_id">;
   if (conv.initiator_id !== agentId && conv.recipient_id !== agentId) {
     return NextResponse.json(
       { error: { code: 403, message: "Not a participant in this conversation" } },
@@ -61,7 +66,7 @@ export async function GET(
   const offset = parseInt(searchParams.get("offset") ?? "0", 10);
 
   const { data: messages, error } = await db
-    .from("messages" as any)
+    .from("messages")
     .select("*")
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: true })
@@ -75,11 +80,11 @@ export async function GET(
   }
 
   return NextResponse.json({
-    messages: (messages ?? []).map((m: any) => ({
-      id: m.id,
-      sender_id: m.sender_id,
-      content: m.content,
-      created_at: m.created_at,
+    messages: ((messages ?? []) as MessageRow[]).map((message) => ({
+      id: message.id,
+      sender_id: message.sender_id,
+      content: message.content,
+      created_at: message.created_at,
     })),
     limit,
     offset,
@@ -137,7 +142,7 @@ export async function POST(
 
   // Verify conversation exists and agent is a participant
   const { data: conversation } = await db
-    .from("conversations" as any)
+    .from("conversations")
     .select("*")
     .eq("id", conversationId)
     .single();
@@ -149,7 +154,7 @@ export async function POST(
     );
   }
 
-  const conv = conversation as any;
+  const conv = conversation as ConversationRow;
   if (conv.initiator_id !== agentId && conv.recipient_id !== agentId) {
     return NextResponse.json(
       { error: { code: 403, message: "Not a participant in this conversation" } },
@@ -165,13 +170,15 @@ export async function POST(
     );
   }
 
+  const newMessage: TokenbookInsert<"messages"> = {
+    conversation_id: conversationId,
+    sender_id: agentId,
+    content: body.content.trim(),
+  };
+
   const { data: message, error } = await db
-    .from("messages" as any)
-    .insert({
-      conversation_id: conversationId,
-      sender_id: agentId,
-      content: body.content.trim(),
-    })
+    .from("messages")
+    .insert(newMessage)
     .select("*")
     .single();
 
@@ -183,7 +190,7 @@ export async function POST(
   }
 
   // Update conversation updated_at
-  db.from("conversations" as any)
+  db.from("conversations")
     .update({ updated_at: new Date().toISOString() })
     .eq("id", conversationId)
     .then();
@@ -193,13 +200,15 @@ export async function POST(
     conversation_id: conversationId,
   }).catch(() => {});
 
+  const typedMessage = message as MessageRow;
+
   return NextResponse.json(
     {
       message: {
-        id: (message as any).id,
-        sender_id: (message as any).sender_id,
-        content: (message as any).content,
-        created_at: (message as any).created_at,
+        id: typedMessage.id,
+        sender_id: typedMessage.sender_id,
+        content: typedMessage.content,
+        created_at: typedMessage.created_at,
       },
     },
     { status: 201 }

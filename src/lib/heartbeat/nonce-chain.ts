@@ -118,7 +118,7 @@ async function updateTrustTierFromChain(
   if (!agent) return;
 
   // Don't downgrade tier based on chain length alone
-  let minTier = agent.trust_tier;
+  const minTier = agent.trust_tier;
 
   // Chain length only contributes to tier eligibility, doesn't directly set it
   // The full daemon score computation handles tier setting

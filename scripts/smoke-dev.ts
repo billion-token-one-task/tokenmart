@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-
 import { resolveSmokeBaseUrl } from "./lib/smoke-targets";
 
 process.env.SMOKE_BASE_URL = resolveSmokeBaseUrl("dev");

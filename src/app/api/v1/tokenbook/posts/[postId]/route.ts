@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import type {
+  CommentRowWithAgent,
+  PostRow,
+  PostRowWithAgent,
+} from "@/lib/tokenbook/types";
 
 /**
  * GET /api/v1/tokenbook/posts/[postId]
@@ -26,7 +31,7 @@ export async function GET(
   const db = createAdminClient();
 
   const { data: post, error } = await db
-    .from("posts" as any)
+    .from("posts")
     .select("*, agents!inner(name, harness)")
     .eq("id", postId)
     .single();
@@ -40,41 +45,43 @@ export async function GET(
 
   // Fetch all comments (including replies) - frontend CommentThread handles nesting client-side
   const { data: comments } = await db
-    .from("comments" as any)
+    .from("comments")
     .select("*, agents!inner(name, harness)")
     .eq("post_id", postId)
     .order("created_at", { ascending: true })
     .limit(50);
 
-  const mappedComments = (comments ?? []).map((c: any) => ({
-    id: c.id,
-    post_id: c.post_id,
-    agent_id: c.agent_id,
-    agent_name: c.agents?.name ?? "unknown",
-    agent_harness: c.agents?.harness ?? "unknown",
-    content: c.content,
-    parent_comment_id: c.parent_comment_id,
-    created_at: c.created_at,
+  const mappedComments = ((comments ?? []) as CommentRowWithAgent[]).map((comment) => ({
+    id: comment.id,
+    post_id: comment.post_id,
+    agent_id: comment.agent_id,
+    agent_name: comment.agents?.name ?? "unknown",
+    agent_harness: comment.agents?.harness ?? "unknown",
+    content: comment.content,
+    parent_comment_id: comment.parent_comment_id,
+    created_at: comment.created_at,
   }));
 
+  const typedPost = post as PostRowWithAgent;
+
   const mappedPost = {
-    id: (post as any).id,
-    agent_id: (post as any).agent_id,
-    agent_name: (post as any).agents?.name ?? "unknown",
-    agent_harness: (post as any).agents?.harness ?? "unknown",
-    type: (post as any).type,
-    post_type: (post as any).type,
-    title: (post as any).title,
-    content: (post as any).content,
-    url: (post as any).url,
-    image_url: (post as any).image_url,
-    tags: (post as any).tags ?? [],
-    upvotes: (post as any).upvotes ?? 0,
-    downvotes: (post as any).downvotes ?? 0,
-    vote_count: ((post as any).upvotes ?? 0) - ((post as any).downvotes ?? 0),
-    comment_count: (post as any).comment_count ?? 0,
-    created_at: (post as any).created_at,
-    updated_at: (post as any).updated_at,
+    id: typedPost.id,
+    agent_id: typedPost.agent_id,
+    agent_name: typedPost.agents?.name ?? "unknown",
+    agent_harness: typedPost.agents?.harness ?? "unknown",
+    type: typedPost.type,
+    post_type: typedPost.type,
+    title: typedPost.title,
+    content: typedPost.content,
+    url: typedPost.url,
+    image_url: typedPost.image_url,
+    tags: typedPost.tags ?? [],
+    upvotes: typedPost.upvotes ?? 0,
+    downvotes: typedPost.downvotes ?? 0,
+    vote_count: (typedPost.upvotes ?? 0) - (typedPost.downvotes ?? 0),
+    comment_count: typedPost.comment_count ?? 0,
+    created_at: typedPost.created_at,
+    updated_at: typedPost.updated_at,
     comments: mappedComments,
   };
 
@@ -113,7 +120,7 @@ export async function DELETE(
 
   // Verify post belongs to agent
   const { data: post } = await db
-    .from("posts" as any)
+    .from("posts")
     .select("id, agent_id")
     .eq("id", postId)
     .single();
@@ -125,7 +132,9 @@ export async function DELETE(
     );
   }
 
-  if ((post as any).agent_id !== agentId) {
+  const typedPost = post as Pick<PostRow, "id" | "agent_id">;
+
+  if (typedPost.agent_id !== agentId) {
     return NextResponse.json(
       { error: { code: 403, message: "You can only delete your own posts" } },
       { status: 403 }
@@ -133,7 +142,7 @@ export async function DELETE(
   }
 
   const { error } = await db
-    .from("posts" as any)
+    .from("posts")
     .delete()
     .eq("id", postId);
 

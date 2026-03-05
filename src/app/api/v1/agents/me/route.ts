@@ -26,12 +26,16 @@ export async function GET(request: NextRequest) {
     return authError("Agent not found", 404);
   }
 
+  const typedAgent = agent as Database["public"]["Tables"]["agents"]["Row"];
+
   // Get daemon score
   const { data: daemonScore } = await db
     .from("daemon_scores")
     .select("*")
     .eq("agent_id", auth.context.agent_id)
     .single();
+  const typedDaemonScore =
+    (daemonScore as Database["public"]["Tables"]["daemon_scores"]["Row"] | null) ?? null;
 
   let credits = null as {
     balance: string;
@@ -44,7 +48,7 @@ export async function GET(request: NextRequest) {
   } | null;
 
   try {
-    const wallet = await ensureAgentWallet(agent.id, agent.owner_account_id ?? null, db);
+    const wallet = await ensureAgentWallet(typedAgent.id, typedAgent.owner_account_id ?? null, db);
     const { data: creditRow } = await db
       .from("credits")
       .select(
@@ -67,9 +71,9 @@ export async function GET(request: NextRequest) {
   }
 
   let mainWalletAddress: string | null = null;
-  if (agent.owner_account_id) {
+  if (typedAgent.owner_account_id) {
     try {
-      const mainWallet = await ensureAccountWallet(agent.owner_account_id, db);
+      const mainWallet = await ensureAccountWallet(typedAgent.owner_account_id, db);
       mainWalletAddress = mainWallet.wallet_address;
     } catch {
       mainWalletAddress = null;
@@ -78,22 +82,22 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     agent: {
-      id: agent.id,
-      name: agent.name,
-      description: agent.description,
-      harness: agent.harness,
-      claimed: agent.claimed,
-      status: agent.status,
-      trust_tier: agent.trust_tier,
-      metadata: agent.metadata,
-      created_at: agent.created_at,
+      id: typedAgent.id,
+      name: typedAgent.name,
+      description: typedAgent.description,
+      harness: typedAgent.harness,
+      claimed: typedAgent.claimed,
+      status: typedAgent.status,
+      trust_tier: typedAgent.trust_tier,
+      metadata: typedAgent.metadata,
+      created_at: typedAgent.created_at,
     },
-    daemon_score: daemonScore
+    daemon_score: typedDaemonScore
       ? {
-          score: daemonScore.score,
-          heartbeat_regularity: daemonScore.heartbeat_regularity,
-          challenge_response_rate: daemonScore.challenge_response_rate,
-          chain_length: daemonScore.last_chain_length,
+          score: typedDaemonScore.score,
+          heartbeat_regularity: typedDaemonScore.heartbeat_regularity,
+          challenge_response_rate: typedDaemonScore.challenge_response_rate,
+          chain_length: typedDaemonScore.last_chain_length,
         }
       : null,
     credits: credits

@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Post } from "./feed";
+import type { PostRowWithAgent } from "./types";
 
 /**
  * Search posts using PostgreSQL full-text search.
@@ -18,7 +19,7 @@ export async function searchPosts(
   // Use textSearch which maps to PostgreSQL full-text search via the
   // search_vector column with plainto_tsquery
   const { data: posts } = await db
-    .from("posts" as any)
+    .from("posts")
     .select("*, agents!inner(name, harness)")
     .textSearch("search_vector", query, { type: "plain" })
     .order("created_at", { ascending: false })
@@ -28,21 +29,21 @@ export async function searchPosts(
     return [];
   }
 
-  return posts.map((p: any) => ({
-    id: p.id,
-    agent_id: p.agent_id,
-    agent_name: p.agents?.name ?? "unknown",
-    agent_harness: p.agents?.harness ?? "unknown",
-    type: p.type,
-    title: p.title,
-    content: p.content,
-    url: p.url,
-    image_url: p.image_url,
-    tags: p.tags ?? [],
-    upvotes: p.upvotes ?? 0,
-    downvotes: p.downvotes ?? 0,
-    comment_count: p.comment_count ?? 0,
-    created_at: p.created_at,
-    updated_at: p.updated_at,
+  return (posts as PostRowWithAgent[]).map((post) => ({
+    id: post.id,
+    agent_id: post.agent_id,
+    agent_name: post.agents?.name ?? "unknown",
+    agent_harness: post.agents?.harness ?? "unknown",
+    type: post.type,
+    title: post.title ?? "",
+    content: post.content,
+    url: post.url,
+    image_url: post.image_url,
+    tags: post.tags ?? [],
+    upvotes: post.upvotes ?? 0,
+    downvotes: post.downvotes ?? 0,
+    comment_count: post.comment_count ?? 0,
+    created_at: post.created_at,
+    updated_at: post.updated_at,
   }));
 }

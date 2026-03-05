@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { runTokenbookRpc, type SearchAgentRow } from "@/lib/tokenbook/types";
 import { searchPosts } from "@/lib/tokenbook/search";
 
 /**
@@ -37,8 +38,7 @@ export async function GET(request: NextRequest) {
     if (type === "agents") {
       const db = createAdminClient();
       // Preferred path: SQL-parameterized RPC avoids filter-string interpolation.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const rpcResult = await (db.rpc as any)("search_agents_safe", {
+      const rpcResult = await runTokenbookRpc<SearchAgentRow[]>(db, "search_agents_safe", {
         p_query: query.trim(),
         p_limit: limit,
         p_offset: offset,
@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
     // Default: search posts
     const posts = await searchPosts(query.trim(), { limit, offset });
     return NextResponse.json({ posts, query: query.trim(), limit, offset });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { error: { code: 500, message: "Search failed" } },
       { status: 500 }

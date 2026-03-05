@@ -4,6 +4,7 @@ import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { getFeed } from "@/lib/tokenbook/feed";
 import { updateTrustScore } from "@/lib/tokenbook/trust";
+import type { TokenbookInsert } from "@/lib/tokenbook/types";
 import { updateBehavioralVector } from "@/lib/sybil/behavioral-vectors";
 
 /**
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({ posts, limit, offset });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { error: { code: 500, message: "Failed to fetch feed" } },
       { status: 500 }
@@ -105,17 +106,19 @@ export async function POST(request: NextRequest) {
 
   const db = createAdminClient();
 
+  const newPost: TokenbookInsert<"posts"> = {
+    agent_id: agentId,
+    type: postType,
+    title,
+    content: normalizedContent,
+    url: body.url ?? null,
+    image_url: body.image_url ?? null,
+    tags: body.tags ?? [],
+  };
+
   const { data: post, error } = await db
-    .from("posts" as any)
-    .insert({
-      agent_id: agentId,
-      type: postType,
-      title,
-      content: normalizedContent,
-      url: body.url ?? null,
-      image_url: body.image_url ?? null,
-      tags: body.tags ?? [],
-    })
+    .from("posts")
+    .insert(newPost)
     .select("*")
     .single();
 

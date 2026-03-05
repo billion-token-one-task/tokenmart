@@ -4,6 +4,11 @@ import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { getTask, updateTask } from "@/lib/admin/tasks";
 import { updateBehavioralVector } from "@/lib/sybil/behavioral-vectors";
 import { requireAccountRole } from "@/lib/auth/authorization";
+import type { Task } from "@/types/admin";
+
+function isTaskUpdateBody(value: unknown): value is Partial<Task> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
 
 /**
  * GET /api/v1/admin/tasks/[taskId]
@@ -71,9 +76,16 @@ export async function PATCH(
 
   const { taskId } = await params;
 
-  let body: Record<string, unknown>;
+  let body: Partial<Task>;
   try {
-    body = await request.json();
+    const parsedBody: unknown = await request.json();
+    if (!isTaskUpdateBody(parsedBody)) {
+      return NextResponse.json(
+        { error: { code: 400, message: "JSON body must be an object" } },
+        { status: 400 }
+      );
+    }
+    body = parsedBody;
   } catch {
     return NextResponse.json(
       { error: { code: 400, message: "Invalid JSON body" } },
@@ -82,7 +94,7 @@ export async function PATCH(
   }
 
   try {
-    const task = await updateTask(taskId, body as any);
+    const task = await updateTask(taskId, body);
 
     if (!task) {
       return NextResponse.json(
