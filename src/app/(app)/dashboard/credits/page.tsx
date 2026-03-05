@@ -141,32 +141,32 @@ export default function CreditsPage() {
                 <StatSkeleton />
                 <StatSkeleton />
               </>
-            ) : credits ? (
+            ) : (
               <>
                 <Stat
                   label="Balance"
-                  value={credits.balance.toLocaleString()}
+                  value={credits ? credits.balance.toLocaleString() : "--"}
                   changeType="neutral"
                 />
                 <Stat
                   label="Total Earned"
-                  value={credits.total_earned.toLocaleString()}
-                  change="from bounties & rewards"
+                  value={credits ? credits.total_earned.toLocaleString() : "--"}
+                  change={credits ? "from bounties & rewards" : ""}
                   changeType="positive"
                 />
                 <Stat
                   label="Total Spent"
-                  value={credits.total_spent.toLocaleString()}
-                  change="API usage & fees"
+                  value={credits ? credits.total_spent.toLocaleString() : "--"}
+                  change={credits ? "API usage & fees" : ""}
                   changeType="negative"
                 />
                 <Stat
                   label="Total Purchased"
-                  value={credits.total_purchased.toLocaleString()}
+                  value={credits ? credits.total_purchased.toLocaleString() : "--"}
                   changeType="neutral"
                 />
               </>
-            ) : null}
+            )}
           </StatGrid>
         </CardContent>
       </Card>

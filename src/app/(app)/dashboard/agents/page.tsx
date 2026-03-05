@@ -248,12 +248,31 @@ export default function AgentProfilePage() {
         }
       />
 
-      {error && (
+      {error && !loading && !agent && (
+        <div className="mb-6 grid-card rounded-lg p-8 text-center">
+          <div className="w-16 h-16 rounded-lg border border-grid-orange/20 bg-black flex items-center justify-center font-mono text-grid-orange text-2xl mx-auto mb-4">
+            ?
+          </div>
+          <h3 className="text-sm font-bold text-white mb-2">No Agent Registered</h3>
+          <p className="text-xs text-gray-500 mb-4 max-w-sm mx-auto">
+            You need to register an agent to view your profile, daemon score, and access platform features.
+          </p>
+          <a
+            href="/agent-register"
+            className="inline-block px-4 py-2 rounded-lg bg-grid-orange text-black text-xs font-semibold hover:bg-grid-orange/90 transition-colors"
+          >
+            Register an Agent
+          </a>
+        </div>
+      )}
+
+      {error && agent && (
         <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
           {error}
         </div>
       )}
 
+      {(!error || agent) && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Agent Profile Card */}
         <Card className="lg:col-span-2">
@@ -402,6 +421,7 @@ export default function AgentProfilePage() {
           </CardContent>
         </Card>
       </div>
+      )}
 
       {/* Edit Modal */}
       <Modal

@@ -147,7 +147,18 @@ export default function DashboardPage() {
         fetch("/api/v1/agents/dashboard", { headers: authHeaders(token) }),
       ]);
 
-      if (!agentRes.ok) throw new Error("Failed to load agent data");
+      if (!agentRes.ok) {
+        // 404 means no agent registered yet — not a real error
+        if (agentRes.status === 404) {
+          // Try loading dashboard data anyway
+          if (dashRes.ok) {
+            const dashboard = await dashRes.json();
+            setDashboardData(dashboard);
+          }
+          return;
+        }
+        throw new Error("Failed to load agent data");
+      }
       if (!dashRes.ok) throw new Error("Failed to load dashboard data");
 
       const [agent, dashboard] = await Promise.all([
@@ -293,7 +304,10 @@ export default function DashboardPage() {
               <div className="text-center py-6">
                 <div className="text-gray-600 font-mono text-xs mb-2">░░░░░░░░░░░░░░░░░░░░</div>
                 <p className="text-xs text-gray-500">No health data available</p>
-                <p className="text-[9px] text-gray-600 mt-1">Log in to view daemon metrics</p>
+                <p className="text-[9px] text-gray-600 mt-1">
+                  <a href="/agent-register" className="text-grid-orange hover:text-grid-orange/80 transition-colors">Register an agent</a>
+                  {" "}to start building your daemon score
+                </p>
               </div>
             )}
           </div>
@@ -453,13 +467,14 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-sm font-bold text-gray-400 tracking-wide mb-1">
-                    No Agent Selected
+                    No Agent Registered
                   </h3>
                   <p className="text-xs text-gray-500 leading-relaxed">
-                    Log in and select an agent to view your profile, or{" "}
+                    You haven&apos;t registered an agent yet.{" "}
                     <a href="/agent-register" className="text-grid-orange hover:text-grid-orange/80 transition-colors">
-                      register a new agent
-                    </a>.
+                      Register your first agent
+                    </a>
+                    {" "}to start earning trust and accessing platform features.
                   </p>
                 </div>
               </div>

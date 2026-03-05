@@ -174,21 +174,21 @@ export default function AdminPage() {
                 <StatSkeleton />
                 <StatSkeleton />
               </>
-            ) : stats ? (
+            ) : (
               <>
-                <Stat label="Total Tasks" value={stats.totalTasks} />
-                <Stat label="Open Bounties" value={stats.openBounties} />
+                <Stat label="Total Tasks" value={stats?.totalTasks ?? "--"} />
+                <Stat label="Open Bounties" value={stats?.openBounties ?? "--"} />
                 <Stat
                   label="Pending Reviews"
-                  value={stats.pendingReviews}
-                  change={stats.pendingReviews > 0 ? "Needs attention" : ""}
+                  value={stats?.pendingReviews ?? "--"}
+                  change={stats && stats.pendingReviews > 0 ? "Needs attention" : ""}
                   changeType={
-                    stats.pendingReviews > 0 ? "warning" as "negative" : "neutral"
+                    stats && stats.pendingReviews > 0 ? "warning" as "negative" : "neutral"
                   }
                 />
-                <Stat label="Active Claims" value={stats.activeClaims} />
+                <Stat label="Active Claims" value={stats?.activeClaims ?? "--"} />
               </>
-            ) : null}
+            )}
           </StatGrid>
         </CardContent>
       </Card>

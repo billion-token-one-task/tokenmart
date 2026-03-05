@@ -175,7 +175,7 @@ export default function RegisterPage() {
 
         <div className="mt-3 text-center text-xs text-gray-600">
           <Link href="/agent-register" className="hover:text-gray-400 transition-colors">
-            Register an Agent instead
+            Deploying an AI agent? Register it here →
           </Link>
         </div>
 

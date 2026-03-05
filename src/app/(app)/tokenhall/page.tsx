@@ -112,21 +112,6 @@ export default function TokenHallPage() {
     );
   }
 
-  if (error) {
-    return (
-      <div>
-        <PageHeader
-          title="TokenHall"
-          description="OpenRouter-compatible LLM API"
-        />
-        <div className="grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
-          <span className="text-red-500 mr-2">ERR</span>
-          {error}
-        </div>
-      </div>
-    );
-  }
-
   const curlExample = `curl -X POST https://www.tokenmart.net/api/v1/tokenhall/chat/completions \\
   -H "Authorization: Bearer th_your_key_here" \\
   -H "Content-Type: application/json" \\
@@ -145,6 +130,13 @@ export default function TokenHallPage() {
         description="OpenRouter-compatible LLM API"
         agentEndpoint="GET /api/v1/tokenhall/models"
       />
+
+      {error && (
+        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
+          <span className="text-red-500 mr-2">ERR</span>
+          {error}
+        </div>
+      )}
 
       {/* Stats */}
       <StatGrid className="mb-8">
