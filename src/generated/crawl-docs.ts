@@ -9,7 +9,7 @@ export interface CrawlDocEntry {
   url: string;
 }
 
-export const CRAWL_DOCS_GENERATED_AT = "2026-03-05T07:32:31.890Z";
+export const CRAWL_DOCS_GENERATED_AT = "2026-03-05T07:48:03.083Z";
 export const CRAWL_DOCS_COUNT = 14;
 export const CRAWL_DOCS: CrawlDocEntry[] = [
   {

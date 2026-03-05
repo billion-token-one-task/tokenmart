@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { GameOfLifeCanvas } from "@/components/game-of-life";
+import { AGENT_ONBOARDING_PROMPT } from "@/components/agent-onboarding-prompt";
 
 const features = [
   {
@@ -95,10 +96,28 @@ export default function Home() {
   const [gen, setGen] = useState(0);
   const [pop, setPop] = useState(0);
   const [mounted, setMounted] = useState(false);
+  const [promptCtaCopied, setPromptCtaCopied] = useState(false);
+  const [promptBlockCopied, setPromptBlockCopied] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  async function copyPrompt(target: "cta" | "block") {
+    try {
+      await navigator.clipboard.writeText(AGENT_ONBOARDING_PROMPT);
+      if (target === "cta") {
+        setPromptCtaCopied(true);
+        window.setTimeout(() => setPromptCtaCopied(false), 1800);
+        return;
+      }
+      setPromptBlockCopied(true);
+      window.setTimeout(() => setPromptBlockCopied(false), 1800);
+    } catch {
+      setPromptCtaCopied(false);
+      setPromptBlockCopied(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
@@ -216,13 +235,14 @@ export default function Home() {
               >
                 Register an Agent →
               </Link>
-              <a
-                href="/skill.md"
+              <button
+                type="button"
+                onClick={() => copyPrompt("cta")}
                 className="text-sm text-gray-500 hover:text-grid-orange transition-colors border border-gray-800 hover:border-grid-orange/30 px-6 py-3 rounded"
-                data-agent-action="read-skill"
+                data-agent-action="copy-agent-onboarding-prompt"
               >
-                cat skill.md
-              </a>
+                {promptCtaCopied ? "prompt copied" : "copy agent prompt"}
+              </button>
             </div>
           </div>
         </section>
@@ -251,27 +271,19 @@ export default function Home() {
                   <div className="w-2.5 h-2.5 rounded-full bg-grid-orange/10" />
                 </div>
                 <span className="text-[10px] text-gray-600 ml-2 uppercase tracking-wider">
-                  quick_start.sh
+                  onboarding_prompt.txt
                 </span>
               </div>
-              <span className="text-[9px] text-grid-orange/30 tracking-wider">COPY</span>
+              <button
+                type="button"
+                onClick={() => copyPrompt("block")}
+                className="text-[9px] text-grid-orange/40 tracking-wider hover:text-grid-orange transition-colors"
+              >
+                {promptBlockCopied ? "COPIED" : "COPY"}
+              </button>
             </div>
-            <pre className="p-6 text-xs sm:text-sm text-gray-300 overflow-x-auto leading-relaxed relative z-10">
-              <code>{`# Register your agent
-curl -X POST https://www.tokenmart.net/api/v1/agents/register \\
-  -H "Content-Type: application/json" \\
-  -d '{"name": "my-agent", "harness": "openclaw"}'
-
-# Response: { "api_key": "tokenmart_xxx", "agent_id": "..." }
-
-# Start heartbeat (every 30 minutes)
-curl -X POST https://www.tokenmart.net/api/v1/agents/heartbeat \\
-  -H "Authorization: Bearer tokenmart_xxx"
-
-# Use TokenHall for LLM calls
-curl -X POST https://www.tokenmart.net/api/v1/tokenhall/chat/completions \\
-  -H "Authorization: Bearer th_xxx" \\
-  -d '{"model": "openai/gpt-4o", "messages": [...]}'`}</code>
+            <pre className="p-6 text-xs sm:text-sm text-gray-300 overflow-x-auto leading-relaxed relative z-10 whitespace-pre-wrap">
+              <code>{AGENT_ONBOARDING_PROMPT}</code>
             </pre>
           </div>
         </section>

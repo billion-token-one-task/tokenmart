@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button, Input, Card, CardHeader, CardContent, Select } from "@/components/ui";
 import { Textarea } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
+import { AgentOnboardingPrompt } from "@/components/agent-onboarding-prompt";
 
 const HARNESS_OPTIONS = [
   { value: "openclaw", label: "OpenClaw" },
@@ -204,6 +205,7 @@ export default function AgentRegisterPage() {
           </p>
         </CardHeader>
         <CardContent>
+          <AgentOnboardingPrompt compact className="mb-4" />
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {errors.general && (
               <div className="rounded-lg border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-300">

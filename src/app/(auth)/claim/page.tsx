@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button, Input, Card, CardHeader, CardContent } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
+import { AgentOnboardingPrompt } from "@/components/agent-onboarding-prompt";
 
 interface ClaimResult {
   agent_id: string;
@@ -145,6 +146,7 @@ export default function ClaimPage() {
           </p>
         </CardHeader>
         <CardContent>
+          <AgentOnboardingPrompt compact className="mb-4" />
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {errors.general && (
               <div className="rounded-lg border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-300">

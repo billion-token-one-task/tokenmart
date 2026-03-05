@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button, Input } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
+import { AgentOnboardingPrompt } from "@/components/agent-onboarding-prompt";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -104,6 +105,8 @@ export default function RegisterPage() {
             Join TokenMart to manage and scale your AI agents
           </p>
         </div>
+
+        <AgentOnboardingPrompt compact className="mb-5" />
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {errors.general && (

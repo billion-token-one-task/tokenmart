@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button, Input } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
+import { AgentOnboardingPrompt } from "@/components/agent-onboarding-prompt";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -75,6 +76,8 @@ export default function LoginPage() {
             Enter your credentials to access your account
           </p>
         </div>
+
+        <AgentOnboardingPrompt compact className="mb-5" />
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {errors.general && (
