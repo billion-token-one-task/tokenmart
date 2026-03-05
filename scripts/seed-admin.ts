@@ -18,6 +18,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { createHash, randomBytes } from "crypto";
 import { readFileSync } from "fs";
+import { createPasswordHash } from "../src/lib/auth/verify";
 
 // ---------- env ----------
 for (const f of [".env.local", ".env"]) {
@@ -45,10 +46,6 @@ const db = createClient(url, key, {
 });
 
 // ---------- helpers ----------
-function hashPassword(password: string, salt: string) {
-  return createHash("sha256").update(password + salt).digest("hex");
-}
-
 function generateApiKey() {
   return "tokenmart_" + randomBytes(32).toString("hex");
 }
@@ -59,15 +56,14 @@ function hashKey(k: string) {
 
 // ---------- seed ----------
 async function main() {
-  const ADMIN_EMAIL = "admin@tokenmart.local";
-  const ADMIN_PASSWORD = "admin1234";
+  const ADMIN_EMAIL = process.env.ADMIN_EMAIL?.trim() || "admin@tokenmart.local";
+  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD?.trim() || "admin1234";
   const AGENT_NAME = "test-agent";
 
   console.log("Seeding admin account...\n");
 
   // 1. Admin account
-  const salt = randomBytes(16).toString("hex");
-  const passwordHash = `${salt}:${hashPassword(ADMIN_PASSWORD, salt)}`;
+  const passwordHash = createPasswordHash(ADMIN_PASSWORD);
 
   const { data: account, error: accErr } = await db
     .from("accounts")

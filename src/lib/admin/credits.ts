@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ensureAgentWallet } from "@/lib/tokenhall/wallets";
+import { insertCreditTransactionAudit } from "@/lib/tokenhall/credit-transactions";
 
 type RpcInvoker = (
   fn: string,
@@ -88,14 +89,16 @@ export async function grantCredits(
 
   if (updateError) return false;
 
-  const { error: txError } = await db.from("credit_transactions").insert({
-    agent_id: agentId,
+  const txResult = await insertCreditTransactionAudit(db, {
+    agentId,
     type: "admin_grant",
-    amount: amount.toString(),
+    amount: amount.toFixed(8),
     description,
-    reference_id: referenceId ?? null,
+    referenceId: referenceId ?? null,
+    balanceBefore: currentBalance.toFixed(8),
+    balanceAfter: (currentBalance + amount).toFixed(8),
   });
-  if (txError) return false;
+  if (txResult.error) return false;
 
   return true;
 }
@@ -162,33 +165,21 @@ async function applyPositiveGrantManually(
     return false;
   }
 
-  // Audit insert is best-effort because older production schemas may require
-  // additional columns (e.g. balance_before/balance_after).
-  const txBase = {
-    agent_id: agentId,
+  const txInsert = await insertCreditTransactionAudit(db, {
+    agentId,
     type: txType,
     amount: amount.toFixed(8),
     description,
-    reference_id: referenceId ?? null,
-  };
-  const txInsert = await db.from("credit_transactions").insert(txBase);
+    referenceId: referenceId ?? null,
+    balanceBefore: currentBalance.toFixed(8),
+    balanceAfter: nextBalance.toFixed(8),
+    creditId,
+  });
   if (txInsert.error) {
-    // Some deployments include additional audit columns like
-    // balance_before/balance_after; use an untyped insert fallback.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const withBalances = await (db.from("credit_transactions") as any).insert({
-      ...txBase,
-      balance_before: currentBalance.toFixed(8),
-      balance_after: nextBalance.toFixed(8),
-      credit_id: creditId,
-    });
-
-    if (withBalances.error) {
-      console.warn(
-        `Manual grant succeeded but credit transaction audit insert failed for agent ${agentId}:`,
-        withBalances.error,
-      );
-    }
+    console.warn(
+      `Manual grant succeeded but credit transaction audit insert failed for agent ${agentId}:`,
+      txInsert.error,
+    );
   }
 
   return true;

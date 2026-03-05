@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { existsSync, readFileSync } from "node:fs";
+import { insertCreditTransactionAudit } from "../src/lib/tokenhall/credit-transactions";
 import {
   buildFundingStrategies,
   resolveAdminCredentials,
@@ -374,14 +375,29 @@ async function run() {
         }
       }
 
-      const txInsert = await supabase.from("credit_transactions").insert({
-        agent_id: agentId,
+      const previousBalance =
+        creditsResult.data == null
+          ? "0.00000000"
+          : (
+              Number.parseFloat(String(creditsResult.data.balance ?? "0")) || 0
+            ).toFixed(8);
+      const nextBalance =
+        creditsResult.data == null
+          ? "50.00000000"
+          : (
+              (Number.parseFloat(String(creditsResult.data.balance ?? "0")) || 0) + 50
+            ).toFixed(8);
+
+      const txInsert = await insertCreditTransactionAudit(supabase, {
+        agentId,
         type: "admin_grant",
         amount: "50.00000000",
         description: `${grantDescription} (service-role fallback)`,
+        balanceBefore: previousBalance,
+        balanceAfter: nextBalance,
       });
       if (txInsert.error) {
-        fundingNotes.push(`transaction log skipped (${txInsert.error.message})`);
+        fundingNotes.push(`transaction log skipped (${txInsert.error.message ?? "unknown error"})`);
       }
 
       fundingReady = true;

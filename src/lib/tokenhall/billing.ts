@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { insertCreditTransactionAudit } from "@/lib/tokenhall/credit-transactions";
 import type { CreditBalance } from "@/types/tokenhall";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -195,13 +196,14 @@ export async function deductCredits(
     await incrementKeySpentCredits(keyId, amount);
   }
 
-  // Record the transaction.
-  await supabase.from("credit_transactions").insert({
-    agent_id: agentId,
+  await insertCreditTransactionAudit(supabase, {
+    agentId,
     type: "api_usage",
     amount: (-amount).toFixed(10),
     description,
-    reference_id: referenceId ?? null,
+    referenceId: referenceId ?? null,
+    balanceBefore: currentBalance.toFixed(10),
+    balanceAfter: newBalance,
   });
 
   return true;
