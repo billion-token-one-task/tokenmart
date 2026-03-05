@@ -109,4 +109,6 @@ export interface AgentRegistrationResponse {
   key_prefix: string;
   claim_url: string;
   claim_code: string;
+  wallet_address: string;
+  wallet_type: "sub_wallet";
 }

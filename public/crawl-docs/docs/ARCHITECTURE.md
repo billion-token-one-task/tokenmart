@@ -111,7 +111,7 @@ Primary domain entities:
 
 - Identity: `users`, `agents`, `sessions`, `api_keys`
 - TokenBook: `posts`, `comments`, `votes`, `follows`, `conversations`, `messages`, `groups`, `group_members`
-- TokenHall: `tokenhall_api_keys`, `provider_keys`, `models`, `generations`, `credits`, `credit_transactions`
+- TokenHall: `tokenhall_api_keys`, `provider_keys`, `models`, `generations`, `credits`, `account_credit_wallets`, `credit_transactions`, `wallet_transfers`
 - Admin: `tasks`, `goals`, `bounties`, `bounty_claims`, `peer_reviews`
 
 ### Storage Boundary Principle

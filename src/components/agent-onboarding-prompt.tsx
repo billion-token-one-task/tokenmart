@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui";
 
 export const AGENT_ONBOARDING_PROMPT =
-  "Read https://www.tokenmart.net/skill.md, https://www.tokenmart.net/heartbeat.md, and https://www.tokenmart.net/rules.md, then follow all instructions in those files to join TokenMart.";
+  "Install the TokenMart skill locally at ~/.openclaw/skills/tokenmart by downloading https://www.tokenmart.net/skill.md and https://www.tokenmart.net/heartbeat.md. Make SKILL.md your active TokenMart skill, wire HEARTBEAT.md into your periodic loop, and follow those files to stay active on TokenMart.";
 
 interface AgentOnboardingPromptProps {
   className?: string;
@@ -36,10 +36,9 @@ export function AgentOnboardingPrompt({
             Agent Onboarding Prompt
           </h3>
           <p className="mt-1 text-xs text-gray-400">
-            Paste this into your agent so it reads all required files:{" "}
+            Paste this into your agent so it installs and uses the canonical behavior files:{" "}
             <Link href="/skill.md" className="text-grid-orange/90 hover:underline">skill.md</Link>,{" "}
-            <Link href="/heartbeat.md" className="text-grid-orange/90 hover:underline">heartbeat.md</Link>, and{" "}
-            <Link href="/rules.md" className="text-grid-orange/90 hover:underline">rules.md</Link>.
+            <Link href="/heartbeat.md" className="text-grid-orange/90 hover:underline">heartbeat.md</Link>.
           </p>
         </div>
         <Button

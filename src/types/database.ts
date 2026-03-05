@@ -387,10 +387,13 @@ export interface Database {
           id: string;
           agent_id: string;
           account_id: string | null;
+          wallet_address: string;
           balance: string;
           total_purchased: string;
           total_earned: string;
           total_spent: string;
+          total_transferred_in: string;
+          total_transferred_out: string;
           created_at: string;
           updated_at: string;
         };
@@ -398,10 +401,13 @@ export interface Database {
           id?: string;
           agent_id: string;
           account_id?: string | null;
+          wallet_address?: string;
           balance?: string;
           total_purchased?: string;
           total_earned?: string;
           total_spent?: string;
+          total_transferred_in?: string;
+          total_transferred_out?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -409,19 +415,70 @@ export interface Database {
           id?: string;
           agent_id?: string;
           account_id?: string | null;
+          wallet_address?: string;
           balance?: string;
           total_purchased?: string;
           total_earned?: string;
           total_spent?: string;
+          total_transferred_in?: string;
+          total_transferred_out?: string;
           created_at?: string;
           updated_at?: string;
         };
         Relationships: [
           {
+            foreignKeyName: "credits_account_id_fkey";
+            columns: ["account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "credits_agent_id_fkey";
             columns: ["agent_id"];
             isOneToOne: false;
             referencedRelation: "agents";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      account_credit_wallets: {
+        Row: {
+          id: string;
+          account_id: string;
+          wallet_address: string;
+          balance: string;
+          total_transferred_in: string;
+          total_transferred_out: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          account_id: string;
+          wallet_address: string;
+          balance?: string;
+          total_transferred_in?: string;
+          total_transferred_out?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          account_id?: string;
+          wallet_address?: string;
+          balance?: string;
+          total_transferred_in?: string;
+          total_transferred_out?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "account_credit_wallets_account_id_fkey";
+            columns: ["account_id"];
+            isOneToOne: true;
+            referencedRelation: "accounts";
             referencedColumns: ["id"];
           },
         ];
@@ -514,6 +571,103 @@ export interface Database {
           {
             foreignKeyName: "credit_transactions_agent_id_fkey";
             columns: ["agent_id"];
+            isOneToOne: false;
+            referencedRelation: "agents";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      wallet_transfers: {
+        Row: {
+          id: string;
+          from_wallet_address: string;
+          to_wallet_address: string;
+          from_owner_type: "account" | "agent";
+          to_owner_type: "account" | "agent";
+          from_account_id: string | null;
+          to_account_id: string | null;
+          from_agent_id: string | null;
+          to_agent_id: string | null;
+          amount: string;
+          memo: string | null;
+          initiated_by_type: "account" | "agent" | "system";
+          initiated_by_account_id: string | null;
+          initiated_by_agent_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          from_wallet_address: string;
+          to_wallet_address: string;
+          from_owner_type: "account" | "agent";
+          to_owner_type: "account" | "agent";
+          from_account_id?: string | null;
+          to_account_id?: string | null;
+          from_agent_id?: string | null;
+          to_agent_id?: string | null;
+          amount: string;
+          memo?: string | null;
+          initiated_by_type: "account" | "agent" | "system";
+          initiated_by_account_id?: string | null;
+          initiated_by_agent_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          from_wallet_address?: string;
+          to_wallet_address?: string;
+          from_owner_type?: "account" | "agent";
+          to_owner_type?: "account" | "agent";
+          from_account_id?: string | null;
+          to_account_id?: string | null;
+          from_agent_id?: string | null;
+          to_agent_id?: string | null;
+          amount?: string;
+          memo?: string | null;
+          initiated_by_type?: "account" | "agent" | "system";
+          initiated_by_account_id?: string | null;
+          initiated_by_agent_id?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transfers_from_account_id_fkey";
+            columns: ["from_account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "wallet_transfers_from_agent_id_fkey";
+            columns: ["from_agent_id"];
+            isOneToOne: false;
+            referencedRelation: "agents";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "wallet_transfers_initiated_by_account_id_fkey";
+            columns: ["initiated_by_account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "wallet_transfers_initiated_by_agent_id_fkey";
+            columns: ["initiated_by_agent_id"];
+            isOneToOne: false;
+            referencedRelation: "agents";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "wallet_transfers_to_account_id_fkey";
+            columns: ["to_account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "wallet_transfers_to_agent_id_fkey";
+            columns: ["to_agent_id"];
             isOneToOne: false;
             referencedRelation: "agents";
             referencedColumns: ["id"];

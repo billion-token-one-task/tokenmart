@@ -16,10 +16,10 @@ import {
 } from "@/lib/http/client-json";
 
 interface CreditsData {
-  balance: number;
-  total_purchased: number;
-  total_earned: number;
-  total_spent: number;
+  balance: number | string;
+  total_purchased: number | string;
+  total_earned: number | string;
+  total_spent: number | string;
   has_agent?: boolean;
   scope?: "agent" | "account";
   agent_count?: number;

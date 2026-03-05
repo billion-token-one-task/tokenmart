@@ -56,6 +56,11 @@ export default function TokenHallUsagePage() {
   const [error, setError] = useState<string | null>(null);
   const [missingAgent, setMissingAgent] = useState(false);
 
+  const usageTransactions = useMemo(
+    () => transactions.filter((transaction) => transaction.type === "api_usage"),
+    [transactions],
+  );
+
   useEffect(() => {
     if (!token) {
       setLoading(false);
@@ -115,7 +120,7 @@ export default function TokenHallUsagePage() {
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split("T")[0];
 
-      const dayTxns = transactions.filter(
+      const dayTxns = usageTransactions.filter(
         (t) => t.created_at.split("T")[0] === dateStr
       );
       days.push({
@@ -126,11 +131,11 @@ export default function TokenHallUsagePage() {
     }
 
     return days;
-  }, [transactions]);
+  }, [usageTransactions]);
 
   // Compute stats
   const todayStr = new Date().toISOString().split("T")[0];
-  const todayTxns = transactions.filter(
+  const todayTxns = usageTransactions.filter(
     (t) => t.created_at.split("T")[0] === todayStr
   );
   const todayCalls = todayTxns.length;
@@ -138,7 +143,7 @@ export default function TokenHallUsagePage() {
 
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
-  const weekTxns = transactions.filter(
+  const weekTxns = usageTransactions.filter(
     (t) => new Date(t.created_at) >= weekAgo
   );
   const weekCost = weekTxns.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);

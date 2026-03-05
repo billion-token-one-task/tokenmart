@@ -1,4 +1,10 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { ensureAgentWallet } from "@/lib/tokenhall/wallets";
+
+type RpcInvoker = (
+  fn: string,
+  args?: Record<string, unknown>,
+) => Promise<{ error: { message?: string } | null }>;
 
 /**
  * Apply a signed credit adjustment.
@@ -18,11 +24,10 @@ export async function grantCredits(
 
   const db = createAdminClient();
   const normalizedType = type === "reviewer_reward" ? "review_reward" : type;
+  const rpc = db.rpc.bind(db) as unknown as RpcInvoker;
 
   if (amount > 0) {
-    // Call the grant_credits RPC function.
-    // Cast as any since the function isn't in the generated Database types.
-    const { error } = await (db.rpc as any)("grant_credits", {
+    const { error } = await rpc("grant_credits", {
       p_agent_id: agentId,
       p_amount: amount,
       p_type: normalizedType,
@@ -48,7 +53,7 @@ export async function grantCredits(
   }
 
   // Negative adjustment path: use atomic SQL function when available.
-  const { error: adjustError } = await (db.rpc as any)("adjust_credits", {
+  const { error: adjustError } = await rpc("adjust_credits", {
     p_agent_id: agentId,
     p_amount: amount,
     p_tx_type: normalizedType || "admin_grant",
@@ -109,54 +114,52 @@ async function applyPositiveGrantManually(
     .eq("agent_id", agentId)
     .maybeSingle();
 
-  const currentBalance = Number(credit?.balance ?? 0);
-  const nextBalance = currentBalance + amount;
-  const currentPurchased = Number(credit?.total_purchased ?? 0);
-  const currentEarned = Number(credit?.total_earned ?? 0);
-  const nextPurchased =
-    txType === "purchase" ? currentPurchased + amount : currentPurchased;
-  const nextEarned = txType === "purchase" ? currentEarned : currentEarned + amount;
-
-  let creditId = credit?.id ?? null;
-  if (!credit) {
+  let resolvedCredit = credit;
+  if (!resolvedCredit) {
     const { data: agent } = await db
       .from("agents")
       .select("owner_account_id")
       .eq("id", agentId)
       .maybeSingle();
 
-    const insertCredit = await db
-      .from("credits")
-      .insert({
-        agent_id: agentId,
-        account_id: agent?.owner_account_id ?? null,
-        balance: nextBalance.toFixed(8),
-        total_purchased: nextPurchased.toFixed(8),
-        total_earned: nextEarned.toFixed(8),
-      })
-      .select("id")
-      .single();
+    await ensureAgentWallet(agentId, agent?.owner_account_id ?? null, db);
 
-    if (insertCredit.error || !insertCredit.data) {
-      console.error(`Manual credit insert failed for agent ${agentId}:`, insertCredit.error);
-      return false;
-    }
-    creditId = insertCredit.data.id;
-  } else {
-    const updateCredit = await db
+    const ensured = await db
       .from("credits")
-      .update({
-        balance: nextBalance.toFixed(8),
-        total_purchased: nextPurchased.toFixed(8),
-        total_earned: nextEarned.toFixed(8),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", credit.id);
+      .select("id, account_id, balance, total_purchased, total_earned")
+      .eq("agent_id", agentId)
+      .maybeSingle();
 
-    if (updateCredit.error) {
-      console.error(`Manual credit update failed for agent ${agentId}:`, updateCredit.error);
-      return false;
-    }
+    resolvedCredit = ensured.data ?? null;
+  }
+
+  if (!resolvedCredit) {
+    console.error(`Unable to resolve credits row for agent ${agentId}`);
+    return false;
+  }
+
+  const currentBalance = Number(resolvedCredit.balance ?? 0);
+  const nextBalance = currentBalance + amount;
+  const currentPurchased = Number(resolvedCredit.total_purchased ?? 0);
+  const currentEarned = Number(resolvedCredit.total_earned ?? 0);
+  const nextPurchased =
+    txType === "purchase" ? currentPurchased + amount : currentPurchased;
+  const nextEarned = txType === "purchase" ? currentEarned : currentEarned + amount;
+  const creditId = resolvedCredit.id;
+
+  const updateCredit = await db
+    .from("credits")
+    .update({
+      balance: nextBalance.toFixed(8),
+      total_purchased: nextPurchased.toFixed(8),
+      total_earned: nextEarned.toFixed(8),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", resolvedCredit.id);
+
+  if (updateCredit.error) {
+    console.error(`Manual credit update failed for agent ${agentId}:`, updateCredit.error);
+    return false;
   }
 
   // Audit insert is best-effort because older production schemas may require

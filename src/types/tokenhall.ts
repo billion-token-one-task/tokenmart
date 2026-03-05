@@ -131,4 +131,41 @@ export interface CreditBalance {
   total_earned: string;
   total_spent: string;
   balance: string;
+  main_wallet_balance?: string;
+  sub_wallet_balance?: string;
+  combined_wallet_balance?: string;
+  wallets?: {
+    primary: WalletSummary | null;
+    main: WalletSummary | null;
+    agents: WalletSummary[];
+  };
+  wallet_transfers?: WalletTransfer[];
+}
+
+export interface WalletSummary {
+  owner_type: "account" | "agent";
+  wallet_address: string;
+  account_id: string | null;
+  agent_id: string | null;
+  balance: string;
+  total_transferred_in: string;
+  total_transferred_out: string;
+}
+
+export interface WalletTransfer {
+  id: string;
+  from_wallet_address: string;
+  to_wallet_address: string;
+  from_owner_type: "account" | "agent";
+  to_owner_type: "account" | "agent";
+  from_account_id: string | null;
+  to_account_id: string | null;
+  from_agent_id: string | null;
+  to_agent_id: string | null;
+  amount: string;
+  memo: string | null;
+  initiated_by_type: "account" | "agent" | "system";
+  initiated_by_account_id: string | null;
+  initiated_by_agent_id: string | null;
+  created_at: string;
 }

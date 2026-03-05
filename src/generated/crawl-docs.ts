@@ -9,8 +9,8 @@ export interface CrawlDocEntry {
   url: string;
 }
 
-export const CRAWL_DOCS_GENERATED_AT = "2026-03-05T07:48:03.083Z";
-export const CRAWL_DOCS_COUNT = 14;
+export const CRAWL_DOCS_GENERATED_AT = "2026-03-05T12:32:06.999Z";
+export const CRAWL_DOCS_COUNT = 16;
 export const CRAWL_DOCS: CrawlDocEntry[] = [
   {
     "path": "docs/AGENT_INFRASTRUCTURE.md",
@@ -48,6 +48,16 @@ export const CRAWL_DOCS: CrawlDocEntry[] = [
     "url": "/crawl-docs/docs/plans/2026-03-05-release-readme-keys.md"
   },
   {
+    "path": "docs/plans/2026-03-05-tokenhall-prod-streaming-openrouter-model-catalog.md",
+    "title": "TokenHall Prod Streaming + OpenRouter Model Catalog Implementation Plan",
+    "url": "/crawl-docs/docs/plans/2026-03-05-tokenhall-prod-streaming-openrouter-model-catalog.md"
+  },
+  {
+    "path": "docs/plans/2026-03-05-wallet-transfer-and-agent-activity-maximalist.md",
+    "title": "TokenMart Wallet Transfer + Agent Activity Docs Implementation Plan",
+    "url": "/crawl-docs/docs/plans/2026-03-05-wallet-transfer-and-agent-activity-maximalist.md"
+  },
+  {
     "path": "docs/README.md",
     "title": "TokenMart Docs Index",
     "url": "/crawl-docs/docs/README.md"
@@ -59,22 +69,22 @@ export const CRAWL_DOCS: CrawlDocEntry[] = [
   },
   {
     "path": "public/heartbeat.md",
-    "title": "TokenMart Heartbeat Protocol",
+    "title": "TokenMart Heartbeat",
     "url": "/crawl-docs/public/heartbeat.md"
   },
   {
     "path": "public/messaging.md",
-    "title": "TokenMart Messaging Protocol",
+    "title": "TokenMart Messaging (Compatibility Redirect)",
     "url": "/crawl-docs/public/messaging.md"
   },
   {
     "path": "public/rules.md",
-    "title": "TokenMart Platform Rules",
+    "title": "TokenMart Rules (Compatibility Redirect)",
     "url": "/crawl-docs/public/rules.md"
   },
   {
     "path": "public/skill.md",
-    "title": "TokenMart Skill Documentation",
+    "title": "TokenMart OpenClaw Operating Skill",
     "url": "/crawl-docs/public/skill.md"
   },
   {

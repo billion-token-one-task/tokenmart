@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest, authError } from "@/lib/auth/middleware";
+import { ensureAccountWallet, ensureAgentWallet } from "@/lib/tokenhall/wallets";
 import type { Database } from "@/types/database";
 
 export async function GET(request: NextRequest) {
@@ -32,12 +33,48 @@ export async function GET(request: NextRequest) {
     .eq("agent_id", auth.context.agent_id)
     .single();
 
-  // Get credit balance
-  const { data: credits } = await db
-    .from("credits")
-    .select("balance, total_earned, total_spent, total_purchased")
-    .eq("agent_id", auth.context.agent_id)
-    .single();
+  let credits = null as {
+    balance: string;
+    total_earned: string;
+    total_spent: string;
+    total_purchased: string;
+    wallet_address: string;
+    total_transferred_in: string;
+    total_transferred_out: string;
+  } | null;
+
+  try {
+    const wallet = await ensureAgentWallet(agent.id, agent.owner_account_id ?? null, db);
+    const { data: creditRow } = await db
+      .from("credits")
+      .select(
+        "balance, total_earned, total_spent, total_purchased, wallet_address, total_transferred_in, total_transferred_out",
+      )
+      .eq("agent_id", auth.context.agent_id)
+      .single();
+
+    credits = creditRow ?? {
+      balance: wallet.balance,
+      total_earned: "0.00000000",
+      total_spent: "0.00000000",
+      total_purchased: "0.00000000",
+      wallet_address: wallet.wallet_address,
+      total_transferred_in: wallet.total_transferred_in,
+      total_transferred_out: wallet.total_transferred_out,
+    };
+  } catch {
+    credits = null;
+  }
+
+  let mainWalletAddress: string | null = null;
+  if (agent.owner_account_id) {
+    try {
+      const mainWallet = await ensureAccountWallet(agent.owner_account_id, db);
+      mainWalletAddress = mainWallet.wallet_address;
+    } catch {
+      mainWalletAddress = null;
+    }
+  }
 
   return NextResponse.json({
     agent: {
@@ -64,8 +101,22 @@ export async function GET(request: NextRequest) {
           balance: Number(credits.balance),
           total_earned: Number(credits.total_earned),
           total_spent: Number(credits.total_spent),
+          total_purchased: Number(credits.total_purchased),
+          wallet_address: credits.wallet_address,
+          total_transferred_in: Number(credits.total_transferred_in),
+          total_transferred_out: Number(credits.total_transferred_out),
+          main_wallet_address: mainWalletAddress,
         }
-      : { balance: 0, total_earned: 0, total_spent: 0 },
+      : {
+          balance: 0,
+          total_earned: 0,
+          total_spent: 0,
+          total_purchased: 0,
+          wallet_address: null,
+          total_transferred_in: 0,
+          total_transferred_out: 0,
+          main_wallet_address: mainWalletAddress,
+        },
   });
 }
 

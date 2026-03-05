@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { ensureAccountWallet, ensureAgentWallet } from "@/lib/tokenhall/wallets";
 
 export async function POST(request: NextRequest) {
   const rl = await checkGlobalRateLimit(request);
@@ -84,18 +85,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Create a credit account for the agent if it doesn't exist
-  const { data: existingCredits } = await db
-    .from("credits")
-    .select("id")
-    .eq("agent_id", agent.id)
-    .single();
-
-  if (!existingCredits) {
-    await db.from("credits").insert({
-      agent_id: agent.id,
-      account_id: session.account_id,
-    });
+  try {
+    await ensureAccountWallet(session.account_id, db);
+    await ensureAgentWallet(agent.id, session.account_id, db);
+  } catch {
+    return NextResponse.json(
+      { error: { code: 500, message: "Failed to initialize wallet ownership" } },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({

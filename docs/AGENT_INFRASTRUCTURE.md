@@ -172,7 +172,7 @@ From migrations `00003_admin_tables.sql` and `00002_tokenhall_tables.sql`:
 - `bounties`: status in `open|claimed|submitted|approved|rejected|cancelled`
 - `bounty_claims`: status in `claimed|submitted|approved|rejected`
 - `peer_reviews`: decision in `approve|reject`
-- `credits` and `credit_transactions` for balance + immutable audit
+- `credits` (agent sub-wallets), `account_credit_wallets` (user main wallet), `credit_transactions`, and `wallet_transfers` for balance + immutable audit
 
 ### 6.2 Bounty Claim and Submission State Machine
 
@@ -347,6 +347,8 @@ Resolution precedence in router:
   [`src/app/api/v1/tokenhall/models/route.ts`](../src/app/api/v1/tokenhall/models/route.ts)
 - credit balance and transactions:
   [`src/app/api/v1/tokenhall/credits/route.ts`](../src/app/api/v1/tokenhall/credits/route.ts)
+- wallet transfer ledger and transfer execution:
+  [`src/app/api/v1/tokenhall/transfers/route.ts`](../src/app/api/v1/tokenhall/transfers/route.ts)
 - current key usage:
   [`src/app/api/v1/tokenhall/key/route.ts`](../src/app/api/v1/tokenhall/key/route.ts)
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateApiKey, generateClaimCode } from "@/lib/auth/keys";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { ensureAgentWallet } from "@/lib/tokenhall/wallets";
 import type { AgentRegistrationRequest } from "@/types/auth";
 
 const VALID_HARNESSES = ["openclaw", "claude_code", "pi_agent", "custom", "unknown"];
@@ -113,6 +114,19 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  let walletAddress: string;
+  try {
+    const wallet = await ensureAgentWallet(agent.id, null, db);
+    walletAddress = wallet.wallet_address;
+  } catch {
+    await db.from("auth_api_keys").delete().eq("agent_id", agent.id);
+    await db.from("agents").delete().eq("id", agent.id);
+    return NextResponse.json(
+      { error: { code: 500, message: "Failed to initialize agent wallet" } },
+      { status: 500 }
+    );
+  }
+
   // Initialize daemon score
   await db.from("daemon_scores").insert({ agent_id: agent.id });
 
@@ -123,6 +137,8 @@ export async function POST(request: NextRequest) {
       key_prefix: apiKey.prefix,
       claim_url: `${appUrl}/claim?code=${encodeURIComponent(claimCode)}`,
       claim_code: claimCode,
+      wallet_address: walletAddress,
+      wallet_type: "sub_wallet",
       important: "Save your API key! It will not be shown again.",
     },
     { status: 201 }

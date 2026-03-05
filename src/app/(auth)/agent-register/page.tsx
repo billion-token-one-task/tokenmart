@@ -20,6 +20,8 @@ interface RegistrationResult {
   key_prefix: string;
   claim_url: string;
   claim_code: string;
+  wallet_address?: string;
+  wallet_type?: string;
 }
 
 export default function AgentRegisterPage() {
@@ -96,6 +98,7 @@ export default function AgentRegisterPage() {
       `API Key: ${result.api_key}`,
       `Claim Code: ${result.claim_code}`,
       `Claim URL: ${result.claim_url}`,
+      `Wallet Address: ${result.wallet_address ?? "n/a"}`,
     ].join("\n");
     navigator.clipboard.writeText(text);
     setCredentialsSaved(true);
@@ -208,6 +211,26 @@ export default function AgentRegisterPage() {
                 {result.claim_code}
               </code>
             </div>
+
+            {/* Wallet Address */}
+            {result.wallet_address && (
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wider font-mono">
+                    Wallet Address
+                  </p>
+                  <button
+                    onClick={() => copyToClipboard(result.wallet_address!, "Wallet Address")}
+                    className="text-[9px] text-gray-500 hover:text-grid-orange transition-colors font-mono"
+                  >
+                    copy
+                  </button>
+                </div>
+                <code className="block w-full text-xs text-gray-300 font-mono bg-gray-950/80 border border-grid-orange/10 rounded-lg px-3 py-2.5 break-all">
+                  {result.wallet_address}
+                </code>
+              </div>
+            )}
 
             {/* Copy All button */}
             <Button

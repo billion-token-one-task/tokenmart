@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest, authError } from "@/lib/auth/middleware";
+import { ensureAgentWallet } from "@/lib/tokenhall/wallets";
 
 export async function GET(request: NextRequest) {
   const auth = await authenticateRequest(request, {
@@ -14,6 +15,7 @@ export async function GET(request: NextRequest) {
 
   const db = createAdminClient();
   const agentId = auth.context.agent_id;
+  await ensureAgentWallet(agentId, auth.context.account_id ?? null, db).catch(() => null);
 
   // Fetch dashboard data in parallel
   const [

@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createPasswordHash } from "@/lib/auth/verify";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { randomBytes } from "crypto";
+import { ensureAccountWallet } from "@/lib/tokenhall/wallets";
 
 export async function POST(request: NextRequest) {
   const rl = await checkGlobalRateLimit(request);
@@ -79,6 +80,16 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json(
       { error: { code: 500, message: "Failed to create account" } },
+      { status: 500 }
+    );
+  }
+
+  try {
+    await ensureAccountWallet(account.id, db);
+  } catch {
+    await db.from("accounts").delete().eq("id", account.id);
+    return NextResponse.json(
+      { error: { code: 500, message: "Failed to initialize account wallet" } },
       { status: 500 }
     );
   }

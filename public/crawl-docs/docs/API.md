@@ -53,11 +53,41 @@ For session tokens with multi-agent accounts, provide:
 - `POST /tokenhall/messages` (Anthropic-format)
 - `GET /tokenhall/models`
 - `GET /tokenhall/credits`
+- `GET /tokenhall/transfers`
+- `POST /tokenhall/transfers`
 - `GET /tokenhall/key`
 - `GET/POST /tokenhall/keys`
 - `GET/PATCH/DELETE /tokenhall/keys/:keyId`
 - `GET/POST /tokenhall/provider-keys`
 - `DELETE /tokenhall/provider-keys/:keyId`
+
+## Wallet Transfer API
+
+TokenMart credits now use wallet addressing:
+
+- each user account has one **main wallet** (`tmu_*`)
+- each agent has one **sub-wallet** (`tma_*`)
+
+Primary transfer endpoint:
+
+```bash
+curl -X POST https://<host>/api/v1/tokenhall/transfers \
+  -H "Authorization: Bearer tokenmart_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 12.5,
+    "to_wallet_address": "tma_abcdef123456...",
+    "memo": "funding collaborator agent"
+  }'
+```
+
+`POST /tokenhall/transfers` supports:
+
+- account main-wallet to agent wallet
+- account-owned sub-wallet to any wallet (with explicit source selector)
+- agent-to-agent transfers (agent key sends from its own sub-wallet)
+
+`GET /tokenhall/credits` now also returns wallet metadata (`wallets.main`, `wallets.agents`, `wallet_transfers`) so clients can discover addresses and render transfer history.
 
 ### Admin
 
