@@ -31,8 +31,17 @@ export async function grantCredits(
     });
 
     if (error) {
-      console.error(`Failed to grant credits to agent ${agentId}:`, error);
-      return false;
+      console.warn(
+        `grant_credits RPC failed for agent ${agentId} (${error.message}); falling back to manual grant`,
+      );
+      return applyPositiveGrantManually(
+        db,
+        agentId,
+        amount,
+        normalizedType,
+        description,
+        referenceId,
+      );
     }
 
     return true;
@@ -82,6 +91,102 @@ export async function grantCredits(
     reference_id: referenceId ?? null,
   });
   if (txError) return false;
+
+  return true;
+}
+
+async function applyPositiveGrantManually(
+  db: ReturnType<typeof createAdminClient>,
+  agentId: string,
+  amount: number,
+  txType: string,
+  description: string,
+  referenceId?: string,
+): Promise<boolean> {
+  const { data: credit } = await db
+    .from("credits")
+    .select("id, account_id, balance, total_purchased, total_earned")
+    .eq("agent_id", agentId)
+    .maybeSingle();
+
+  const currentBalance = Number(credit?.balance ?? 0);
+  const nextBalance = currentBalance + amount;
+  const currentPurchased = Number(credit?.total_purchased ?? 0);
+  const currentEarned = Number(credit?.total_earned ?? 0);
+  const nextPurchased =
+    txType === "purchase" ? currentPurchased + amount : currentPurchased;
+  const nextEarned = txType === "purchase" ? currentEarned : currentEarned + amount;
+
+  let creditId = credit?.id ?? null;
+  if (!credit) {
+    const { data: agent } = await db
+      .from("agents")
+      .select("owner_account_id")
+      .eq("id", agentId)
+      .maybeSingle();
+
+    const insertCredit = await db
+      .from("credits")
+      .insert({
+        agent_id: agentId,
+        account_id: agent?.owner_account_id ?? null,
+        balance: nextBalance.toFixed(8),
+        total_purchased: nextPurchased.toFixed(8),
+        total_earned: nextEarned.toFixed(8),
+      })
+      .select("id")
+      .single();
+
+    if (insertCredit.error || !insertCredit.data) {
+      console.error(`Manual credit insert failed for agent ${agentId}:`, insertCredit.error);
+      return false;
+    }
+    creditId = insertCredit.data.id;
+  } else {
+    const updateCredit = await db
+      .from("credits")
+      .update({
+        balance: nextBalance.toFixed(8),
+        total_purchased: nextPurchased.toFixed(8),
+        total_earned: nextEarned.toFixed(8),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", credit.id);
+
+    if (updateCredit.error) {
+      console.error(`Manual credit update failed for agent ${agentId}:`, updateCredit.error);
+      return false;
+    }
+  }
+
+  // Audit insert is best-effort because older production schemas may require
+  // additional columns (e.g. balance_before/balance_after).
+  const txBase = {
+    agent_id: agentId,
+    type: txType,
+    amount: amount.toFixed(8),
+    description,
+    reference_id: referenceId ?? null,
+  };
+  const txInsert = await db.from("credit_transactions").insert(txBase);
+  if (txInsert.error) {
+    // Some deployments include additional audit columns like
+    // balance_before/balance_after; use an untyped insert fallback.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const withBalances = await (db.from("credit_transactions") as any).insert({
+      ...txBase,
+      balance_before: currentBalance.toFixed(8),
+      balance_after: nextBalance.toFixed(8),
+      credit_id: creditId,
+    });
+
+    if (withBalances.error) {
+      console.warn(
+        `Manual grant succeeded but credit transaction audit insert failed for agent ${agentId}:`,
+        withBalances.error,
+      );
+    }
+  }
 
   return true;
 }

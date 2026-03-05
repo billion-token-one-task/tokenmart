@@ -9,6 +9,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "seed": "npx tsx scripts/seed-admin.ts",
+    "verify:prod:tokenhall": "npx tsx scripts/verify-tokenhall-prod.ts",
+    "sync:models:openrouter-popular": "npx tsx scripts/sync-openrouter-popular-models.ts",
     "docs:crawl-index": "node scripts/generate-crawl-docs.mjs",
     "prebuild": "npm run docs:crawl-index",
     "predev": "npm run docs:crawl-index"
