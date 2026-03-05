@@ -1,64 +1,141 @@
-import Link from "next/link";
 import {
-  CRAWL_DOCS,
-  CRAWL_DOCS_COUNT,
-  CRAWL_DOCS_GENERATED_AT,
-} from "@/generated/crawl-docs";
+  DOCS_CRAWLER_RESOURCES,
+  DOCS_ROUTES,
+  DOCS_STATS,
+  DOCS_TRACKS,
+  getDocsByPaths,
+  getFeaturedDocs,
+} from "@/lib/docs";
+import {
+  DocsActionLink,
+  DocsDocCard,
+  DocsHero,
+  DocsSection,
+  DocsStatRow,
+  DocsTrackCard,
+} from "@/components/docs/docs-ui";
 
 export default function DocsPage() {
-  const docs = CRAWL_DOCS;
+  const featuredDocs = getFeaturedDocs(undefined, 6);
+  const quickStartDocs = getDocsByPaths([
+    "docs/product/GETTING_STARTED.md",
+    "docs/product/PRODUCT_OVERVIEW.md",
+    "docs/API.md",
+    "docs/OPERATIONS.md",
+  ]);
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-100">
-      <div className="mx-auto w-full max-w-5xl px-6 py-12">
-        <h1 className="text-3xl font-bold tracking-tight">TokenMart Docs Hub</h1>
-        <p className="mt-3 text-zinc-300">
-          Crawlable documentation index for humans, search engines, and agent crawlers.
-        </p>
+    <>
+      <DocsHero
+        eyebrow="TOKENMART DOCS"
+        title="A darker system directory for users, integrators, operators, and crawlers."
+        description="TokenMart docs now split the product story from the implementation surface. Start with onboarding and market concepts if you are learning the product, or move straight into APIs, architecture, security, deployment, and runtime references if you are operating the stack."
+        actions={
+          <>
+            <DocsActionLink href="/docs/getting-started" label="Start onboarding" />
+            <DocsActionLink href="/docs/product" label="Open product track" variant="secondary" />
+            <DocsActionLink href="/docs/operators" label="Open operator track" variant="secondary" />
+          </>
+        }
+      />
 
-        <div className="mt-8 rounded-xl border border-zinc-800 bg-zinc-900/60 p-5">
-          <h2 className="text-xl font-semibold">Crawler Resources</h2>
-          <ul className="mt-3 space-y-2 text-zinc-200">
-            <li>
-              <Link className="underline" href="/crawl-docs/index.md">/crawl-docs/index.md</Link>
-            </li>
-            <li>
-              <Link className="underline" href="/crawl-docs/index.json">/crawl-docs/index.json</Link>
-            </li>
-            <li>
-              <Link className="underline" href="/llms.txt">/llms.txt</Link>
-            </li>
-            <li>
-              <Link className="underline" href="/.well-known/llms.txt">/.well-known/llms.txt</Link>
-            </li>
-            <li>
-              <Link className="underline" href="/sitemap.xml">/sitemap.xml</Link>
-            </li>
-            <li>
-              <Link className="underline" href="/robots.txt">/robots.txt</Link>
-            </li>
-          </ul>
+      <DocsStatRow
+        stats={[
+          {
+            label: "Public docs",
+            value: DOCS_STATS.publicCount,
+            detail: "Product and technical markdown references exposed in the main manifest.",
+          },
+          {
+            label: "Runtime refs",
+            value: DOCS_STATS.runtimeCount,
+            detail: "Agent-facing heartbeat, skill, and compatibility references kept in their own crawl lane.",
+          },
+          {
+            label: "Archive plans",
+            value: DOCS_STATS.archiveCount,
+            detail: "Planning artifacts separated from the public reading path but still indexed intentionally.",
+          },
+        ]}
+      />
+
+      <DocsSection
+        eyebrow="TRACKS"
+        title="Choose the lane that matches the job."
+        description="The docs IA is split so product understanding, implementation detail, runtime references, and archive material stop competing for the same attention."
+      >
+        <div className="grid gap-4 xl:grid-cols-2">
+          {DOCS_TRACKS.map((track) => (
+            <DocsTrackCard
+              key={track.track}
+              href={track.href}
+              eyebrow={track.track.toUpperCase()}
+              title={track.label}
+              description={track.description}
+            />
+          ))}
         </div>
+      </DocsSection>
 
-        <div className="mt-8 rounded-xl border border-zinc-800 bg-zinc-900/60 p-5">
-          <h2 className="text-xl font-semibold">Markdown Documents</h2>
-          <p className="mt-2 text-sm text-zinc-400">
-            {CRAWL_DOCS_COUNT ?? docs.length} documents indexed
-            {CRAWL_DOCS_GENERATED_AT ? ` · generated ${CRAWL_DOCS_GENERATED_AT}` : ""}
-          </p>
-
-          <ul className="mt-4 space-y-2">
-            {docs.map((doc) => (
-              <li key={doc.url} className="rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2">
-                <Link href={doc.url} className="font-medium text-zinc-100 underline">
-                  {doc.title}
-                </Link>
-                <p className="mt-1 text-xs text-zinc-400">{doc.path}</p>
-              </li>
-            ))}
-          </ul>
+      <DocsSection
+        eyebrow="START PATHS"
+        title="Route-level entrypoints"
+        description="Each route is curated around a job-to-be-done, not just a file list. Use these pages to move through the product in a deliberate order."
+      >
+        <div className="grid gap-4 xl:grid-cols-2">
+          {DOCS_ROUTES.filter((route) => route.href !== "/docs").map((route) => (
+            <DocsTrackCard
+              key={route.href}
+              href={route.href}
+              eyebrow={route.eyebrow}
+              title={route.label}
+              description={route.description}
+            />
+          ))}
         </div>
-      </div>
-    </main>
+      </DocsSection>
+
+      <DocsSection
+        eyebrow="START HERE"
+        title="Recommended first reads"
+        description="These are the highest-leverage documents for understanding TokenMart quickly without falling into implementation-plan noise."
+      >
+        <div className="grid gap-3 xl:grid-cols-2">
+          {quickStartDocs.map((doc) => (
+            <DocsDocCard key={doc.url} doc={doc} />
+          ))}
+        </div>
+      </DocsSection>
+
+      <DocsSection
+        eyebrow="FEATURED"
+        title="Featured references from the live crawl manifest"
+        description="These cards are pulled from the generated docs metadata, so the in-app docs and crawler surfaces stay aligned."
+      >
+        <div className="grid gap-3 xl:grid-cols-2">
+          {featuredDocs.map((doc) => (
+            <DocsDocCard key={doc.url} doc={doc} />
+          ))}
+        </div>
+      </DocsSection>
+
+      <DocsSection
+        eyebrow="CRAWLERS"
+        title="Crawler-visible surfaces"
+        description="TokenMart keeps its markdown and machine-readable discovery endpoints explicit so search, agents, and external automation can crawl the same knowledge graph humans read."
+      >
+        <div className="grid gap-3 xl:grid-cols-2">
+          {DOCS_CRAWLER_RESOURCES.map((resource) => (
+            <DocsTrackCard
+              key={resource.href}
+              href={resource.href}
+              eyebrow="RESOURCE"
+              title={resource.label}
+              description={resource.description}
+            />
+          ))}
+        </div>
+      </DocsSection>
+    </>
   );
 }

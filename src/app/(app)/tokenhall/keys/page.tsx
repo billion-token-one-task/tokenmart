@@ -17,6 +17,7 @@ import {
   Th,
   Td,
   EmptyState,
+  Skeleton,
   useToast,
 } from "@/components/ui";
 import {
@@ -364,10 +365,18 @@ export default function TokenHallKeysPage() {
   if (!token) {
     return (
       <div>
-        <PageHeader title="TokenHall Keys" />
-        <div className="rounded-lg grid-card px-6 py-12 text-center">
-          <p className="text-gray-400">Please log in to manage your keys.</p>
-        </div>
+        <PageHeader
+          title="TokenHall Keys"
+          pixelFont="grid"
+          gradient="gradient-text-success"
+        />
+        <Card>
+          <CardContent>
+            <p className="text-[#6b6050] text-[13px] text-center py-8">
+              Please log in to manage your keys.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -376,14 +385,17 @@ export default function TokenHallKeysPage() {
     <div>
       <PageHeader
         title="TokenHall Keys"
-        description="Manage platform keys (th_/thm_) and provider BYOK keys"
+        description="Issue spend controls, session credentials, and BYOK routes for TokenHall traffic."
         actions={<Button onClick={() => setCreateOpen(true)}>Create TH Key</Button>}
+        pixelFont="grid"
+        gradient="gradient-text-success"
       />
 
-      <Card className="mb-6">
+      {/* Agent Context */}
+      <Card variant="glass" className="mb-6">
         <CardHeader>
-          <h2 className="text-base font-semibold text-white">Agent Context (Session Auth)</h2>
-          <p className="text-sm text-gray-400 mt-1">
+          <h2 className="text-[15px] font-medium text-[#ede8e0]">Agent context (session auth)</h2>
+          <p className="text-[13px] text-[#6b6050] mt-1">
             When using a human session token, set the active agent ID so the backend can resolve ownership.
           </p>
         </CardHeader>
@@ -406,22 +418,27 @@ export default function TokenHallKeysPage() {
       </Card>
 
       {error && (
-        <div className="grid-card rounded-lg border-red-900/30 px-6 py-4 text-xs text-red-400 font-mono mb-6">
+        <div className="rounded-lg border border-[rgba(192,72,56,0.2)] bg-[rgba(192,72,56,0.06)] px-5 py-4 text-[13px] text-[#C04838] font-mono mb-6">
           {error}
         </div>
       )}
 
-      <Card className="mb-6">
+      {/* Platform Keys */}
+      <Card variant="glass" className="mb-6">
         <CardHeader>
-          <h2 className="text-base font-semibold text-white">TokenHall API Keys</h2>
+          <h2 className="text-[15px] font-medium text-[#ede8e0]">TokenHall API keys</h2>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="py-8 text-sm text-gray-400">Loading keys...</div>
+            <div className="space-y-3">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
           ) : platformKeys.length === 0 ? (
             <EmptyState
               title="No TokenHall keys yet"
-              description="Create your first th_ or thm_ key to start API usage."
+              description="Create a th_ or thm_ key to start routing requests and metering credit spend."
               action={<Button onClick={() => setCreateOpen(true)}>Create key</Button>}
             />
           ) : (
@@ -444,7 +461,7 @@ export default function TokenHallKeysPage() {
                   <tr key={key.id}>
                     <Td>{key.name}</Td>
                     <Td>
-                      <code className="text-xs bg-gray-900 border border-grid-orange/10 rounded px-2 py-1 text-gray-400">
+                      <code className="text-[12px] glass-code rounded-md px-2 py-1 text-[#a09080] font-mono">
                         {key.prefix}...
                       </code>
                     </Td>
@@ -453,8 +470,16 @@ export default function TokenHallKeysPage() {
                         {key.is_management_key ? "thm_" : "th_"}
                       </Badge>
                     </Td>
-                    <Td>{key.rate_limit_rpm ? `${key.rate_limit_rpm}/min` : "Unlimited"}</Td>
-                    <Td>{key.credit_limit != null ? `${key.credit_limit.toLocaleString()} cr` : "Unlimited"}</Td>
+                    <Td>
+                      <span className="font-mono tabular-nums">
+                        {key.rate_limit_rpm ? `${key.rate_limit_rpm}/min` : "Unlimited"}
+                      </span>
+                    </Td>
+                    <Td>
+                      <span className="font-mono tabular-nums">
+                        {key.credit_limit != null ? `${key.credit_limit.toLocaleString()} cr` : "Unlimited"}
+                      </span>
+                    </Td>
                     <Td>{formatDate(key.created_at)}</Td>
                     <Td>{formatDate(key.last_used_at)}</Td>
                     <Td>
@@ -473,10 +498,11 @@ export default function TokenHallKeysPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      {/* Provider BYOK Keys */}
+      <Card variant="glass">
         <CardHeader>
-          <h2 className="text-base font-semibold text-white">Provider BYOK Keys</h2>
-          <p className="text-sm text-gray-400 mt-1">
+          <h2 className="text-[15px] font-medium text-[#ede8e0]">Provider BYOK keys</h2>
+          <p className="text-[13px] text-[#6b6050] mt-1">
             Add provider secrets (OpenRouter/OpenAI/Anthropic/etc.) directly in the webapp.
           </p>
         </CardHeader>
@@ -559,7 +585,7 @@ export default function TokenHallKeysPage() {
           {providerKeys.length === 0 ? (
             <EmptyState
               title="No provider keys"
-              description="Add a BYOK provider key to route requests with your own upstream credentials."
+              description="Add a BYOK credential to route TokenHall traffic through your own upstream accounts."
             />
           ) : (
             <Table>
@@ -575,7 +601,9 @@ export default function TokenHallKeysPage() {
               <TBody>
                 {providerKeys.map((key) => (
                   <tr key={key.id}>
-                    <Td>{key.provider}</Td>
+                    <Td>
+                      <span className="font-mono text-[13px]">{key.provider}</span>
+                    </Td>
                     <Td>{key.label ?? "--"}</Td>
                     <Td>
                       <Badge variant={key.scope === "agent" ? "info" : "default"}>{key.scope}</Badge>
@@ -599,6 +627,7 @@ export default function TokenHallKeysPage() {
         </CardContent>
       </Card>
 
+      {/* Create Key Modal */}
       <Modal
         open={createOpen}
         onClose={() => {
@@ -659,6 +688,7 @@ export default function TokenHallKeysPage() {
         </form>
       </Modal>
 
+      {/* Created Key Display Modal */}
       <Modal
         open={showCreated}
         onClose={() => {
@@ -668,15 +698,15 @@ export default function TokenHallKeysPage() {
         title="API Key Created"
       >
         <div className="flex flex-col gap-4">
-          <div className="rounded-lg border border-amber-800 bg-amber-950 px-4 py-3 text-sm text-grid-orange">
+          <div className="rounded-lg border border-[rgba(208,160,40,0.2)] bg-[rgba(208,160,40,0.06)] px-4 py-3 text-[13px] text-[#D0A028]">
             Copy this key now. It will not be shown again.
           </div>
 
           {createdKey && (
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-gray-300">Your API Key</label>
+              <label className="text-[13px] font-medium text-[#a09080]">Your API Key</label>
               <div className="flex items-center gap-2">
-                <code className="flex-1 text-sm bg-gray-900 border border-grid-orange/15 rounded-lg px-4 py-3 text-grid-green break-all select-all">
+                <code className="flex-1 text-[13px] glass-code rounded-lg px-4 py-3 text-[#B89060] font-mono break-all select-all">
                   {createdKey.raw_key}
                 </code>
                 <Button variant="secondary" size="sm" onClick={() => copyToClipboard(createdKey.raw_key)}>
@@ -699,14 +729,15 @@ export default function TokenHallKeysPage() {
         </div>
       </Modal>
 
+      {/* Revoke Confirmation Modal */}
       <Modal
         open={!!revokeTarget}
         onClose={() => setRevokeTarget(null)}
         title="Revoke API Key"
       >
         <div className="flex flex-col gap-4">
-          <p className="text-sm text-gray-300">
-            Revoke <span className="font-semibold text-white">{revokeTarget?.name}</span>? This cannot be undone.
+          <p className="text-[13px] text-[#a09080]">
+            Revoke <span className="font-medium text-[#ede8e0]">{revokeTarget?.name}</span>? This cannot be undone.
           </p>
 
           <div className="flex justify-end gap-3 pt-2">

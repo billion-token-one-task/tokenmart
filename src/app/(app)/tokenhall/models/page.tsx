@@ -10,6 +10,7 @@ import {
   CardContent,
   Badge,
   EmptyState,
+  Skeleton,
   useToast,
 } from "@/components/ui";
 import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
@@ -122,13 +123,17 @@ export default function TokenHallModelsPage() {
       <div>
         <PageHeader
           title="Models"
-          description="Browse available LLM models"
+          description="Price, filter, and route across the model inventory backing TokenHall."
+          pixelFont="grid"
+          gradient="gradient-text-success"
         />
-        <div className="rounded-lg grid-card px-6 py-12 text-center">
-          <p className="text-gray-400">
-            Please log in to browse models.
-          </p>
-        </div>
+        <Card>
+          <CardContent>
+            <p className="text-[#6b6050] text-[13px] text-center py-8">
+              Please log in to browse models.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -138,28 +143,33 @@ export default function TokenHallModelsPage() {
       <div>
         <PageHeader
           title="Models"
-          description="Browse available LLM models"
+          description="Price, filter, and route across the model inventory backing TokenHall."
+          pixelFont="grid"
+          gradient="gradient-text-success"
         />
-        <div className="flex items-center justify-center py-20">
-          <svg
-            className="animate-spin h-6 w-6 text-gray-400"
-            viewBox="0 0 24 24"
-            fill="none"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-            />
-          </svg>
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <Skeleton className="h-10 flex-1" />
+          <Skeleton className="h-10 w-full sm:w-48" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i}>
+              <CardContent>
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <Skeleton className="h-4 w-40 mb-2" />
+                    <Skeleton className="h-3 w-56" />
+                  </div>
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                </div>
+                <Skeleton className="h-3 w-24 mb-4" />
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-3 w-48" />
+                  <Skeleton className="h-8 w-20 rounded-lg" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     );
@@ -170,9 +180,11 @@ export default function TokenHallModelsPage() {
       <div>
         <PageHeader
           title="Models"
-          description="Browse available LLM models"
+          description="Price, filter, and route across the model inventory backing TokenHall."
+          pixelFont="grid"
+          gradient="gradient-text-success"
         />
-        <div className="grid-card rounded-lg border-red-900/30 px-6 py-4 text-xs text-red-400 font-mono">
+        <div className="rounded-lg border border-[rgba(192,72,56,0.2)] bg-[rgba(192,72,56,0.06)] px-5 py-4 text-[13px] text-[#C04838] font-mono">
           {error}
         </div>
       </div>
@@ -183,7 +195,9 @@ export default function TokenHallModelsPage() {
     <div>
       <PageHeader
         title="Models"
-        description="Browse available LLM models"
+        description="Price, filter, and route across the model inventory backing TokenHall."
+        pixelFont="grid"
+        gradient="gradient-text-success"
       />
 
       {/* Search and Filter Bar */}
@@ -205,7 +219,7 @@ export default function TokenHallModelsPage() {
       </div>
 
       {/* Model count */}
-      <p className="text-sm text-gray-500 mb-4">
+      <p className="text-[13px] text-[#4a4035] mb-4 font-mono tabular-nums">
         {filteredModels.length} model{filteredModels.length !== 1 ? "s" : ""}
         {search || provider !== "all" ? " matching filters" : " available"}
       </p>
@@ -216,8 +230,8 @@ export default function TokenHallModelsPage() {
           title="No models found"
           description={
             search || provider !== "all"
-              ? "Try adjusting your search or filter criteria."
-              : "No models are currently available."
+              ? "Adjust your search or provider filters to surface another routing candidate."
+              : "No model inventory is available for routing right now."
           }
           action={
             (search || provider !== "all") ? (
@@ -236,14 +250,14 @@ export default function TokenHallModelsPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {filteredModels.map((model) => (
-            <Card key={model.id} className="hover:border-grid-orange/30 transition-colors">
+            <Card key={model.id} variant="glass" className="hover:border-[rgba(200,170,130,0.16)] transition-colors">
               <CardContent>
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-semibold text-white truncate">
+                    <h3 className="text-[15px] font-medium text-[#ede8e0] truncate">
                       {model.name}
                     </h3>
-                    <p className="text-xs text-gray-500 mt-0.5 truncate">
+                    <p className="text-[12px] text-[#4a4035] mt-0.5 truncate font-mono">
                       {model.id}
                     </p>
                   </div>
@@ -252,7 +266,7 @@ export default function TokenHallModelsPage() {
                   </Badge>
                 </div>
 
-                <div className="flex items-center gap-4 mb-4 text-xs text-gray-400">
+                <div className="flex items-center gap-4 mb-4 text-[13px] text-[#6b6050]">
                   <div className="flex items-center gap-1.5">
                     <svg
                       width="14"
@@ -261,25 +275,25 @@ export default function TokenHallModelsPage() {
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="2"
-                      className="text-gray-600"
+                      className="text-[#4a4035]"
                     >
                       <path d="M4 7V4h16v3M9 20h6M12 4v16" />
                     </svg>
-                    <span>{formatContextLength(model.context_length)} ctx</span>
+                    <span className="font-mono tabular-nums">{formatContextLength(model.context_length)} ctx</span>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4 text-xs">
+                  <div className="flex items-center gap-4 text-[13px]">
                     <div>
-                      <span className="text-gray-500">Input: </span>
-                      <span className="text-gray-300">
+                      <span className="text-[#4a4035]">Input: </span>
+                      <span className="gradient-text-success font-mono tabular-nums">
                         {formatPricing(model.pricing.input)}/1M
                       </span>
                     </div>
                     <div>
-                      <span className="text-gray-500">Output: </span>
-                      <span className="text-gray-300">
+                      <span className="text-[#4a4035]">Output: </span>
+                      <span className="gradient-text-success font-mono tabular-nums">
                         {formatPricing(model.pricing.output)}/1M
                       </span>
                     </div>

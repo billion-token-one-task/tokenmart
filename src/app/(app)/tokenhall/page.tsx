@@ -8,7 +8,11 @@ import {
   Stat,
   StatGrid,
   Badge,
+  Skeleton,
 } from "@/components/ui";
+import { AsciiArt } from "@/components/ui/ascii-art";
+import { AsciiField } from "@/components/ui/ascii-field";
+import { LIGHTNING, ART_GRADIENTS } from "@/lib/ascii-art";
 import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
 import {
   fetchJsonResult,
@@ -139,11 +143,17 @@ export default function TokenHallPage() {
       <div>
         <PageHeader
           title="TokenHall"
-          description="OpenRouter-compatible LLM API"
+          description="Route TokenMart Credits into live inference across models, providers, and agent workloads."
+          pixelFont="grid"
+          gradient="gradient-text-success"
         />
-        <div className="grid-card rounded-lg px-6 py-12 text-center">
-          <p className="text-gray-400 text-sm">Please log in to access TokenHall.</p>
-        </div>
+        <Card>
+          <CardContent>
+            <p className="text-[#6b6050] text-[13px] text-center py-8">
+              Please log in to access TokenHall.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -153,13 +163,21 @@ export default function TokenHallPage() {
       <div>
         <PageHeader
           title="TokenHall"
-          description="OpenRouter-compatible LLM API"
+          description="Route TokenMart Credits into live inference across models, providers, and agent workloads."
+          pixelFont="grid"
+          gradient="gradient-text-success"
         />
-        <div className="flex items-center justify-center py-20">
-          <div className="text-grid-orange/60 font-mono text-xs animate-pulse-subtle">
-            loading...
-          </div>
-        </div>
+        <StatGrid className="mb-8">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i}>
+              <CardContent>
+                <Skeleton className="h-3 w-24 mb-3" />
+                <Skeleton className="h-7 w-32" />
+              </CardContent>
+            </Card>
+          ))}
+        </StatGrid>
+        <Skeleton className="h-64 w-full rounded-xl" />
       </div>
     );
   }
@@ -176,37 +194,54 @@ export default function TokenHallPage() {
   }'`;
 
   return (
-    <div>
+    <div className="relative">
+      {/* Animated ASCII field background — cyan for TokenHall */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none hidden md:block" aria-hidden="true">
+        <AsciiField intensity={0.25} color={[184, 144, 96]} className="absolute inset-0 opacity-25" />
+      </div>
+
+      {/* LIGHTNING ASCII art background */}
+      <div className="absolute top-0 right-0 pointer-events-none select-none overflow-hidden">
+        <AsciiArt
+          lines={LIGHTNING}
+          gradient={ART_GRADIENTS.LIGHTNING}
+          opacity={0.03}
+          size="lg"
+          pixelFont="font-pixel-grid"
+        />
+      </div>
+
       <PageHeader
         title="TokenHall"
-        description="OpenRouter-compatible LLM API"
+        description="Route TokenMart Credits into live inference across models, providers, and agent workloads."
         agentEndpoint="GET /api/v1/tokenhall/models"
+        pixelFont="grid"
+        gradient="gradient-text-success"
       />
 
       {error && (
-        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
-          <span className="text-red-500 mr-2">ERR</span>
+        <div className="mb-6 rounded-lg border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.06)] px-4 py-3 text-[13px] text-[#EE4444] font-mono">
+          <span className="font-medium mr-2">err</span>
           {error}
         </div>
       )}
 
       {warning && (
-        <div className="mb-6 grid-card rounded-lg border-amber-900/30 px-4 py-3 text-xs text-amber-300 font-mono">
-          <span className="text-amber-400 mr-2">WARN</span>
+        <div className="mb-6 rounded-lg border border-[rgba(245,166,35,0.2)] bg-[rgba(245,166,35,0.06)] px-4 py-3 text-[13px] text-[#F5A623] font-mono">
+          <span className="font-medium mr-2">warn</span>
           {warning}
         </div>
       )}
 
       {missingAgentCredits && (
-        <div className="mb-6 grid-card rounded-lg border-grid-orange/30 px-4 py-3 text-xs text-grid-orange/90">
-          Credits are unavailable until you register an agent. Models and API key
-          management remain available.
+        <div className="mb-6 rounded-lg border border-[rgba(163,72,47,0.2)] bg-[rgba(163,72,47,0.06)] px-4 py-3 text-[13px] text-[#a09080]">
+          Register an agent to activate spendable TokenHall balances. Model discovery and key management stay online in the meantime.
         </div>
       )}
 
       {/* Stats */}
       <StatGrid className="mb-8">
-        <Card>
+        <Card variant="glass">
           <CardContent>
             <Stat
               label="Credit Balance"
@@ -214,17 +249,17 @@ export default function TokenHallPage() {
             />
           </CardContent>
         </Card>
-        <Card>
+        <Card variant="glass">
           <CardContent>
             <Stat label="Models Available" value={models.length} />
           </CardContent>
         </Card>
-        <Card>
+        <Card variant="glass">
           <CardContent>
             <Stat label="Active Keys" value={keys.length} />
           </CardContent>
         </Card>
-        <Card>
+        <Card variant="glass">
           <CardContent>
             <Stat
               label="Total Spent"
@@ -237,91 +272,95 @@ export default function TokenHallPage() {
       </StatGrid>
 
       {/* Quick Start */}
-      <div className="grid-card rounded-lg overflow-hidden mb-8">
-        <div className="px-4 py-3 border-b border-grid-orange/10 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-grid-orange text-sm">⚡</span>
-            <h2 className="text-xs font-semibold text-white uppercase tracking-wider">
-              Quick Start
+      <Card variant="glass" className="mb-8 overflow-hidden">
+        <div className="px-5 py-4 border-b border-[rgba(200,170,130,0.06)] flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center w-6 h-6 rounded-md bg-[rgba(163,72,47,0.1)]">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#A34830" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+              </svg>
+            </div>
+            <h2 className="text-[15px] font-medium text-[#ede8e0] font-pixel-grid">
+              Quick start
             </h2>
           </div>
-          <span className="text-[9px] text-gray-600 font-mono">
+          <span className="text-[12px] text-[#4a4035] font-mono">
             chat/completions
           </span>
         </div>
-        <div className="p-4">
-          <p className="text-xs text-gray-400 mb-3">
+        <div className="px-5 py-4">
+          <p className="text-[13px] text-[#6b6050]">
             Use any OpenAI-compatible client to call 400+ LLM models
           </p>
         </div>
-        <div className="bg-gray-950 border-t border-grid-orange/10">
-          <div className="px-4 py-2 border-b border-grid-orange/5 flex items-center gap-2">
+        <div className="glass-code border-t border-[rgba(200,170,130,0.06)] rounded-none rounded-b-xl">
+          <div className="px-5 py-2.5 border-b border-[rgba(200,170,130,0.04)] flex items-center gap-2">
             <div className="flex gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-grid-orange/30" />
-              <div className="w-2.5 h-2.5 rounded-full bg-grid-green/30" />
-              <div className="w-2.5 h-2.5 rounded-full bg-gray-700" />
+              <div className="w-2.5 h-2.5 rounded-full bg-[#EE4444]" />
+              <div className="w-2.5 h-2.5 rounded-full bg-[#F5A623]" />
+              <div className="w-2.5 h-2.5 rounded-full bg-[#B89060]" />
             </div>
-            <span className="text-[9px] text-gray-600 ml-1 font-mono">
+            <span className="text-[11px] text-[#4a4035] ml-1 font-mono">
               quick_start.sh
             </span>
           </div>
-          <pre className="p-5 text-xs text-gray-300 overflow-x-auto leading-relaxed">
+          <pre className="p-5 text-[13px] text-[#a09080] font-mono overflow-x-auto leading-relaxed">
             <code>{curlExample}</code>
           </pre>
         </div>
-      </div>
+      </Card>
 
       {/* Supported Formats */}
-      <div className="grid-card rounded-lg overflow-hidden">
-        <div className="px-4 py-3 border-b border-grid-orange/10">
-          <h2 className="text-xs font-semibold text-white uppercase tracking-wider">
-            Supported Formats
+      <Card variant="glass" className="overflow-hidden">
+        <div className="px-5 py-4 border-b border-[rgba(200,170,130,0.06)]">
+          <h2 className="text-[15px] font-medium text-[#ede8e0] font-pixel-grid">
+            Supported formats
           </h2>
-          <p className="text-[10px] text-gray-500 mt-1">
+          <p className="text-[13px] text-[#4a4035] mt-1">
             TokenHall supports multiple API formats out of the box
           </p>
         </div>
-        <div className="p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="border border-grid-orange/10 rounded-lg p-4 hover:border-grid-orange/25 transition-colors">
-              <div className="flex items-center gap-2 mb-2">
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="border border-[rgba(200,170,130,0.08)] rounded-xl p-5 hover:border-[rgba(200,170,130,0.12)] transition-colors">
+              <div className="flex items-center gap-2 mb-3">
                 <Badge variant="info">OpenAI</Badge>
               </div>
-              <h3 className="text-sm font-medium text-white mb-1">
-                OpenAI-Compatible
+              <h3 className="text-[15px] font-medium text-[#ede8e0] mb-1.5 font-pixel-grid">
+                OpenAI-compatible
               </h3>
-              <p className="text-xs text-gray-400 leading-relaxed">
+              <p className="text-[13px] text-[#6b6050] leading-relaxed">
                 Drop-in replacement for the OpenAI API. Use any
                 OpenAI-compatible SDK or client library.
               </p>
             </div>
-            <div className="border border-grid-orange/10 rounded-lg p-4 hover:border-grid-orange/25 transition-colors">
-              <div className="flex items-center gap-2 mb-2">
+            <div className="border border-[rgba(200,170,130,0.08)] rounded-xl p-5 hover:border-[rgba(200,170,130,0.12)] transition-colors">
+              <div className="flex items-center gap-2 mb-3">
                 <Badge variant="success">Anthropic</Badge>
               </div>
-              <h3 className="text-sm font-medium text-white mb-1">
+              <h3 className="text-[15px] font-medium text-[#ede8e0] mb-1.5 font-pixel-grid">
                 Anthropic Messages
               </h3>
-              <p className="text-xs text-gray-400 leading-relaxed">
+              <p className="text-[13px] text-[#6b6050] leading-relaxed">
                 Native support for the Anthropic Messages API format. Use
                 Claude models with the native API.
               </p>
             </div>
-            <div className="border border-grid-orange/10 rounded-lg p-4 hover:border-grid-orange/25 transition-colors">
-              <div className="flex items-center gap-2 mb-2">
+            <div className="border border-[rgba(200,170,130,0.08)] rounded-xl p-5 hover:border-[rgba(200,170,130,0.12)] transition-colors">
+              <div className="flex items-center gap-2 mb-3">
                 <Badge variant="warning">Streaming</Badge>
               </div>
-              <h3 className="text-sm font-medium text-white mb-1">
-                SSE Streaming
+              <h3 className="text-[15px] font-medium text-[#ede8e0] mb-1.5 font-pixel-grid">
+                SSE streaming
               </h3>
-              <p className="text-xs text-gray-400 leading-relaxed">
+              <p className="text-[13px] text-[#6b6050] leading-relaxed">
                 Full Server-Sent Events streaming support for real-time token
                 generation across all models.
               </p>
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

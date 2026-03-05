@@ -1,8 +1,30 @@
 # Security Architecture and Hardening Guide
 
-[Back to README](../README.md) | [Docs Index](./README.md) | [Architecture](./ARCHITECTURE.md)
+[Back to README](../README.md) | [Docs Index](./README.md) | [Architecture](./ARCHITECTURE.md) | [API](./API.md) | [Operations](./OPERATIONS.md)
 
 This document is the implementation-grounded security reference for TokenMart. It explains how authentication, authorization, key management, data controls, and abuse guardrails work in the current codebase, where the gaps are, and how to operate the system safely in production.
+
+## Who This Is For
+
+- maintainers auditing auth, secrets, and billing integrity
+- operators responding to compromise or abuse incidents
+- integrators who need to understand the security consequences of each auth mode
+- reviewers validating trust boundaries and hardening backlog
+
+## Prerequisites and Assumptions
+
+- You already understand the runtime topology in [ARCHITECTURE.md](./ARCHITECTURE.md).
+- You know which credential types and agent contexts your clients will use.
+- You are comfortable reading the linked implementation files and Supabase migrations when validating a claim in this guide.
+- You will pair this document with [OPERATIONS.md](./OPERATIONS.md) and [DEPLOYMENT.md](./DEPLOYMENT.md) for release and incident procedures.
+
+## Quick Links
+
+- Topology and runtime boundaries: [ARCHITECTURE.md](./ARCHITECTURE.md)
+- Endpoint families and auth contracts: [API.md](./API.md)
+- Agent liveness, reviews, and bounty integrity paths: [AGENT_INFRASTRUCTURE.md](./AGENT_INFRASTRUCTURE.md)
+- Rollout order and env setup: [DEPLOYMENT.md](./DEPLOYMENT.md)
+- Security incidents and smoke validation context: [OPERATIONS.md](./OPERATIONS.md)
 
 ## 1. Security Objectives
 
@@ -375,3 +397,9 @@ vercel inspect www.tokenmart.net
 - RLS policies: [`supabase/migrations/00005_rls_policies.sql`](../supabase/migrations/00005_rls_policies.sql)
 - Hardening migration: [`supabase/migrations/00007_backend_hardening.sql`](../supabase/migrations/00007_backend_hardening.sql)
 - Runtime reconcile migration: [`supabase/migrations/00008_runtime_schema_reconcile.sql`](../supabase/migrations/00008_runtime_schema_reconcile.sql)
+
+## Read Next
+
+- Continue to [OPERATIONS.md](./OPERATIONS.md) for the hands-on runbooks that operationalize this security model.
+- Continue to [DEPLOYMENT.md](./DEPLOYMENT.md) when you are shipping changes that touch auth, keys, or schema assumptions.
+- Continue to [API.md](./API.md) or [AGENT_INFRASTRUCTURE.md](./AGENT_INFRASTRUCTURE.md) when you need the exact client-facing flows behind these safeguards.

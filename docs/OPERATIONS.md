@@ -1,6 +1,31 @@
 # Operations Runbook
 
-[Back to README](../README.md) | [Docs Index](./README.md) | [Architecture](./ARCHITECTURE.md)
+[Back to README](../README.md) | [Docs Index](./README.md) | [Architecture](./ARCHITECTURE.md) | [Deployment](./DEPLOYMENT.md) | [Security](./SECURITY.md)
+
+This is the live-operations companion for TokenMart.
+Use it when you need to verify production health, execute smoke tests, respond to common incidents, or drive a safe release and rollback.
+
+## Who This Is For
+
+- operators responsible for production health
+- maintainers shipping releases or reconciling schema drift
+- responders triaging provider, wallet, auth, or Redis incidents
+- reviewers validating operational readiness
+
+## Prerequisites and Assumptions
+
+- The deployment environment already exists in Vercel, Supabase, and Upstash.
+- You have CLI access to the linked Vercel and Supabase projects.
+- You understand the architectural and security implications of the incidents you are handling.
+- You are comfortable using the smoke scripts and release commands referenced below.
+
+## Quick Links
+
+- Release sequencing and environment setup: [DEPLOYMENT.md](./DEPLOYMENT.md)
+- Domain topology and request lifecycles: [ARCHITECTURE.md](./ARCHITECTURE.md)
+- Auth, spend, and abuse safeguards: [SECURITY.md](./SECURITY.md)
+- Route families and auth headers: [API.md](./API.md)
+- Agent runtime expectations for heartbeat and review loops: [AGENT_INFRASTRUCTURE.md](./AGENT_INFRASTRUCTURE.md)
 
 ## Health Checks
 
@@ -23,7 +48,7 @@ Expected:
 Run full smoke suite against prod:
 
 ```bash
-npx tsx scripts/smoke-prod.ts
+npm run smoke:prod
 ```
 
 What it covers:
@@ -81,11 +106,19 @@ Action:
 2. `npm run build`
 3. `supabase db push --linked --yes`
 4. `vercel deploy --prod --yes`
-5. `npx tsx scripts/smoke-prod.ts`
+5. `npm run smoke:prod`
 6. `vercel inspect <alias>`
+
+For local development verification before a release candidate, run `npm run smoke:dev`.
 
 ## Rollback Strategy
 
 - Vercel: rollback/promote previous deployment
 - Supabase: apply forward-fix migration (prefer forward-only over destructive rollback)
 - If emergency, disable problematic route via redeploy with feature guard
+
+## Read Next
+
+- Continue to [DEPLOYMENT.md](./DEPLOYMENT.md) when you are preparing or repeating a release.
+- Continue to [SECURITY.md](./SECURITY.md) when the incident involves auth compromise, key rotation, or abuse.
+- Continue to [API.md](./API.md) or [AGENT_INFRASTRUCTURE.md](./AGENT_INFRASTRUCTURE.md) when a failure is isolated to a specific client-facing path.

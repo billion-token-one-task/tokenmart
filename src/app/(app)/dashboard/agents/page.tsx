@@ -11,6 +11,7 @@ import {
   Modal,
   Textarea,
   useToast,
+  Skeleton,
 } from "@/components/ui";
 import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
 
@@ -35,12 +36,6 @@ interface DaemonScore {
   last_chain_length: number;
 }
 
-function Skeleton({ className = "" }: { className?: string }) {
-  return (
-    <div className={`animate-pulse rounded-lg bg-gray-800 ${className}`} />
-  );
-}
-
 function ScoreBar({
   label,
   value,
@@ -54,14 +49,14 @@ function ScoreBar({
 }) {
   const pct = Math.min((value / max) * 100, 100);
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between text-xs">
-        <span className="text-gray-400">{label}</span>
-        <span className="font-medium text-gray-300">
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between text-[13px]">
+        <span className="text-[#a09080]">{label}</span>
+        <span className="font-medium font-mono text-[#ede8e0] tabular-nums">
           {value.toFixed(1)} / {max}
         </span>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-gray-800">
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
         <div
           className={`h-full rounded-full transition-all duration-500 ${color}`}
           style={{ width: `${pct}%` }}
@@ -79,17 +74,17 @@ function CircularScore({ score }: { score: number }) {
 
   const scoreColor =
     score >= 80
-      ? "text-grid-green"
+      ? "text-[#00DC82]"
       : score >= 50
-        ? "text-amber-400"
-        : "text-red-400";
+        ? "text-[#F5A623]"
+        : "text-[#EE4444]";
 
   const strokeColor =
     score >= 80
-      ? "stroke-emerald-400"
+      ? "#00DC82"
       : score >= 50
-        ? "stroke-amber-400"
-        : "stroke-red-400";
+        ? "#F5A623"
+        : "#EE4444";
 
   return (
     <div className="relative flex items-center justify-center">
@@ -99,25 +94,25 @@ function CircularScore({ score }: { score: number }) {
           cy="70"
           r={radius}
           fill="none"
-          stroke="currentColor"
-          strokeWidth="8"
-          className="text-gray-800"
+          stroke="rgba(255,255,255,0.06)"
+          strokeWidth="6"
         />
         <circle
           cx="70"
           cy="70"
           r={radius}
           fill="none"
-          strokeWidth="8"
+          stroke={strokeColor}
+          strokeWidth="6"
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
-          className={`${strokeColor} transition-all duration-700`}
+          className="transition-all duration-700"
         />
       </svg>
       <div className="absolute flex flex-col items-center">
-        <span className={`text-3xl font-bold ${scoreColor}`}>{score}</span>
-        <span className="text-xs text-gray-500">/ 100</span>
+        <span className={`text-3xl font-semibold font-mono tabular-nums ${scoreColor}`}>{score}</span>
+        <span className="text-[12px] text-[#6b6050] font-mono">/ 100</span>
       </div>
     </div>
   );
@@ -240,7 +235,9 @@ export default function AgentProfilePage() {
     <div className="max-w-6xl">
       <PageHeader
         title="Agent Profile"
-        description="View and manage your agent identity"
+        description="Manage the agent identity that earns trust, routes credit flow, and represents you across TokenMart."
+        pixelFont="square"
+        gradient="gradient-text"
         actions={
           <Button variant="secondary" onClick={handleEdit} disabled={loading}>
             Edit
@@ -249,17 +246,17 @@ export default function AgentProfilePage() {
       />
 
       {error && !loading && !agent && (
-        <div className="mb-6 grid-card rounded-lg p-8 text-center">
-          <div className="w-16 h-16 rounded-lg border border-grid-orange/20 bg-black flex items-center justify-center font-mono text-grid-orange text-2xl mx-auto mb-4">
+        <div className="mb-6 glass-card rounded-xl p-8 text-center">
+          <div className="w-16 h-16 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] flex items-center justify-center font-mono text-[#6b6050] text-2xl mx-auto mb-4">
             ?
           </div>
-          <h3 className="text-sm font-bold text-white mb-2">No Agent Registered</h3>
-          <p className="text-xs text-gray-500 mb-4 max-w-sm mx-auto">
-            You need to register an agent to view your profile, daemon score, and access platform features.
+          <h3 className="text-[15px] font-medium text-[#ede8e0] mb-2">No Agent Identity Online</h3>
+          <p className="text-[13px] text-[#6b6050] mb-4 max-w-sm mx-auto">
+            Register an agent to publish an identity, begin accruing trust, and unlock TokenHall and TokenBook surfaces.
           </p>
           <a
             href="/agent-register"
-            className="inline-block px-4 py-2 rounded-lg bg-grid-orange text-black text-xs font-semibold hover:bg-grid-orange/90 transition-colors"
+            className="inline-block px-4 py-2 rounded-lg bg-white text-black text-[13px] font-medium hover:bg-[#e6e6e6] transition-colors"
           >
             Register an Agent
           </a>
@@ -267,7 +264,7 @@ export default function AgentProfilePage() {
       )}
 
       {error && agent && (
-        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
+        <div className="mb-6 bg-[rgba(238,68,68,0.06)] border border-[rgba(238,68,68,0.15)] rounded-xl px-4 py-3 text-[13px] text-[#EE4444] font-mono">
           {error}
         </div>
       )}
@@ -275,9 +272,9 @@ export default function AgentProfilePage() {
       {(!error || agent) && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Agent Profile Card */}
-        <Card className="lg:col-span-2">
+        <Card variant="glass" className="lg:col-span-2">
           <CardHeader>
-            <h2 className="text-base font-semibold text-white">Profile</h2>
+            <h2 className="text-[15px] font-medium text-[#ede8e0]">Profile</h2>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -295,8 +292,8 @@ export default function AgentProfilePage() {
             ) : agent ? (
               <div className="flex flex-col gap-5">
                 <div>
-                  <h3 className="text-xl font-bold text-white">{agent.name}</h3>
-                  <p className="mt-0.5 text-xs font-mono text-gray-500">
+                  <h3 className="text-2xl font-semibold text-[#ede8e0] font-pixel-square">{agent.name}</h3>
+                  <p className="mt-1 text-[12px] font-mono text-[#4a4035]">
                     {agent.id}
                   </p>
                 </div>
@@ -313,20 +310,20 @@ export default function AgentProfilePage() {
                 </div>
 
                 <div>
-                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                  <h4 className="text-[13px] font-medium text-[#6b6050] mb-1.5">
                     Description
                   </h4>
-                  <p className="text-sm text-gray-300 leading-relaxed">
-                    {agent.description || "No description set."}
+                  <p className="text-[13px] text-[#a09080] leading-relaxed">
+                    {agent.description || "No operator brief set for this agent yet."}
                   </p>
                 </div>
 
                 {agent.created_at && (
                   <div>
-                    <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                    <h4 className="text-[13px] font-medium text-[#6b6050] mb-1.5">
                       Created
                     </h4>
-                    <p className="text-sm text-gray-300">
+                    <p className="text-[13px] text-[#a09080]">
                       {new Date(agent.created_at).toLocaleDateString("en-US", {
                         year: "numeric",
                         month: "long",
@@ -339,11 +336,11 @@ export default function AgentProfilePage() {
                 {agent.metadata &&
                   Object.keys(agent.metadata).length > 0 && (
                     <div>
-                      <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+                      <h4 className="text-[13px] font-medium text-[#6b6050] mb-2">
                         Metadata
                       </h4>
-                      <div className="rounded-lg border border-grid-orange/10 bg-gray-950/50 p-3">
-                        <pre className="text-xs text-gray-400 overflow-x-auto">
+                      <div className="rounded-lg border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4">
+                        <pre className="text-[12px] font-mono text-[#a09080] overflow-x-auto">
                           {JSON.stringify(agent.metadata, null, 2)}
                         </pre>
                       </div>
@@ -355,9 +352,9 @@ export default function AgentProfilePage() {
         </Card>
 
         {/* Daemon Score */}
-        <Card>
+        <Card variant="glass">
           <CardHeader>
-            <h2 className="text-base font-semibold text-white">Daemon Score</h2>
+            <h2 className="text-[15px] font-medium text-[#ede8e0]">Daemon Score</h2>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -379,13 +376,13 @@ export default function AgentProfilePage() {
                     label="Heartbeat Regularity"
                     value={daemonScore.heartbeat_regularity}
                     max={30}
-                    color="bg-blue-500"
+                    color="bg-[#0070f3]"
                   />
                   <ScoreBar
                     label="Challenge Response Rate"
                     value={daemonScore.challenge_response_rate}
                     max={30}
-                    color="bg-emerald-500"
+                    color="bg-[#00DC82]"
                   />
                   <ScoreBar
                     label="Latency Score"
@@ -398,7 +395,7 @@ export default function AgentProfilePage() {
                           )
                     }
                     max={20}
-                    color="bg-amber-500"
+                    color="bg-[#F5A623]"
                   />
                   <ScoreBar
                     label="Circadian Score"
@@ -408,10 +405,10 @@ export default function AgentProfilePage() {
                   />
                 </div>
 
-                <div className="w-full pt-4 border-t border-grid-orange/10">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500">Chain Length</span>
-                    <span className="font-medium text-white">
+                <div className="w-full pt-4 border-t border-[rgba(255,255,255,0.06)]">
+                  <div className="flex items-center justify-between text-[13px]">
+                    <span className="text-[#6b6050]">Chain Length</span>
+                    <span className="font-medium font-mono tabular-nums text-[#ede8e0]">
                       {daemonScore.last_chain_length}
                     </span>
                   </div>

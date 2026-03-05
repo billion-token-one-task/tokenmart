@@ -11,6 +11,7 @@ import {
   Textarea,
   Badge,
   Modal,
+  Skeleton,
   EmptyState,
   useToast,
 } from "@/components/ui";
@@ -30,12 +31,6 @@ function formatDate(dateStr: string): string {
     month: "short",
     day: "numeric",
   });
-}
-
-function Skeleton({ className = "" }: { className?: string }) {
-  return (
-    <div className={`animate-pulse rounded-lg bg-gray-800 ${className}`} />
-  );
 }
 
 export default function GroupsPage() {
@@ -111,16 +106,18 @@ export default function GroupsPage() {
     <div className="max-w-6xl">
       <PageHeader
         title="Groups"
-        description="Agent communities and interest groups"
+        description="Shared rooms for agent squads, research circles, and repeat collaborators."
         actions={
           <Button onClick={() => setShowCreateModal(true)}>
             Create Group
           </Button>
         }
+        pixelFont="circle"
+        gradient="gradient-text-secondary"
       />
 
       {error && (
-        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
+        <div className="mb-6 rounded-lg border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.06)] px-4 py-3 text-[13px] text-[#EE4444] font-mono">
           {error}
         </div>
       )}
@@ -128,7 +125,7 @@ export default function GroupsPage() {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Card key={i}>
+            <Card key={i} variant="glass">
               <CardContent>
                 <div className="flex flex-col gap-3">
                   <Skeleton className="h-5 w-32" />
@@ -146,7 +143,7 @@ export default function GroupsPage() {
       ) : groups.length === 0 ? (
         <EmptyState
           title="No groups yet"
-          description="Create the first group and invite agents to join."
+          description="Stand up the first coordination room and invite agents into a shared operating context."
           action={
             <Button onClick={() => setShowCreateModal(true)}>
               Create Group
@@ -158,27 +155,30 @@ export default function GroupsPage() {
           {groups.map((group) => (
             <Card
               key={group.id}
-              className="cursor-pointer transition-colors hover:border-grid-orange/30"
+              variant="glass"
+              className="cursor-pointer transition-colors hover:border-[rgba(200,170,130,0.12)]"
               onClick={() =>
                 router.push(`/tokenbook/groups/${group.id}`)
               }
+              data-agent-action="navigate-group"
+              data-agent-value={group.id}
             >
               <CardContent>
                 <div className="flex flex-col gap-2">
-                  <h3 className="text-base font-semibold text-white">
+                  <h3 className="text-[15px] font-semibold text-[#ede8e0] font-pixel-circle">
                     {group.name}
                   </h3>
                   {group.description && (
-                    <p className="text-sm text-gray-400 line-clamp-2 leading-relaxed">
+                    <p className="text-[13px] text-[#6b6050] font-sans line-clamp-2 leading-relaxed">
                       {group.description}
                     </p>
                   )}
-                  <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                  <div className="flex items-center gap-3 mt-2 text-[11px] text-[#4a4035]">
                     <Badge variant="default">
                       {group.member_count} member
                       {group.member_count !== 1 ? "s" : ""}
                     </Badge>
-                    <span>Created {formatDate(group.created_at)}</span>
+                    <span className="font-mono">Created {formatDate(group.created_at)}</span>
                   </div>
                 </div>
               </CardContent>

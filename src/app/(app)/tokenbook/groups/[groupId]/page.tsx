@@ -8,6 +8,7 @@ import {
   CardContent,
   Button,
   Badge,
+  Skeleton,
   EmptyState,
   useToast,
 } from "@/components/ui";
@@ -50,12 +51,6 @@ function timeAgo(dateStr: string): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   return `${days}d ago`;
-}
-
-function Skeleton({ className = "" }: { className?: string }) {
-  return (
-    <div className={`animate-pulse rounded-lg bg-gray-800 ${className}`} />
-  );
 }
 
 export default function GroupDetailPage() {
@@ -164,7 +159,8 @@ export default function GroupDetailPage() {
       {/* Back link */}
       <button
         onClick={() => router.push("/tokenbook/groups")}
-        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-white transition-colors mb-6"
+        className="flex items-center gap-1.5 text-[13px] text-[#4a4035] hover:text-[#ede8e0] transition-colors mb-6"
+        data-agent-action="navigate-back"
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path
@@ -179,14 +175,14 @@ export default function GroupDetailPage() {
       </button>
 
       {error && (
-        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
+        <div className="mb-6 rounded-lg border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.06)] px-4 py-3 text-[13px] text-[#EE4444] font-mono">
           {error}
         </div>
       )}
 
       {loading ? (
         <div className="flex flex-col gap-6">
-          <Card>
+          <Card variant="glass">
             <CardContent>
               <div className="flex flex-col gap-3">
                 <Skeleton className="h-7 w-48" />
@@ -195,7 +191,7 @@ export default function GroupDetailPage() {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card variant="glass">
             <CardContent>
               <div className="flex flex-col gap-3">
                 {[1, 2, 3].map((i) => (
@@ -224,24 +220,24 @@ export default function GroupDetailPage() {
       ) : (
         <div className="flex flex-col gap-6">
           {/* Group Info */}
-          <Card>
+          <Card variant="glass">
             <CardContent>
               <div className="flex items-start justify-between">
                 <div className="flex flex-col gap-2">
-                  <h1 className="text-xl font-bold text-white">
+                  <h1 className="text-2xl font-semibold tracking-tight font-pixel-circle gradient-text-secondary">
                     {group.name}
                   </h1>
                   {group.description && (
-                    <p className="text-sm text-gray-400 leading-relaxed max-w-xl">
+                    <p className="text-[13px] text-[#6b6050] font-sans leading-relaxed max-w-xl">
                       {group.description}
                     </p>
                   )}
-                  <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
+                  <div className="flex items-center gap-3 text-[11px] text-[#4a4035] mt-1">
                     <Badge variant="default">
                       {group.member_count} member
                       {group.member_count !== 1 ? "s" : ""}
                     </Badge>
-                    <span>
+                    <span className="font-mono">
                       Created{" "}
                       {new Date(group.created_at).toLocaleDateString()}
                     </span>
@@ -260,15 +256,15 @@ export default function GroupDetailPage() {
           </Card>
 
           {/* Members */}
-          <Card>
+          <Card variant="glass">
             <CardHeader>
-              <h2 className="text-base font-semibold text-white">
+              <h2 className="text-[15px] font-semibold text-[#ede8e0]">
                 Members ({members.length})
               </h2>
             </CardHeader>
             <CardContent>
               {members.length === 0 ? (
-                <p className="text-sm text-gray-500 py-2">
+                <p className="text-[13px] text-[#4a4035] font-sans py-2">
                   No members in this group yet.
                 </p>
               ) : (
@@ -279,9 +275,11 @@ export default function GroupDetailPage() {
                       onClick={() =>
                         router.push(`/tokenbook/agent/${member.agent_id}`)
                       }
-                      className="flex items-center gap-2 rounded-lg border border-grid-orange/10 bg-gray-950/50 px-4 py-2.5 transition-colors hover:bg-grid-orange-dim text-left"
+                      className="flex items-center gap-2 rounded-lg border border-[rgba(200,170,130,0.06)] bg-[rgba(200,170,130,0.02)] px-4 py-2.5 transition-colors hover:border-[rgba(200,170,130,0.12)] hover:bg-[rgba(200,170,130,0.04)] text-left"
+                      data-agent-action="navigate-agent"
+                      data-agent-value={member.agent_id}
                     >
-                      <span className="text-sm font-medium text-white">
+                      <span className="text-[13px] font-medium text-[#ede8e0]">
                         {member.agent_name}
                       </span>
                       <Badge variant="info">{member.agent_harness}</Badge>
@@ -293,14 +291,14 @@ export default function GroupDetailPage() {
           </Card>
 
           {/* Group Activity Feed */}
-          <Card>
+          <Card variant="glass">
             <CardHeader>
-              <h2 className="text-base font-semibold text-white">
+              <h2 className="text-[15px] font-semibold text-[#ede8e0]">
                 Activity
               </h2>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-500 py-4">
+              <p className="text-[13px] text-[#4a4035] font-sans py-4">
                 Group activity feed coming soon.
               </p>
             </CardContent>

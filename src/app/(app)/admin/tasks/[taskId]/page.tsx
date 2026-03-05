@@ -1,8 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { PageHeader } from "@/components/page-header";
 import {
   Button,
   Input,
@@ -11,10 +11,10 @@ import {
   Card,
   CardHeader,
   CardContent,
-  CardFooter,
   Badge,
   Modal,
   EmptyState,
+  Skeleton,
   useToast,
 } from "@/components/ui";
 import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
@@ -43,12 +43,6 @@ interface Goal {
 
 interface GoalTreeNode extends Goal {
   children: GoalTreeNode[];
-}
-
-function Skeleton({ className = "" }: { className?: string }) {
-  return (
-    <div className={`animate-pulse rounded-lg bg-gray-800 ${className}`} />
-  );
 }
 
 function buildGoalTree(goals: Goal[]): GoalTreeNode[] {
@@ -101,13 +95,13 @@ function GoalNode({
   return (
     <div>
       <div
-        className="flex items-start gap-3 rounded-lg border border-grid-orange/10 bg-gray-950/50 px-4 py-3 hover:bg-grid-orange-dim transition-colors"
+        className="flex items-start gap-3 rounded-lg border border-[rgba(200,170,130,0.06)] bg-[rgba(200,170,130,0.02)] px-4 py-3 hover:bg-[rgba(200,170,130,0.04)] transition-colors"
         style={{ marginLeft: `${depth * 24}px` }}
       >
         {/* Expand / Collapse */}
         <button
           onClick={() => setExpanded(!expanded)}
-          className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded text-gray-500 hover:text-white hover:bg-gray-700 transition-colors"
+          className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded text-[#6b6050] hover:text-[#ede8e0] hover:bg-[rgba(200,170,130,0.06)] transition-colors"
         >
           {hasChildren ? (
             <svg
@@ -126,23 +120,23 @@ function GoalNode({
               />
             </svg>
           ) : (
-            <span className="h-1.5 w-1.5 rounded-full bg-gray-600" />
+            <span className="h-1.5 w-1.5 rounded-full bg-[#444]" />
           )}
         </button>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-sm font-medium text-white">{node.title}</span>
+            <span className="text-[13px] font-medium text-[#ede8e0]">{node.title}</span>
             <Badge variant={statusVariant(node.status)}>{node.status}</Badge>
             {node.requires_all_subgoals && hasChildren && (
               <Badge variant="outline">All required</Badge>
             )}
           </div>
           {node.description && (
-            <p className="text-xs text-gray-500 mb-1">{node.description}</p>
+            <p className="text-[13px] text-[#6b6050] mb-1">{node.description}</p>
           )}
           {node.passing_spec && (
-            <p className="text-xs text-gray-600 italic">
+            <p className="text-[13px] text-[#4a4035] italic">
               Spec: {node.passing_spec}
             </p>
           )}
@@ -150,7 +144,7 @@ function GoalNode({
 
         <button
           onClick={() => onAddSubGoal(node.id)}
-          className="shrink-0 text-xs text-gray-500 hover:text-white px-2 py-1 rounded hover:bg-gray-700 transition-colors"
+          className="shrink-0 text-[13px] text-[#6b6050] hover:text-[#ede8e0] px-2 py-1 rounded hover:bg-[rgba(200,170,130,0.06)] transition-colors"
           title="Add Sub-Goal"
         >
           + Sub-Goal
@@ -354,9 +348,9 @@ export default function TaskDetailPage() {
   return (
     <div className="max-w-6xl">
       {/* Back link */}
-      <a
+      <Link
         href="/admin/tasks"
-        className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-white transition-colors mb-6"
+        className="inline-flex items-center gap-1.5 text-[13px] text-[#6b6050] hover:text-[#ede8e0] transition-colors mb-6"
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path
@@ -368,10 +362,10 @@ export default function TaskDetailPage() {
           />
         </svg>
         Back to Tasks
-      </a>
+      </Link>
 
       {error && (
-        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
+        <div className="mb-6 rounded-lg border border-[#C04838]/20 bg-[#C04838]/5 px-4 py-3 text-[13px] text-[#C04838] font-mono">
           {error}
         </div>
       )}
@@ -386,7 +380,7 @@ export default function TaskDetailPage() {
       ) : !task ? (
         <EmptyState
           title="Task not found"
-          description="The task you're looking for doesn't exist or has been removed."
+          description="This task is unavailable or no longer part of the active queue."
           action={
             <Button variant="secondary" onClick={() => window.history.back()}>
               Go Back
@@ -396,19 +390,19 @@ export default function TaskDetailPage() {
       ) : (
         <>
           {/* Task Info Card */}
-          <Card className="mb-6">
+          <Card variant="glass" className="mb-6">
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div>
-                  <h1 className="text-xl font-bold text-white">{task.title}</h1>
+                  <h1 className="text-2xl font-semibold tracking-tight font-pixel-triangle gradient-text-tertiary">{task.title}</h1>
                   <div className="flex items-center gap-2 mt-2">
                     <Badge variant={statusVariant(task.status)}>
-                      {task.status}
+                      <span className="font-pixel-triangle">{task.status}</span>
                     </Badge>
                     <Badge variant={priorityVariant(task.priority)}>
-                      {task.priority} priority
+                      <span className="font-pixel-triangle">{task.priority} priority</span>
                     </Badge>
-                    <span className="text-sm text-grid-green font-medium">
+                    <span className="text-[13px] text-[#B89060] font-medium font-mono">
                       {task.credit_reward} credits
                     </span>
                   </div>
@@ -422,29 +416,29 @@ export default function TaskDetailPage() {
               <div className="flex flex-col gap-4">
                 {task.description && (
                   <div>
-                    <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                    <h3 className="text-[13px] font-medium text-[#6b6050] mb-1">
                       Description
                     </h3>
-                    <p className="text-sm text-gray-300 whitespace-pre-wrap">
+                    <p className="text-[13px] text-[#a09080] whitespace-pre-wrap">
                       {task.description}
                     </p>
                   </div>
                 )}
                 {task.passing_spec && (
                   <div>
-                    <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                    <h3 className="text-[13px] font-medium text-[#6b6050] mb-1">
                       Passing Spec
                     </h3>
-                    <p className="text-sm text-gray-400 whitespace-pre-wrap bg-gray-900/50 rounded-lg p-3 border border-gray-800">
+                    <p className="text-[13px] text-[#a09080] whitespace-pre-wrap bg-[rgba(200,170,130,0.02)] rounded-lg p-3 border border-[rgba(200,170,130,0.06)] font-mono">
                       {task.passing_spec}
                     </p>
                   </div>
                 )}
                 <div>
-                  <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                  <h3 className="text-[13px] font-medium text-[#6b6050] mb-1">
                     Created
                   </h3>
-                  <p className="text-sm text-gray-400">
+                  <p className="text-[13px] text-[#a09080]">
                     {new Date(task.created_at).toLocaleString()}
                   </p>
                 </div>
@@ -453,14 +447,14 @@ export default function TaskDetailPage() {
           </Card>
 
           {/* Goal Tree */}
-          <Card>
+          <Card variant="glass">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-base font-semibold text-white">
+                  <h2 className="text-[15px] font-semibold text-[#ede8e0]">
                     Goal Tree
                   </h2>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-[13px] text-[#6b6050] mt-1">
                     {goals.length} goal{goals.length !== 1 ? "s" : ""} defined
                   </p>
                 </div>
@@ -473,7 +467,7 @@ export default function TaskDetailPage() {
               {goals.length === 0 ? (
                 <EmptyState
                   title="No goals yet"
-                  description="Add goals to break this task into measurable objectives"
+                  description="Break this task into measurable checkpoints before agents start executing against it."
                   action={
                     <Button size="sm" onClick={() => openGoalModal()}>
                       Add First Goal

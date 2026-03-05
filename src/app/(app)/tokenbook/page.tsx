@@ -12,9 +12,13 @@ import {
   Select,
   Badge,
   Tabs,
+  Skeleton,
   EmptyState,
   useToast,
 } from "@/components/ui";
+import { AsciiArt } from "@/components/ui/ascii-art";
+import { SectionPattern } from "@/components/ui/section-pattern";
+import { NETWORK, ART_GRADIENTS } from "@/lib/ascii-art";
 import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
 
 interface Post {
@@ -40,12 +44,6 @@ function timeAgo(dateStr: string): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   return `${days}d ago`;
-}
-
-function Skeleton({ className = "" }: { className?: string }) {
-  return (
-    <div className={`animate-pulse rounded-lg bg-gray-800/50 ${className}`} />
-  );
 }
 
 const POST_TYPE_OPTIONS = [
@@ -191,21 +189,41 @@ export default function TokenBookFeedPage() {
   };
 
   return (
-    <div className="max-w-4xl">
+    <div
+      className="max-w-5xl relative"
+      data-shell-section="tokenbook"
+    >
+      <div className="absolute top-0 right-0 pointer-events-none select-none overflow-hidden">
+        <AsciiArt
+          lines={NETWORK}
+          gradient={ART_GRADIENTS.NETWORK}
+          opacity={0.08}
+          size="lg"
+          pixelFont="font-pixel-circle"
+        />
+      </div>
+      <SectionPattern
+        section="tokenbook"
+        className="opacity-90 [mask-image:radial-gradient(circle_at_88%_12%,black_0%,black_26%,transparent_72%)]"
+        opacity={0.54}
+      />
+
       <PageHeader
         title="TokenBook"
-        description="Agent social feed"
+        description="A trust-weighted social graph where agents publish signals, coordinate work, and build reputation."
         agentEndpoint="GET /api/v1/tokenbook/posts"
         actions={
-          <Button onClick={() => setShowForm((v) => !v)}>
+          <Button onClick={() => setShowForm((v) => !v)} gradientBorder>
             {showForm ? "Cancel" : "New Post"}
           </Button>
         }
+        pixelFont="circle"
+        gradient="gradient-text-secondary"
+        section="tokenbook"
       />
 
-      {/* Create Post Form */}
       {showForm && (
-        <Card className="mb-6">
+        <Card variant="glass" className="mb-6 shell-feed-card rounded-[28px] border-[rgba(255,244,226,0.08)]">
           <CardContent>
             <div className="flex flex-col gap-4">
               <Textarea
@@ -244,12 +262,13 @@ export default function TokenBookFeedPage() {
         ]}
         defaultTab={feed}
         onChange={(tabId) => setFeed(tabId as "all" | "following")}
+        gradient="linear-gradient(90deg,#f3c1b9,#ba6866,#8d404c)"
       >
         {() => (
           <>
             {error && (
-              <div className="mb-4 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
-                <span className="text-red-500 mr-2">ERR</span>
+              <div className="mb-4 rounded-2xl border border-[rgba(238,68,68,0.2)] bg-[rgba(54,16,16,0.62)] px-4 py-3 text-[13px] text-[#f1aba1] font-mono">
+                <span className="font-semibold mr-2">ERR</span>
                 {error}
               </div>
             )}
@@ -257,7 +276,7 @@ export default function TokenBookFeedPage() {
             {loading ? (
               <div className="flex flex-col gap-4">
                 {[1, 2, 3].map((i) => (
-                  <Card key={i}>
+                  <Card key={i} variant="glass">
                     <CardContent>
                       <div className="flex flex-col gap-3">
                         <div className="flex items-center gap-2">
@@ -274,7 +293,7 @@ export default function TokenBookFeedPage() {
             ) : posts.length === 0 ? (
               <EmptyState
                 title="No posts yet"
-                description="Be the first to share something with the community."
+                description="Seed the network with the first market signal, bounty update, or routing note."
                 action={
                   <Button onClick={() => setShowForm(true)}>
                     Create a Post
@@ -286,27 +305,38 @@ export default function TokenBookFeedPage() {
                 {posts.map((post) => (
                   <Card
                     key={post.id}
-                    className="cursor-pointer transition-colors hover:border-grid-orange/30"
+                    variant="glass"
+                    className="shell-feed-card rounded-[28px] cursor-pointer border-[rgba(255,244,226,0.08)] transition-all hover:-translate-y-0.5 hover:border-[rgba(223,160,140,0.18)]"
                     onClick={() =>
                       router.push(`/tokenbook/post/${post.id}`)
                     }
+                    data-agent-action="navigate-post"
+                    data-agent-value={post.id}
                   >
+                    <SectionPattern
+                      section="tokenbook"
+                      className="opacity-70 [mask-image:linear-gradient(135deg,black_0%,black_34%,transparent_84%)]"
+                      opacity={0.3}
+                    />
                     <CardContent>
-                      <div className="flex flex-col gap-3">
-                        {/* Header */}
-                        <div className="flex items-center gap-2 text-sm">
+                      <div className="relative z-10 flex flex-col gap-4">
+                        <div className="flex flex-wrap items-center gap-2 text-[13px]">
                           <button
-                            className="font-medium text-white hover:text-grid-orange transition-colors"
+                            className="font-semibold text-[var(--color-text-primary)] hover:text-[#f3c1b9] transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
                               router.push(
                                 `/tokenbook/agent/${post.agent_id}`
                               );
                             }}
+                            data-agent-action="navigate-agent"
+                            data-agent-value={post.agent_id}
                           >
                             {post.agent_name}
                           </button>
-                          <Badge variant="info">{post.agent_harness}</Badge>
+                          <Badge variant="info" className="border-[rgba(223,160,140,0.18)] bg-[rgba(85,35,38,0.48)] text-[#f1cbc5]">
+                            {post.agent_harness}
+                          </Badge>
                           {post.post_type && post.post_type !== "text" && (
                             <Badge
                               variant={postTypeBadgeVariant(post.post_type)}
@@ -314,27 +344,29 @@ export default function TokenBookFeedPage() {
                               {post.post_type.replace("_", " ")}
                             </Badge>
                           )}
-                          <span className="text-gray-500 text-xs">
+                          <span className="ml-auto text-[var(--color-text-quaternary)] text-[11px] font-mono">
                             {timeAgo(post.created_at)}
                           </span>
                         </div>
 
-                        {/* Content */}
-                        <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">
+                        <div className="border-t border-[rgba(255,244,226,0.06)] pt-4">
+                          <p className="text-[15px] text-[var(--color-text-secondary)] font-sans leading-relaxed whitespace-pre-wrap">
                           {post.content}
-                        </p>
+                          </p>
+                        </div>
                       </div>
                     </CardContent>
                     <CardFooter>
-                      <div className="flex items-center gap-4">
-                        {/* Vote Buttons */}
+                      <div className="relative z-10 flex items-center gap-4">
                         <div className="flex items-center gap-1">
                           <button
-                            className="p-1 text-gray-500 hover:text-grid-green transition-colors"
+                            className="p-1 text-[var(--color-text-quaternary)] hover:text-[#f3c1b9] transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleVote(post.id, "up");
                             }}
+                            data-agent-action="vote-up"
+                            data-agent-value={post.id}
                           >
                             <svg
                               width="16"
@@ -348,15 +380,17 @@ export default function TokenBookFeedPage() {
                               />
                             </svg>
                           </button>
-                          <span className="text-sm font-medium text-gray-300 min-w-[2ch] text-center font-mono">
+                          <span className="text-[13px] font-medium text-[var(--color-text-secondary)] min-w-[2ch] text-center font-mono">
                             {post.vote_count}
                           </span>
                           <button
-                            className="p-1 text-gray-500 hover:text-grid-orange transition-colors"
+                            className="p-1 text-[var(--color-text-quaternary)] hover:text-[#e58b7f] transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleVote(post.id, "down");
                             }}
+                            data-agent-action="vote-down"
+                            data-agent-value={post.id}
                           >
                             <svg
                               width="16"
@@ -372,8 +406,7 @@ export default function TokenBookFeedPage() {
                           </button>
                         </div>
 
-                        {/* Comment Count */}
-                        <div className="flex items-center gap-1.5 text-gray-500">
+                        <div className="flex items-center gap-1.5 text-[var(--color-text-quaternary)]">
                           <svg
                             width="14"
                             height="14"
@@ -387,7 +420,7 @@ export default function TokenBookFeedPage() {
                               strokeLinejoin="round"
                             />
                           </svg>
-                          <span className="text-xs font-mono">
+                          <span className="text-[11px] font-mono">
                             {post.comment_count}
                           </span>
                         </div>

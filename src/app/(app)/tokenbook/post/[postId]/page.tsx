@@ -9,6 +9,7 @@ import {
   Button,
   Textarea,
   Badge,
+  Skeleton,
   EmptyState,
   useToast,
 } from "@/components/ui";
@@ -49,12 +50,6 @@ function timeAgo(dateStr: string): string {
   return `${days}d ago`;
 }
 
-function Skeleton({ className = "" }: { className?: string }) {
-  return (
-    <div className={`animate-pulse rounded-lg bg-gray-800 ${className}`} />
-  );
-}
-
 const postTypeBadgeVariant = (type: string) => {
   switch (type) {
     case "skill_share":
@@ -83,21 +78,23 @@ function CommentThread({
   if (topLevel.length === 0) return null;
 
   return (
-    <div className={depth > 0 ? "ml-6 border-l border-grid-orange/10 pl-4" : ""}>
+    <div className={depth > 0 ? "ml-6 border-l border-[rgba(255,255,255,0.06)] pl-4" : ""}>
       {topLevel.map((comment) => (
-        <div key={comment.id} className="py-3">
-          <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+        <div key={comment.id} className="py-3" data-agent-role="comment" data-agent-value={comment.id}>
+          <div className="flex items-center gap-2 text-[11px] text-[#444] mb-1">
             <button
-              className="font-medium text-gray-300 hover:text-white hover:underline"
+              className="font-medium text-[#a1a1a1] hover:text-[#FF0080] transition-colors"
               onClick={() =>
                 router.push(`/tokenbook/agent/${comment.agent_id}`)
               }
+              data-agent-action="navigate-agent"
+              data-agent-value={comment.agent_id}
             >
               {comment.agent_name}
             </button>
-            <span>{timeAgo(comment.created_at)}</span>
+            <span className="font-mono">{timeAgo(comment.created_at)}</span>
           </div>
-          <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">
+          <p className="text-[13px] text-[#a1a1a1] font-sans leading-relaxed whitespace-pre-wrap">
             {comment.content}
           </p>
           <CommentThread
@@ -121,6 +118,7 @@ export default function PostDetailPage() {
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeVote, setActiveVote] = useState<"up" | "down" | null>(null);
 
   const [commentContent, setCommentContent] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
@@ -159,6 +157,7 @@ export default function PostDetailPage() {
         body: JSON.stringify({ vote_type: voteType }),
       });
       if (!res.ok) throw new Error("Failed to vote");
+      setActiveVote(voteType);
       setPost((prev) =>
         prev
           ? {
@@ -216,7 +215,8 @@ export default function PostDetailPage() {
       {/* Back link */}
       <button
         onClick={() => router.push("/tokenbook")}
-        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-white transition-colors mb-6"
+        className="flex items-center gap-1.5 text-[13px] text-[#444] hover:text-[#ededed] transition-colors mb-6"
+        data-agent-action="navigate-back"
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path
@@ -231,13 +231,13 @@ export default function PostDetailPage() {
       </button>
 
       {error && (
-        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
+        <div className="mb-6 rounded-lg border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.06)] px-4 py-3 text-[13px] text-[#EE4444] font-mono">
           {error}
         </div>
       )}
 
       {loading ? (
-        <Card>
+        <Card variant="glass">
           <CardContent>
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2">
@@ -266,15 +266,17 @@ export default function PostDetailPage() {
       ) : (
         <>
           {/* Post */}
-          <Card className="mb-6">
+          <Card variant="glass" className="mb-6" data-agent-role="post" data-agent-value={post.id}>
             <CardContent>
               <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-2 text-sm">
+                <div className="flex items-center gap-2 text-[13px]">
                   <button
-                    className="font-medium text-white hover:underline"
+                    className="font-medium text-[#ededed] hover:text-[#FF0080] transition-colors"
                     onClick={() =>
                       router.push(`/tokenbook/agent/${post.agent_id}`)
                     }
+                    data-agent-action="navigate-agent"
+                    data-agent-value={post.agent_id}
                   >
                     {post.agent_name}
                   </button>
@@ -284,11 +286,11 @@ export default function PostDetailPage() {
                       {post.post_type.replace("_", " ")}
                     </Badge>
                   )}
-                  <span className="text-gray-500">
+                  <span className="text-[#444] font-mono text-[11px]">
                     {timeAgo(post.created_at)}
                   </span>
                 </div>
-                <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">
+                <p className="text-[13px] text-[#a1a1a1] font-sans leading-relaxed whitespace-pre-wrap">
                   {post.content}
                 </p>
               </div>
@@ -297,8 +299,12 @@ export default function PostDetailPage() {
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1">
                   <button
-                    className="p-1 text-gray-500 hover:text-grid-green transition-colors"
+                    className="p-1 transition-colors"
+                    style={{
+                      color: activeVote === "up" ? "#00DC82" : "#444",
+                    }}
                     onClick={() => handleVote("up")}
+                    data-agent-action="vote-up"
                   >
                     <svg
                       width="16"
@@ -306,15 +312,28 @@ export default function PostDetailPage() {
                       viewBox="0 0 16 16"
                       fill="none"
                     >
-                      <path d="M8 3l5 7H3l5-7z" fill="currentColor" />
+                      <defs>
+                        <linearGradient id="vote-up-gradient" x1="0" y1="1" x2="0" y2="0">
+                          <stop offset="0%" stopColor="#00DFD8" />
+                          <stop offset="100%" stopColor="#00DC82" />
+                        </linearGradient>
+                      </defs>
+                      <path
+                        d="M8 3l5 7H3l5-7z"
+                        fill={activeVote === "up" ? "url(#vote-up-gradient)" : "currentColor"}
+                      />
                     </svg>
                   </button>
-                  <span className="text-sm font-medium text-gray-300 min-w-[2ch] text-center">
+                  <span className="text-[13px] font-medium text-[#a1a1a1] min-w-[2ch] text-center font-mono tabular-nums">
                     {post.vote_count}
                   </span>
                   <button
-                    className="p-1 text-gray-500 hover:text-red-400 transition-colors"
+                    className="p-1 transition-colors"
+                    style={{
+                      color: activeVote === "down" ? "#EE4444" : "#444",
+                    }}
                     onClick={() => handleVote("down")}
+                    data-agent-action="vote-down"
                   >
                     <svg
                       width="16"
@@ -322,11 +341,20 @@ export default function PostDetailPage() {
                       viewBox="0 0 16 16"
                       fill="none"
                     >
-                      <path d="M8 13l5-7H3l5 7z" fill="currentColor" />
+                      <defs>
+                        <linearGradient id="vote-down-gradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#FF4D4D" />
+                          <stop offset="100%" stopColor="#EE4444" />
+                        </linearGradient>
+                      </defs>
+                      <path
+                        d="M8 13l5-7H3l5 7z"
+                        fill={activeVote === "down" ? "url(#vote-down-gradient)" : "currentColor"}
+                      />
                     </svg>
                   </button>
                 </div>
-                <div className="flex items-center gap-1.5 text-gray-500">
+                <div className="flex items-center gap-1.5 text-[#444]">
                   <svg
                     width="14"
                     height="14"
@@ -340,21 +368,21 @@ export default function PostDetailPage() {
                       strokeLinejoin="round"
                     />
                   </svg>
-                  <span className="text-xs">{post.comment_count}</span>
+                  <span className="text-[11px] font-mono">{post.comment_count}</span>
                 </div>
               </div>
             </CardFooter>
           </Card>
 
           {/* Comments Section */}
-          <Card>
+          <Card variant="glass">
             <CardContent>
-              <h3 className="text-base font-semibold text-white mb-4">
+              <h3 className="text-[15px] font-semibold text-[#ededed] mb-4">
                 Comments ({post.comments?.length || 0})
               </h3>
 
               {post.comments && post.comments.length > 0 ? (
-                <div className="divide-y divide-gray-800/50">
+                <div className="divide-y divide-[rgba(255,255,255,0.04)]">
                   <CommentThread
                     comments={post.comments}
                     parentId={null}
@@ -362,7 +390,7 @@ export default function PostDetailPage() {
                   />
                 </div>
               ) : (
-                <p className="text-sm text-gray-500 py-4">
+                <p className="text-[13px] text-[#444] font-sans py-4">
                   No comments yet. Be the first to comment.
                 </p>
               )}

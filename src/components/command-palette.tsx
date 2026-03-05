@@ -1,38 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
+import { SectionPattern } from "@/components/ui/section-pattern";
 import { useRouter } from "next/navigation";
+import { flattenShellCommands, getSectionById, shellSectionOrder } from "@/lib/ui-shell";
 
-interface Command {
-  id: string;
-  label: string;
-  section: string;
-  href: string;
-  shortcut?: string;
-  agentEndpoint?: string;
-}
-
-const commands: Command[] = [
-  // Platform
-  { id: "dashboard", label: "Dashboard", section: "Platform", href: "/dashboard", shortcut: "D", agentEndpoint: "/api/v1/agents/dashboard" },
-  { id: "agents", label: "Agent Profile", section: "Platform", href: "/dashboard/agents", agentEndpoint: "/api/v1/agents/me" },
-  { id: "keys", label: "API Keys", section: "Platform", href: "/dashboard/keys", agentEndpoint: "/api/v1/agents/keys" },
-  { id: "credits", label: "Credits", section: "Platform", href: "/dashboard/credits", agentEndpoint: "/api/v1/credits" },
-  // TokenHall
-  { id: "th-overview", label: "TokenHall Overview", section: "TokenHall", href: "/tokenhall", shortcut: "H", agentEndpoint: "/api/v1/tokenhall" },
-  { id: "th-keys", label: "TH Keys", section: "TokenHall", href: "/tokenhall/keys", agentEndpoint: "/api/v1/tokenhall/keys" },
-  { id: "th-models", label: "Models", section: "TokenHall", href: "/tokenhall/models", shortcut: "M", agentEndpoint: "/api/v1/tokenhall/models" },
-  { id: "th-usage", label: "Usage Analytics", section: "TokenHall", href: "/tokenhall/usage", agentEndpoint: "/api/v1/tokenhall/usage" },
-  // TokenBook
-  { id: "tb-feed", label: "Agent Feed", section: "TokenBook", href: "/tokenbook", shortcut: "F", agentEndpoint: "/api/v1/tokenbook/feed" },
-  { id: "tb-messages", label: "Messages", section: "TokenBook", href: "/tokenbook/conversations", agentEndpoint: "/api/v1/tokenbook/conversations" },
-  { id: "tb-groups", label: "Groups", section: "TokenBook", href: "/tokenbook/groups", agentEndpoint: "/api/v1/tokenbook/groups" },
-  // Admin
-  { id: "admin", label: "Admin Overview", section: "Admin", href: "/admin", shortcut: "A", agentEndpoint: "/api/v1/admin" },
-  { id: "tasks", label: "Tasks", section: "Admin", href: "/admin/tasks", shortcut: "T", agentEndpoint: "/api/v1/tasks" },
-  { id: "bounties", label: "Bounties", section: "Admin", href: "/admin/bounties", shortcut: "B", agentEndpoint: "/api/v1/bounties" },
-  { id: "credit-mgmt", label: "Credit Management", section: "Admin", href: "/admin/credits", agentEndpoint: "/api/v1/admin/credits" },
-];
+const commands = flattenShellCommands();
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
@@ -42,159 +15,188 @@ export function CommandPalette() {
   const router = useRouter();
 
   const filtered = query
-    ? commands.filter(
-        (c) =>
-          c.label.toLowerCase().includes(query.toLowerCase()) ||
-          c.section.toLowerCase().includes(query.toLowerCase()) ||
-          c.href.includes(query.toLowerCase())
+    ? commands.filter((command) =>
+        [command.label, command.href, command.section]
+          .some((value) => value.toLowerCase().includes(query.toLowerCase()))
       )
     : commands;
 
-  const groupedCommands = filtered.reduce(
-    (acc, cmd) => {
-      if (!acc[cmd.section]) acc[cmd.section] = [];
-      acc[cmd.section].push(cmd);
-      return acc;
-    },
-    {} as Record<string, Command[]>
-  );
+  const groupedCommands = shellSectionOrder.reduce((acc, sectionId) => {
+    const sectionItems = filtered.filter((command) => command.section === sectionId);
+    if (sectionItems.length > 0) {
+      acc.push([sectionId, sectionItems] as const);
+    }
+    return acc;
+  }, [] as Array<readonly [typeof shellSectionOrder[number], typeof filtered]>);
+  const selectedIndexById = new Map(filtered.map((command, index) => [command.id, index]));
 
-  const flatFiltered = filtered;
-
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === "k") {
+        event.preventDefault();
         setOpen((prev) => !prev);
         setQuery("");
         setSelectedIndex(0);
       }
+
       if (!open) return;
 
-      if (e.key === "Escape") {
+      if (event.key === "Escape") {
         setOpen(false);
-      } else if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setSelectedIndex((i) => Math.min(i + 1, flatFiltered.length - 1));
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        setSelectedIndex((i) => Math.max(i - 1, 0));
-      } else if (e.key === "Enter") {
-        e.preventDefault();
-        const cmd = flatFiltered[selectedIndex];
-        if (cmd) {
-          router.push(cmd.href);
+      } else if (event.key === "ArrowDown") {
+        event.preventDefault();
+        setSelectedIndex((index) => Math.min(index + 1, filtered.length - 1));
+      } else if (event.key === "ArrowUp") {
+        event.preventDefault();
+        setSelectedIndex((index) => Math.max(index - 1, 0));
+      } else if (event.key === "Enter") {
+        event.preventDefault();
+        const command = filtered[selectedIndex];
+        if (command) {
+          router.push(command.href);
           setOpen(false);
         }
       }
-    },
-    [open, flatFiltered, selectedIndex, router]
-  );
+    };
 
-  useEffect(() => {
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [handleKeyDown]);
+  }, [filtered, open, router, selectedIndex]);
 
   useEffect(() => {
-    if (open) {
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
+    if (!open) return;
+    const timer = window.setTimeout(() => inputRef.current?.focus(), 50);
+    return () => window.clearTimeout(timer);
   }, [open]);
-
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [query]);
 
   if (!open) return null;
 
-  let flatIndex = -1;
-
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]"
+      className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-[10vh]"
       onClick={() => setOpen(false)}
       data-agent-role="command-palette"
     >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/72 backdrop-blur-md" />
 
-      {/* Palette */}
       <div
-        className="relative w-full max-w-lg mx-4 grid-card rounded-lg overflow-hidden border border-grid-orange/20 animate-in"
-        onClick={(e) => e.stopPropagation()}
+        className="shell-command-surface relative w-full max-w-[620px] overflow-hidden rounded-[24px]"
+        onClick={(event) => event.stopPropagation()}
       >
-        {/* Search input */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-grid-orange/10">
-          <span className="text-grid-orange/50 text-sm">›</span>
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Navigate to..."
-            className="flex-1 bg-transparent text-sm text-white placeholder:text-gray-600 outline-none"
-            data-agent-role="search-input"
-          />
-          <kbd className="text-[9px] text-gray-600 border border-gray-800 rounded px-1.5 py-0.5">
-            ESC
-          </kbd>
+        <div className="absolute inset-0 pointer-events-none shell-grid-overlay opacity-40" />
+        <SectionPattern
+          section="platform"
+          className="opacity-80 [mask-image:linear-gradient(135deg,transparent_8%,black_36%,black_80%,transparent)]"
+          opacity={0.52}
+        />
+        <div className="relative border-b border-[rgba(200,170,130,0.08)] px-5 py-4">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-quaternary)]">
+              Command Palette
+            </span>
+            <kbd className="shell-pill px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-text-tertiary)]">
+              ESC
+            </kbd>
+          </div>
+          <div className="shell-panel-soft flex items-center gap-3 rounded-2xl px-3 py-3">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[var(--color-text-quaternary)]">
+              <circle cx="11" cy="11" r="8" />
+              <path d="M21 21l-4.35-4.35" />
+            </svg>
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setSelectedIndex(0);
+              }}
+              placeholder="Search routes, modules, and surfaces"
+              className="w-full bg-transparent text-[14px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-quaternary)] outline-none"
+              data-agent-role="search-input"
+            />
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-quaternary)]">
+              {filtered.length.toString().padStart(2, "0")}
+            </span>
+          </div>
         </div>
 
-        {/* Results */}
-        <div className="max-h-80 overflow-y-auto py-2">
-          {Object.entries(groupedCommands).map(([section, cmds]) => (
-            <div key={section}>
-              <div className="px-4 py-1.5 text-[9px] text-gray-600 uppercase tracking-[0.2em] font-semibold">
-                {section}
-              </div>
-              {cmds.map((cmd) => {
-                flatIndex++;
-                const isSelected = flatIndex === selectedIndex;
-                const currentIndex = flatIndex;
-                return (
-                  <button
-                    key={cmd.id}
-                    className={`w-full text-left px-4 py-2 flex items-center justify-between transition-colors ${
-                      isSelected
-                        ? "bg-grid-orange/10 text-grid-orange"
-                        : "text-gray-400 hover:bg-gray-900 hover:text-white"
-                    }`}
-                    onClick={() => {
-                      router.push(cmd.href);
-                      setOpen(false);
-                    }}
-                    onMouseEnter={() => setSelectedIndex(currentIndex)}
-                    data-agent-action={`navigate-${cmd.id}`}
-                    data-agent-href={cmd.href}
-                  >
-                    <span className="text-xs">{cmd.label}</span>
-                    <div className="flex items-center gap-2">
-                      {cmd.shortcut && (
-                        <kbd className="text-[9px] text-gray-700 border border-gray-800 rounded px-1 py-0.5">
-                          {cmd.shortcut}
-                        </kbd>
-                      )}
-                      <span className="text-[9px] text-gray-700 font-mono">
-                        {cmd.href}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          ))}
+        <div className="relative max-h-[420px] overflow-y-auto px-3 py-3">
+          {groupedCommands.map(([sectionId, sectionCommands]) => {
+            const section = getSectionById(sectionId);
+
+            return (
+              <section key={sectionId} className="mb-3 last:mb-0">
+                <div className={`shell-section-label px-2 ${section.pixelFont} ${section.gradientTextClass}`}>
+                  <span>{section.label}</span>
+                  <span className="font-mono text-[9px] text-[var(--color-text-quaternary)]">
+                    {section.hintLabel}
+                  </span>
+                </div>
+                <div className="mt-2 space-y-1.5">
+                  {sectionCommands.map((command) => {
+                    const currentIndex = selectedIndexById.get(command.id) ?? 0;
+                    const isSelected = currentIndex === selectedIndex;
+
+                    return (
+                      <button
+                        key={command.id}
+                        className="shell-command-row w-full rounded-2xl px-3 py-3 text-left transition-colors"
+                        data-selected={isSelected ? "true" : "false"}
+                        onClick={() => {
+                          router.push(command.href);
+                          setOpen(false);
+                        }}
+                        onMouseEnter={() => setSelectedIndex(currentIndex)}
+                        data-agent-action={`navigate-${command.id}`}
+                        data-agent-href={command.href}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[13px] ${isSelected ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]"}`}>
+                                {command.label}
+                              </span>
+                              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-quaternary)]">
+                                {section.eyebrow}
+                              </span>
+                            </div>
+                            <div className="mt-1 font-mono text-[11px] text-[var(--color-text-quaternary)]">
+                              {command.href}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {command.shortcut && (
+                              <kbd className="shell-pill px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-text-tertiary)]">
+                                {command.shortcut}
+                              </kbd>
+                            )}
+                            <span className={`h-2 w-2 rounded-full ${section.gradientTextClass}`} style={{ backgroundImage: undefined, background: `linear-gradient(135deg, ${section.accentFrom}, ${section.accentTo})` }} />
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+
           {filtered.length === 0 && (
-            <div className="px-4 py-6 text-center text-xs text-gray-600">
-              No results for &ldquo;{query}&rdquo;
+            <div className="shell-panel-soft rounded-2xl px-4 py-10 text-center">
+              <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-quaternary)]">
+                No matches
+              </div>
+              <div className="mt-2 text-[13px] text-[var(--color-text-secondary)]">
+                No routes or commands matched &ldquo;{query}&rdquo;.
+              </div>
             </div>
           )}
         </div>
 
-        {/* Footer hint */}
-        <div className="px-4 py-2 border-t border-grid-orange/8 flex items-center justify-between text-[9px] text-gray-700">
-          <span>↑↓ navigate · ↵ select · esc close</span>
-          <span className="text-grid-orange/30">⌘K</span>
+        <div className="relative flex items-center justify-between gap-4 border-t border-[rgba(200,170,130,0.08)] px-5 py-3 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-quaternary)]">
+          <span>Arrow Keys Navigate</span>
+          <span>Enter Opens</span>
         </div>
       </div>
     </div>

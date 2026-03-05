@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Button, Textarea, useToast } from "@/components/ui";
+import { Button, Textarea, Skeleton, useToast } from "@/components/ui";
 import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
 
 interface Participant {
@@ -37,12 +37,6 @@ function timeStamp(dateStr: string): string {
   if (diffDays === 0) return time;
   if (diffDays === 1) return `Yesterday ${time}`;
   return `${date.toLocaleDateString()} ${time}`;
-}
-
-function Skeleton({ className = "" }: { className?: string }) {
-  return (
-    <div className={`animate-pulse rounded-lg bg-gray-800 ${className}`} />
-  );
 }
 
 export default function ConversationDetailPage() {
@@ -133,10 +127,11 @@ export default function ConversationDetailPage() {
   return (
     <div className="flex flex-col h-[calc(100vh-0px)]">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-grid-orange/10 px-6 py-4 shrink-0">
+      <div className="flex items-center gap-3 border-b border-[rgba(200,170,130,0.06)] px-6 py-4 shrink-0">
         <button
           onClick={() => router.push("/tokenbook/conversations")}
-          className="p-1 text-gray-500 hover:text-white transition-colors"
+          className="p-1 text-[#4a4035] hover:text-[#ede8e0] transition-colors"
+          data-agent-action="navigate-back"
         >
           <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
             <path
@@ -151,16 +146,16 @@ export default function ConversationDetailPage() {
         {loading ? (
           <Skeleton className="h-5 w-40" />
         ) : conversation ? (
-          <h1 className="text-base font-semibold text-white truncate">
+          <h1 className="text-[15px] font-semibold text-[#ede8e0] truncate font-pixel-circle gradient-text-secondary">
             {conversation.participants.map((p) => p.name).join(", ")}
           </h1>
         ) : (
-          <span className="text-sm text-gray-500">Conversation</span>
+          <span className="text-[13px] text-[#4a4035]">Conversation</span>
         )}
       </div>
 
       {error && (
-        <div className="mx-6 mt-4 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
+        <div className="mx-6 mt-4 rounded-lg border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.06)] px-4 py-3 text-[13px] text-[#EE4444] font-mono">
           {error}
         </div>
       )}
@@ -181,24 +176,24 @@ export default function ConversationDetailPage() {
           </div>
         ) : messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <p className="text-sm text-gray-500">
+            <p className="text-[13px] text-[#4a4035] font-sans">
               No messages yet. Send the first message below.
             </p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
             {messages.map((msg) => (
-              <div key={msg.id} className="flex flex-col gap-0.5">
+              <div key={msg.id} className="flex flex-col gap-0.5" data-agent-role="message" data-agent-value={msg.id}>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-gray-400">
+                  <span className="text-[11px] font-medium text-[#6b6050]">
                     {msg.sender_name}
                   </span>
-                  <span className="text-[10px] text-gray-600">
+                  <span className="text-[10px] text-[#4a4035] font-mono">
                     {timeStamp(msg.created_at)}
                   </span>
                 </div>
-                <div className="rounded-lg bg-gray-900 border border-grid-orange/10 px-4 py-2.5 max-w-xl">
-                  <p className="text-sm text-gray-300 whitespace-pre-wrap">
+                <div className="rounded-lg glass-card px-4 py-2.5 max-w-xl">
+                  <p className="text-[13px] text-[#a09080] font-sans whitespace-pre-wrap">
                     {msg.content}
                   </p>
                 </div>
@@ -210,7 +205,7 @@ export default function ConversationDetailPage() {
       </div>
 
       {/* Message Input */}
-      <div className="border-t border-grid-orange/10 px-6 py-4 shrink-0">
+      <div className="border-t border-[rgba(200,170,130,0.06)] px-6 py-4 shrink-0">
         <div className="flex items-end gap-3">
           <div className="flex-1">
             <Textarea

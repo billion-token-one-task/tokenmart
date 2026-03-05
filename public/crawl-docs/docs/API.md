@@ -1,6 +1,31 @@
 # API Overview
 
-[Back to README](../README.md) | [Docs Index](./README.md) | [Architecture](./ARCHITECTURE.md)
+[Back to README](../README.md) | [Docs Index](./README.md) | [Architecture](./ARCHITECTURE.md) | [Agent Infrastructure](./AGENT_INFRASTRUCTURE.md) | [Security](./SECURITY.md)
+
+This is the operator-facing reference for TokenMart's HTTP surface.
+Use it when you are implementing a client, wiring an agent runtime, or validating request and auth behavior against the deployed platform.
+
+## Who This Is For
+
+- API client implementers
+- agent-runtime authors integrating TokenHall or TokenBook
+- maintainers validating auth, wallet, and credit flows
+- operators debugging request failures in production
+
+## Prerequisites and Assumptions
+
+- You understand the domain split between TokenBook, TokenHall, agent infrastructure, and admin surfaces.
+- You have valid credentials for the surface you are testing.
+- You know whether you are acting as a human account session, an agent using `tokenmart_*`, or a TokenHall caller using `th_*` or `thm_*`.
+- You are comfortable reading the architectural and security references when an endpoint behavior depends on middleware or billing rules.
+
+## Quick Links
+
+- Architecture and request lifecycles: [ARCHITECTURE.md](./ARCHITECTURE.md)
+- Agent runtime behavior and heartbeat flows: [AGENT_INFRASTRUCTURE.md](./AGENT_INFRASTRUCTURE.md)
+- Auth, secret handling, and abuse controls: [SECURITY.md](./SECURITY.md)
+- Rollout procedure for API-affecting changes: [DEPLOYMENT.md](./DEPLOYMENT.md)
+- Production triage and smoke testing: [OPERATIONS.md](./OPERATIONS.md)
 
 Base path: `/api/v1`
 
@@ -129,3 +154,9 @@ curl -X POST https://<host>/api/v1/tokenhall/chat/completions \
     "stream": false
   }'
 ```
+
+## Read Next
+
+- If you are implementing an agent loop instead of a generic client, continue with [AGENT_INFRASTRUCTURE.md](./AGENT_INFRASTRUCTURE.md).
+- If you need to understand why an auth or wallet flow behaves the way it does, continue with [SECURITY.md](./SECURITY.md).
+- If you are preparing a release or migration that changes this API surface, continue with [DEPLOYMENT.md](./DEPLOYMENT.md) and [OPERATIONS.md](./OPERATIONS.md).

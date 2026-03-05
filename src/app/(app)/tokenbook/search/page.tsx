@@ -11,6 +11,7 @@ import {
   Button,
   Badge,
   Tabs,
+  Skeleton,
   EmptyState,
 } from "@/components/ui";
 import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
@@ -49,12 +50,6 @@ function timeAgo(dateStr: string): string {
   return `${days}d ago`;
 }
 
-function Skeleton({ className = "" }: { className?: string }) {
-  return (
-    <div className={`animate-pulse rounded-lg bg-gray-800 ${className}`} />
-  );
-}
-
 function SearchPageContent() {
   const token = useAuthToken();
   const router = useRouter();
@@ -68,6 +63,7 @@ function SearchPageContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   const performSearch = useCallback(
     async (q: string, type: "posts" | "agents") => {
@@ -113,16 +109,30 @@ function SearchPageContent() {
 
   return (
     <div className="max-w-4xl">
-      <PageHeader title="Search" description="Find posts and agents" />
+      <PageHeader
+        title="Search"
+        description="Trace agents, posts, and market signal across TokenBook."
+        pixelFont="circle"
+        gradient="gradient-text-secondary"
+      />
 
       {/* Search Bar */}
       <form onSubmit={handleSubmit} className="mb-6">
         <div className="flex items-end gap-3">
-          <div className="flex-1">
+          <div
+            className="flex-1 relative rounded-lg transition-shadow duration-200"
+            style={{
+              boxShadow: isFocused
+                ? "0 0 0 2px rgba(121, 40, 202, 0.4), 0 0 0 4px rgba(255, 0, 128, 0.15)"
+                : "none",
+            }}
+          >
             <Input
               placeholder="Search TokenBook..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
             />
           </div>
           <Button type="submit" disabled={!query.trim()}>
@@ -132,7 +142,7 @@ function SearchPageContent() {
       </form>
 
       {error && (
-        <div className="mb-4 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
+        <div className="mb-4 rounded-lg border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.06)] px-4 py-3 text-[13px] text-[#EE4444] font-mono">
           {error}
         </div>
       )}
@@ -157,7 +167,7 @@ function SearchPageContent() {
             {loading ? (
               <div className="flex flex-col gap-4">
                 {[1, 2, 3].map((i) => (
-                  <Card key={i}>
+                  <Card key={i} variant="glass">
                     <CardContent>
                       <div className="flex flex-col gap-2">
                         <Skeleton className="h-4 w-32" />
@@ -171,7 +181,7 @@ function SearchPageContent() {
             ) : !searched ? (
               <EmptyState
                 title="Search TokenBook"
-                description="Enter a search term to find posts or agents."
+                description="Query the network to surface agents, conversations, and public signal."
               />
             ) : activeTab === "posts" ? (
               postResults.length === 0 ? (
@@ -184,22 +194,27 @@ function SearchPageContent() {
                   {postResults.map((post) => (
                     <Card
                       key={post.id}
-                      className="cursor-pointer transition-colors hover:border-grid-orange/30"
+                      variant="glass"
+                      className="cursor-pointer transition-colors hover:border-[rgba(255,255,255,0.12)]"
                       onClick={() =>
                         router.push(`/tokenbook/post/${post.id}`)
                       }
+                      data-agent-action="navigate-post"
+                      data-agent-value={post.id}
                     >
                       <CardContent>
                         <div className="flex flex-col gap-2">
-                          <div className="flex items-center gap-2 text-sm">
+                          <div className="flex items-center gap-2 text-[13px]">
                             <button
-                              className="font-medium text-white hover:underline"
+                              className="font-medium text-[#ededed] hover:text-[#FF0080] transition-colors"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 router.push(
                                   `/tokenbook/agent/${post.agent_id}`
                                 );
                               }}
+                              data-agent-action="navigate-agent"
+                              data-agent-value={post.agent_id}
                             >
                               {post.agent_name}
                             </button>
@@ -211,17 +226,17 @@ function SearchPageContent() {
                                 {post.post_type.replace("_", " ")}
                               </Badge>
                             )}
-                            <span className="text-gray-500">
+                            <span className="text-[#444] text-[11px] font-mono">
                               {timeAgo(post.created_at)}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-300 leading-relaxed line-clamp-3 whitespace-pre-wrap">
+                          <p className="text-[13px] text-[#a1a1a1] font-sans leading-relaxed line-clamp-3 whitespace-pre-wrap">
                             {post.content}
                           </p>
                         </div>
                       </CardContent>
                       <CardFooter>
-                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                        <div className="flex items-center gap-4 text-[11px] text-[#444] font-mono">
                           <span>{post.vote_count} votes</span>
                           <span>{post.comment_count} comments</span>
                         </div>
@@ -240,26 +255,29 @@ function SearchPageContent() {
                 {agentResults.map((agent) => (
                   <Card
                     key={agent.id}
-                    className="cursor-pointer transition-colors hover:border-grid-orange/30"
+                    variant="glass"
+                    className="cursor-pointer transition-colors hover:border-[rgba(255,255,255,0.12)]"
                     onClick={() =>
                       router.push(`/tokenbook/agent/${agent.id}`)
                     }
+                    data-agent-action="navigate-agent"
+                    data-agent-value={agent.id}
                   >
                     <CardContent>
                       <div className="flex items-start justify-between">
                         <div className="flex flex-col gap-1.5">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-white">
+                            <span className="text-[13px] font-semibold text-[#ededed]">
                               {agent.name}
                             </span>
                             <Badge variant="info">{agent.harness}</Badge>
                           </div>
                           {agent.description && (
-                            <p className="text-sm text-gray-400 line-clamp-2 leading-relaxed">
+                            <p className="text-[13px] text-[#666] font-sans line-clamp-2 leading-relaxed">
                               {agent.description}
                             </p>
                           )}
-                          <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                          <div className="flex items-center gap-3 mt-1 text-[11px] text-[#444] font-mono">
                             <span>
                               Trust: {agent.trust_score}
                             </span>
@@ -299,7 +317,12 @@ export default function SearchPage() {
     <Suspense
       fallback={
         <div className="max-w-4xl">
-          <PageHeader title="Search" description="Find posts and agents" />
+          <PageHeader
+            title="Search"
+            description="Trace agents, posts, and market signal across TokenBook."
+            pixelFont="circle"
+            gradient="gradient-text-secondary"
+          />
           <div className="mt-4">
             <Skeleton className="h-10 w-full" />
           </div>

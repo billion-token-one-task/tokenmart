@@ -15,6 +15,7 @@ import {
   Modal,
   Tabs,
   EmptyState,
+  Skeleton,
   useToast,
 } from "@/components/ui";
 import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
@@ -35,12 +36,6 @@ interface Bounty {
   required_trust_tier: number;
   created_at: string;
   claims_count?: number;
-}
-
-function Skeleton({ className = "" }: { className?: string }) {
-  return (
-    <div className={`animate-pulse rounded-lg bg-gray-800 ${className}`} />
-  );
 }
 
 const statusTabs = [
@@ -194,7 +189,9 @@ export default function BountiesPage() {
     <div className="max-w-6xl">
       <PageHeader
         title="Bounties"
-        description="Create and manage bounties for agents"
+        description="Post credit-backed work that agents can claim, deliver, and settle."
+        pixelFont="triangle"
+        gradient="gradient-text-tertiary"
         actions={
           <Button onClick={() => setShowCreateModal(true)}>
             Create Bounty
@@ -203,7 +200,7 @@ export default function BountiesPage() {
       />
 
       {error && (
-        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
+        <div className="mb-6 rounded-lg border border-[#C04838]/20 bg-[#C04838]/5 px-4 py-3 text-[13px] text-[#C04838] font-mono">
           {error}
         </div>
       )}
@@ -228,8 +225,8 @@ export default function BountiesPage() {
                 title="No bounties found"
                 description={
                   activeTab === "all"
-                    ? "Create your first bounty to get started"
-                    : `No ${activeTab} bounties`
+                    ? "Publish the first bounty and put credits on the table for the network."
+                    : `No ${activeTab} bounties are currently on the board.`
                 }
                 action={
                   activeTab === "all" ? (
@@ -247,7 +244,8 @@ export default function BountiesPage() {
               {filtered.map((bounty) => (
                 <Card
                   key={bounty.id}
-                  className="cursor-pointer hover:border-grid-orange/30 transition-colors flex flex-col"
+                  variant="glass"
+                  className="cursor-pointer hover:border-[rgba(200,170,130,0.12)] transition-colors flex flex-col"
                   onClick={() => router.push(`/admin/bounties/${bounty.id}`)}
                 >
                   <CardContent className="flex-1">
@@ -266,29 +264,29 @@ export default function BountiesPage() {
                         </Badge>
                       )}
                     </div>
-                    <h3 className="text-sm font-semibold text-white mb-1 line-clamp-2">
+                    <h3 className="text-[13px] font-medium text-[#ede8e0] mb-1 line-clamp-2">
                       {bounty.title}
                     </h3>
                     {bounty.description && (
-                      <p className="text-xs text-gray-500 line-clamp-2 mb-3">
+                      <p className="text-[13px] text-[#6b6050] line-clamp-2 mb-3">
                         {bounty.description}
                       </p>
                     )}
                     <div className="mt-auto pt-2">
-                      <span className="text-lg font-bold text-grid-green">
+                      <span className="text-lg font-semibold font-pixel-triangle gradient-text-tertiary">
                         {bounty.credit_reward}
                       </span>
-                      <span className="text-xs text-gray-500 ml-1">
+                      <span className="text-[13px] text-[#6b6050] ml-1">
                         credits
                       </span>
                     </div>
                   </CardContent>
                   <CardFooter className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500">
+                    <span className="text-[13px] text-[#4a4035]">
                       {new Date(bounty.created_at).toLocaleDateString()}
                     </span>
                     {bounty.claims_count !== undefined && (
-                      <span className="text-xs text-gray-500">
+                      <span className="text-[13px] text-[#4a4035]">
                         {bounty.claims_count} claim
                         {bounty.claims_count !== 1 ? "s" : ""}
                       </span>

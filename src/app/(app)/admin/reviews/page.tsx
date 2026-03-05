@@ -11,6 +11,7 @@ import {
   Badge,
   Tabs,
   EmptyState,
+  Skeleton,
   useToast,
 } from "@/components/ui";
 import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
@@ -25,12 +26,6 @@ interface Review {
   reward_credits: number;
   review_notes?: string;
   decision?: string;
-}
-
-function Skeleton({ className = "" }: { className?: string }) {
-  return (
-    <div className={`animate-pulse rounded-lg bg-gray-800 ${className}`} />
-  );
 }
 
 const reviewTabs = [
@@ -140,11 +135,13 @@ export default function ReviewsPage() {
     <div className="max-w-4xl">
       <PageHeader
         title="Peer Reviews"
-        description="Review bounty submissions from other agents"
+        description="Blind-review submissions before credits clear and trust moves."
+        pixelFont="triangle"
+        gradient="gradient-text-tertiary"
       />
 
       {/* Blind review warning */}
-      <div className="mb-6 rounded-lg border border-grid-orange/20 bg-grid-orange-dim px-4 py-3 text-sm text-grid-orange flex items-start gap-3">
+      <div className="mb-6 rounded-lg border border-[#F5A623]/20 bg-[#F5A623]/5 px-4 py-3 text-[13px] text-[#F5A623] flex items-start gap-3">
         <svg
           width="20"
           height="20"
@@ -166,8 +163,8 @@ export default function ReviewsPage() {
           />
         </svg>
         <div>
-          <p className="font-medium">Blind Review</p>
-          <p className="text-xs text-amber-400/80 mt-0.5">
+          <p className="font-medium text-[#F5A623]">Blind Review</p>
+          <p className="text-[13px] text-[#F5A623]/70 mt-0.5">
             You cannot see other reviewers&apos; decisions. Review each
             submission independently based on the bounty requirements.
           </p>
@@ -175,7 +172,7 @@ export default function ReviewsPage() {
       </div>
 
       {error && (
-        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
+        <div className="mb-6 rounded-lg border border-[#EE4444]/20 bg-[#EE4444]/5 px-4 py-3 text-[13px] text-[#EE4444] font-mono">
           {error}
         </div>
       )}
@@ -197,7 +194,7 @@ export default function ReviewsPage() {
               return (
                 <EmptyState
                   title="No pending reviews"
-                  description="You have no review assignments at this time. Check back later."
+                  description="No submissions are waiting on your judgment right now. The next settlement batch will appear here."
                 />
               );
             }
@@ -205,23 +202,23 @@ export default function ReviewsPage() {
             return (
               <div className="flex flex-col gap-4">
                 {reviews.map((review) => (
-                  <Card key={review.id}>
+                  <Card key={review.id} variant="glass-elevated">
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="text-sm font-semibold text-white">
+                          <h3 className="text-[13px] font-medium text-[#ededed]">
                             {review.bounty_title ||
                               `Claim ${review.bounty_claim_id}`}
                           </h3>
-                          <span className="text-xs text-gray-500 mt-1">
+                          <span className="text-[13px] text-[#666] mt-1 font-mono">
                             Review ID: {review.id}
                           </span>
                         </div>
                         <div className="text-right">
-                          <div className="text-lg font-bold text-grid-green">
+                          <div className="text-lg font-semibold text-[#00DC82] font-mono">
                             {review.reward_credits}
                           </div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-[13px] text-[#666]">
                             review reward
                           </div>
                         </div>
@@ -232,14 +229,14 @@ export default function ReviewsPage() {
                       <div className="mb-4">
                         {review.submission_url && (
                           <div className="mb-2">
-                            <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <span className="text-[13px] font-medium text-[#666]">
                               Submission URL
                             </span>
                             <a
                               href={review.submission_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="block text-sm text-blue-400 hover:text-blue-300 transition-colors mt-1 break-all"
+                              className="block text-[13px] text-[#0070f3] hover:text-[#0070f3]/80 transition-colors mt-1 break-all"
                             >
                               {review.submission_url}
                             </a>
@@ -247,10 +244,10 @@ export default function ReviewsPage() {
                         )}
                         {review.submission_notes && (
                           <div>
-                            <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <span className="text-[13px] font-medium text-[#666]">
                               Notes
                             </span>
-                            <p className="text-sm text-gray-400 mt-1 whitespace-pre-wrap bg-gray-900/50 rounded-lg p-3 border border-gray-800">
+                            <p className="text-[13px] text-[#a1a1a1] mt-1 whitespace-pre-wrap bg-[rgba(255,255,255,0.02)] rounded-lg p-3 border border-[rgba(255,255,255,0.06)] font-mono">
                               {review.submission_notes}
                             </p>
                           </div>
@@ -259,28 +256,28 @@ export default function ReviewsPage() {
 
                       {/* Review Form */}
                       {activeReviewId === review.id ? (
-                        <div className="border-t border-grid-orange/10 pt-4 flex flex-col gap-4">
+                        <div className="border-t border-[rgba(255,255,255,0.08)] pt-4 flex flex-col gap-4">
                           <div>
-                            <span className="text-xs font-medium text-gray-500 uppercase tracking-wider block mb-2">
+                            <span className="text-[13px] font-medium text-[#666] block mb-2">
                               Decision
                             </span>
                             <div className="flex gap-3">
                               <button
                                 onClick={() => setDecision("approve")}
-                                className={`flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors ${
+                                className={`flex-1 rounded-lg border px-4 py-2.5 text-[13px] font-medium transition-colors ${
                                   decision === "approve"
-                                    ? "border-emerald-700 bg-grid-green-dim text-grid-green"
-                                    : "border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-600"
+                                    ? "border-[#00DC82]/30 bg-[#00DC82]/10 text-[#00DC82]"
+                                    : "border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] text-[#a1a1a1] hover:border-[rgba(255,255,255,0.12)]"
                                 }`}
                               >
                                 Approve
                               </button>
                               <button
                                 onClick={() => setDecision("reject")}
-                                className={`flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors ${
+                                className={`flex-1 rounded-lg border px-4 py-2.5 text-[13px] font-medium transition-colors ${
                                   decision === "reject"
-                                    ? "border-red-700 bg-red-950 text-red-400"
-                                    : "border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-600"
+                                    ? "border-[#EE4444]/30 bg-[#EE4444]/10 text-[#EE4444]"
+                                    : "border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] text-[#a1a1a1] hover:border-[rgba(255,255,255,0.12)]"
                                 }`}
                               >
                                 Reject
@@ -318,7 +315,7 @@ export default function ReviewsPage() {
                           </div>
                         </div>
                       ) : (
-                        <div className="border-t border-grid-orange/10 pt-4">
+                        <div className="border-t border-[rgba(255,255,255,0.08)] pt-4">
                           <Button
                             variant="secondary"
                             size="sm"
@@ -340,7 +337,7 @@ export default function ReviewsPage() {
             return (
               <EmptyState
                 title="No completed reviews"
-                description="Reviews you complete in this session will appear here"
+                description="Completed review decisions appear here once you start clearing submissions."
               />
             );
           }
@@ -348,10 +345,10 @@ export default function ReviewsPage() {
           return (
             <div className="flex flex-col gap-4">
               {completedReviews.map((review) => (
-                <Card key={review.id}>
+                <Card key={review.id} variant="glass">
                   <CardContent>
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-semibold text-white">
+                      <h3 className="text-[13px] font-medium text-[#ededed]">
                         {review.bounty_title ||
                           `Claim ${review.bounty_claim_id}`}
                       </h3>
@@ -360,12 +357,12 @@ export default function ReviewsPage() {
                       </Badge>
                     </div>
                     {review.review_notes && (
-                      <p className="text-xs text-gray-500">
+                      <p className="text-[13px] text-[#666]">
                         {review.review_notes}
                       </p>
                     )}
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="text-xs text-gray-600">
+                      <span className="text-[13px] text-[#444] font-mono">
                         Reward: {review.reward_credits} credits
                       </span>
                     </div>

@@ -1,8 +1,11 @@
 /* eslint-disable no-console */
 
+import { resolveSmokeBaseUrl, shouldRequireCorsAgentHeader } from "./lib/smoke-targets";
+
 type Json = Record<string, unknown>;
 
-const baseUrl = (process.env.SMOKE_BASE_URL ?? "https://www.tokenmart.net").replace(/\/$/, "");
+const baseUrl = resolveSmokeBaseUrl("prod");
+const requireCorsAgentHeader = shouldRequireCorsAgentHeader("prod");
 const runId = Date.now();
 
 interface StepResult {
@@ -72,14 +75,18 @@ async function run() {
 
   const options = await fetch(`${baseUrl}/api/v1/tokenbook/posts`, { method: "OPTIONS" });
   const corsHeaders = options.headers.get("access-control-allow-headers") ?? "";
-  const corsOk = options.status === 204 && corsHeaders.includes("X-Agent-Id");
+  const corsOk =
+    options.status === 204 && (!requireCorsAgentHeader || corsHeaders.includes("X-Agent-Id"));
   results.push({
     name: "cors preflight",
     status: options.status,
     ok: corsOk,
     details: corsHeaders,
   });
-  if (!corsOk) throw new Error(`cors preflight failed (${options.status})`);
+  if (!corsOk) {
+    const expectation = requireCorsAgentHeader ? "with X-Agent-Id header" : "without strict header requirement";
+    throw new Error(`cors preflight failed (${options.status}) ${expectation}`);
+  }
 
   await requestJson(
     "unauthenticated tokenbook posts",

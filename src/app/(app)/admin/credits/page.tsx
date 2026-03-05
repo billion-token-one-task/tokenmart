@@ -117,62 +117,72 @@ export default function CreditsPage() {
     <div className="max-w-4xl">
       <PageHeader
         title="Credit Management"
-        description="Grant or deduct credits for agent accounts"
+        description="Issue or claw back TokenMart Credits as the operator of the marketplace."
+        pixelFont="triangle"
+        gradient="gradient-text-tertiary"
       />
 
       {/* Grant Credits Form */}
-      <Card className="mb-8">
-        <CardHeader>
-          <h2 className="text-base font-semibold text-white">Grant Credits</h2>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-4">
-            <Input
-              label="Agent ID"
-              placeholder="Enter agent ID"
-              value={agentId}
-              onChange={(e) => setAgentId(e.target.value)}
-            />
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                label="Amount"
-                type="number"
-                placeholder="100"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                hint="Use negative values to deduct credits"
-              />
-              <Select
-                label="Type"
-                options={typeOptions}
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-              />
-            </div>
-            <Textarea
-              label="Description"
-              placeholder="Reason for granting credits"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-            />
-            <div className="flex justify-end pt-2">
-              <Button
-                onClick={handleGrant}
-                loading={granting}
-                disabled={!agentId.trim() || !amount}
-              >
-                Grant Credits
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="relative rounded-xl mb-8" style={{ isolation: "isolate" }}>
+        <div className="absolute inset-[-1px] rounded-xl -z-10" style={{
+          background: "conic-gradient(from var(--border-angle), #FF4D4D, #F9CB28, #FF4D4D)",
+          animation: "border-rotate 4s linear infinite",
+        }} />
+        <div className="glass-card-elevated rounded-xl">
+          <Card className="border-0 bg-transparent">
+            <CardHeader>
+              <h2 className="text-[15px] font-semibold text-[#ededed] font-pixel-triangle">Grant Credits</h2>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-4">
+                <Input
+                  label="Agent ID"
+                  placeholder="Enter agent ID"
+                  value={agentId}
+                  onChange={(e) => setAgentId(e.target.value)}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="Amount"
+                    type="number"
+                    placeholder="100"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    hint="Use negative values to deduct credits"
+                  />
+                  <Select
+                    label="Type"
+                    options={typeOptions}
+                    value={type}
+                    onChange={(e) => setType(e.target.value)}
+                  />
+                </div>
+                <Textarea
+                  label="Description"
+                  placeholder="Reason for granting credits"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                />
+                <div className="flex justify-end pt-2">
+                  <Button
+                    onClick={handleGrant}
+                    loading={granting}
+                    disabled={!agentId.trim() || !amount}
+                  >
+                    Grant Credits
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       {/* Recent Transactions */}
-      <Card>
+      <Card variant="glass">
         <CardHeader>
-          <h2 className="text-base font-semibold text-white">
+          <h2 className="text-[15px] font-semibold text-[#ededed]">
             Recent Transactions
           </h2>
         </CardHeader>
@@ -181,7 +191,7 @@ export default function CreditsPage() {
             <div className="px-6 py-8">
               <EmptyState
                 title="No transactions yet"
-                description="Credit transactions you create in this session will appear here"
+                description="Manual issuances and deductions will appear here once credits start clearing."
               />
             </div>
           ) : (
@@ -199,14 +209,14 @@ export default function CreditsPage() {
                 {transactions.map((tx, i) => (
                   <tr key={i}>
                     <Td>
-                      <span className="font-medium text-white font-mono text-xs">
+                      <span className="font-medium text-[#ededed] font-mono text-[13px]">
                         {tx.agent_id}
                       </span>
                     </Td>
                     <Td>
                       <span
-                        className={`font-medium ${
-                          tx.amount >= 0 ? "text-grid-green" : "text-red-400"
+                        className={`font-medium font-mono ${
+                          tx.amount >= 0 ? "text-[#00DC82]" : "text-[#EE4444]"
                         }`}
                       >
                         {tx.amount >= 0 ? "+" : ""}
@@ -217,12 +227,12 @@ export default function CreditsPage() {
                       <Badge variant={typeVariant(tx.type)}>{tx.type}</Badge>
                     </Td>
                     <Td>
-                      <span className="text-gray-400 text-xs truncate max-w-[200px] block">
+                      <span className="text-[#a1a1a1] text-[13px] truncate max-w-[200px] block">
                         {tx.description || "--"}
                       </span>
                     </Td>
                     <Td>
-                      <span className="text-gray-500 text-xs">
+                      <span className="text-[#444] text-[13px]">
                         {new Date(tx.created_at).toLocaleString()}
                       </span>
                     </Td>

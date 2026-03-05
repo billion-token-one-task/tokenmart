@@ -13,6 +13,7 @@ import {
   Th,
   Td,
   EmptyState,
+  Skeleton,
 } from "@/components/ui";
 import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
 
@@ -23,12 +24,6 @@ interface ApiKey {
   created_at: string;
   last_used_at: string | null;
   status: string;
-}
-
-function Skeleton({ className = "" }: { className?: string }) {
-  return (
-    <div className={`animate-pulse rounded-lg bg-gray-800 ${className}`} />
-  );
 }
 
 function maskKey(key: string): string {
@@ -105,45 +100,47 @@ export default function KeysPage() {
     <div className="max-w-6xl">
       <PageHeader
         title="API Keys"
-        description="Manage your platform and service API keys"
+        description="Control the credentials that authenticate your account, agents, and TokenHall sessions."
+        pixelFont="square"
+        gradient="gradient-text"
       />
 
       {error && (
-        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
+        <div className="mb-6 bg-[rgba(238,68,68,0.06)] border border-[rgba(238,68,68,0.15)] rounded-xl px-4 py-3 text-[13px] text-[#EE4444] font-mono">
           {error}
         </div>
       )}
 
       {/* Key Types Info Card */}
-      <Card className="mb-6">
+      <Card variant="glass" className="mb-6">
         <CardHeader>
-          <h2 className="text-base font-semibold text-white">Key Types</h2>
+          <h2 className="text-[15px] font-medium text-[#ededed]">Key Types</h2>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="rounded-lg border border-grid-orange/10 bg-gray-950/50 p-4">
+            <div className="rounded-lg border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4">
               <div className="mb-2">
                 <Badge variant="info">tokenmart_</Badge>
               </div>
-              <p className="text-xs text-gray-400 leading-relaxed">
+              <p className="text-[13px] text-[#a1a1a1] leading-relaxed">
                 Platform API keys for authenticating with the TokenMart API.
                 Used for agent operations, bounties, and marketplace actions.
               </p>
             </div>
-            <div className="rounded-lg border border-grid-orange/10 bg-gray-950/50 p-4">
+            <div className="rounded-lg border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4">
               <div className="mb-2">
                 <Badge variant="success">th_</Badge>
               </div>
-              <p className="text-xs text-gray-400 leading-relaxed">
+              <p className="text-[13px] text-[#a1a1a1] leading-relaxed">
                 TokenHall session keys for accessing the TokenHall service
                 layer. Scoped to individual agent sessions.
               </p>
             </div>
-            <div className="rounded-lg border border-grid-orange/10 bg-gray-950/50 p-4">
+            <div className="rounded-lg border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4">
               <div className="mb-2">
                 <Badge variant="warning">thm_</Badge>
               </div>
-              <p className="text-xs text-gray-400 leading-relaxed">
+              <p className="text-[13px] text-[#a1a1a1] leading-relaxed">
                 TokenHall management keys for administrative operations. Used
                 for key rotation, credit management, and service configuration.
               </p>
@@ -154,7 +151,7 @@ export default function KeysPage() {
 
       {/* Keys Table */}
       {loading ? (
-        <Card>
+        <Card variant="glass">
           <CardContent>
             <div className="flex flex-col gap-3">
               <Skeleton className="h-10 w-full" />
@@ -165,11 +162,11 @@ export default function KeysPage() {
           </CardContent>
         </Card>
       ) : keys.length === 0 ? (
-        <Card>
+        <Card variant="glass">
           <CardContent>
             <EmptyState
               title="No API keys found"
-              description="You don't have any API keys yet. Keys are automatically generated when you claim an agent or create a TokenHall session."
+              description="Keys appear when you claim an agent or open TokenHall access. They act as the control plane for identity, spend, and routing."
             />
           </CardContent>
         </Card>
@@ -186,20 +183,20 @@ export default function KeysPage() {
           </THead>
           <TBody>
             {keys.map((key) => (
-              <tr key={key.id} className="hover:bg-gray-900/30 transition-colors">
+              <tr key={key.id} className="hover:bg-[rgba(255,255,255,0.02)] transition-colors">
                 <Td>
-                  <code className="rounded bg-gray-900 px-2 py-1 text-xs font-mono text-gray-300">
+                  <code className="rounded-md bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] px-2.5 py-1 text-[12px] font-mono text-[#a1a1a1]">
                     {maskKey(key.key)}
                   </code>
                 </Td>
                 <Td>{keyTypeBadge(key.type)}</Td>
                 <Td>
-                  <span className="text-sm text-gray-400">
+                  <span className="text-[13px] text-[#a1a1a1]">
                     {formatDate(key.created_at)}
                   </span>
                 </Td>
                 <Td>
-                  <span className="text-sm text-gray-400">
+                  <span className="text-[13px] text-[#a1a1a1]">
                     {formatDate(key.last_used_at)}
                   </span>
                 </Td>

@@ -18,6 +18,7 @@ import {
   Input,
   Select,
   Button,
+  Skeleton,
 } from "@/components/ui";
 import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
 import {
@@ -99,12 +100,6 @@ interface TransferResponse {
   };
 }
 
-function Skeleton({ className = "" }: { className?: string }) {
-  return (
-    <div className={`animate-pulse rounded-lg bg-gray-800 ${className}`} />
-  );
-}
-
 function StatSkeleton() {
   return (
     <div className="flex flex-col gap-2">
@@ -154,9 +149,9 @@ function transferDirectionBadge(
 
 function formatAmount(amount: number): { text: string; color: string } {
   if (amount >= 0) {
-    return { text: `+${amount.toLocaleString()}`, color: "text-grid-green" };
+    return { text: `+${amount.toLocaleString()}`, color: "text-[#00DC82]" };
   }
-  return { text: amount.toLocaleString(), color: "text-red-400" };
+  return { text: amount.toLocaleString(), color: "text-[#EE4444]" };
 }
 
 function formatDate(dateStr: string): string {
@@ -369,23 +364,24 @@ export default function CreditsPage() {
     <div className="max-w-6xl">
       <PageHeader
         title="Credits"
-        description="Track balances, wallet addresses, and transfer credits"
+        description="Track wallet supply, internal transfers, and the credits your agents can route into work, models, and rewards."
+        pixelFont="square"
+        gradient="gradient-text"
       />
 
       {error && (
-        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
+        <div className="mb-6 bg-[rgba(238,68,68,0.06)] border border-[rgba(238,68,68,0.15)] rounded-xl px-4 py-3 text-[13px] text-[#EE4444] font-mono">
           {error}
         </div>
       )}
 
       {missingAgent && (
-        <div className="mb-6 grid-card rounded-lg border-grid-orange/30 px-4 py-3 text-xs text-grid-orange/90">
-          No agent is linked to this account yet. Register an agent to start
-          earning and spending credits.
+        <div className="mb-6 bg-[rgba(245,166,35,0.06)] border border-[rgba(245,166,35,0.15)] rounded-xl px-4 py-3 text-[13px] text-[#F5A623]">
+          No agent wallet is linked to this account yet. Register an agent to start earning, routing, and settling TokenMart Credits.
         </div>
       )}
 
-      <Card className="mb-6">
+      <Card variant="glass" className="mb-6">
         <CardContent>
           <StatGrid>
             {loading ? (
@@ -401,21 +397,29 @@ export default function CreditsPage() {
                   label="Combined Balance"
                   value={credits ? toCreditNumber(credits.balance).toLocaleString() : "--"}
                   changeType="neutral"
+                  gradient
+                  gradientClass="gradient-text font-pixel-square"
                 />
                 <Stat
                   label="Main Wallet"
                   value={credits ? toCreditNumber(credits.main_wallet_balance).toLocaleString() : "--"}
                   changeType="positive"
+                  gradient
+                  gradientClass="gradient-text font-pixel-square"
                 />
                 <Stat
                   label="Sub-Wallets"
                   value={credits ? toCreditNumber(credits.sub_wallet_balance).toLocaleString() : "--"}
                   changeType="neutral"
+                  gradient
+                  gradientClass="gradient-text font-pixel-square"
                 />
                 <Stat
                   label="Total API Spend"
                   value={credits ? toCreditNumber(credits.total_spent).toLocaleString() : "--"}
                   changeType="negative"
+                  gradient
+                  gradientClass="gradient-text font-pixel-square"
                 />
               </>
             )}
@@ -423,9 +427,9 @@ export default function CreditsPage() {
         </CardContent>
       </Card>
 
-      <Card className="mb-6">
+      <Card variant="glass" className="mb-6">
         <CardHeader>
-          <h2 className="text-base font-semibold text-white">Wallet Directory</h2>
+          <h2 className="text-[15px] font-medium text-[#ededed]">Wallet Directory</h2>
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
@@ -437,7 +441,7 @@ export default function CreditsPage() {
           ) : ownedWallets.length === 0 ? (
             <EmptyState
               title="No wallets available"
-              description="Wallets are created automatically when your account and agent wallets are initialized."
+              description="Wallet rails appear automatically once your account and agent identities have been provisioned."
             />
           ) : (
             <Table>
@@ -452,23 +456,31 @@ export default function CreditsPage() {
               </THead>
               <TBody>
                 {ownedWallets.map((wallet) => (
-                  <tr key={wallet.wallet_address} className="hover:bg-gray-900/30 transition-colors">
+                  <tr key={wallet.wallet_address} className="hover:bg-[rgba(255,255,255,0.02)] transition-colors">
                     <Td>
                       <Badge variant={wallet.owner_type === "account" ? "info" : "default"}>
                         {wallet.owner_type === "account" ? "Main" : "Sub"}
                       </Badge>
                     </Td>
                     <Td>
-                      <span className="font-mono text-xs text-gray-300">
+                      <span className="font-mono text-[12px] text-[#a1a1a1]">
                         {wallet.wallet_address}
                       </span>
                     </Td>
-                    <Td>{toCreditNumber(wallet.balance).toLocaleString()}</Td>
-                    <Td className="text-grid-green">+
-                      {toCreditNumber(wallet.total_transferred_in).toLocaleString()}
+                    <Td>
+                      <span className="font-mono tabular-nums text-[#ededed]">
+                        {toCreditNumber(wallet.balance).toLocaleString()}
+                      </span>
                     </Td>
-                    <Td className="text-red-400">-
-                      {toCreditNumber(wallet.total_transferred_out).toLocaleString()}
+                    <Td>
+                      <span className="font-mono tabular-nums text-[#00DC82]">
+                        +{toCreditNumber(wallet.total_transferred_in).toLocaleString()}
+                      </span>
+                    </Td>
+                    <Td>
+                      <span className="font-mono tabular-nums text-[#EE4444]">
+                        -{toCreditNumber(wallet.total_transferred_out).toLocaleString()}
+                      </span>
                     </Td>
                   </tr>
                 ))}
@@ -478,89 +490,101 @@ export default function CreditsPage() {
         </CardContent>
       </Card>
 
-      <Card className="mb-6">
+      {/* Transfer Credits - animated gradient border */}
+      <div className="relative rounded-xl mb-6" style={{ isolation: "isolate" }}>
+        <div
+          className="absolute inset-[-1px] rounded-xl -z-10"
+          style={{
+            background: "conic-gradient(from var(--border-angle), #0070f3, #00DFD8, #0070f3)",
+            animation: "border-rotate 4s linear infinite",
+          }}
+        />
+        <div className="glass-card rounded-xl">
+          <Card className="border-0 bg-transparent">
+            <CardHeader>
+              <h2 className="text-[15px] font-medium text-[#ededed]">Transfer Credits</h2>
+            </CardHeader>
+            <CardContent>
+              <form className="grid grid-cols-1 md:grid-cols-2 gap-4" onSubmit={handleTransfer}>
+                <Select
+                  label="Source Wallet"
+                  value={sourceWalletAddress}
+                  onChange={(event) => setSourceWalletAddress(event.target.value)}
+                  options={
+                    sourceWalletOptions.length > 0
+                      ? sourceWalletOptions
+                      : [{ value: "", label: "No wallets" }]
+                  }
+                  disabled={transfering || sourceWalletOptions.length === 0}
+                />
+
+                <Select
+                  label="Destination Type"
+                  value={destinationMode}
+                  onChange={(event) => {
+                    setDestinationMode(event.target.value as "wallet" | "agent");
+                    setDestinationValue("");
+                  }}
+                  options={[
+                    { value: "wallet", label: "Wallet Address" },
+                    { value: "agent", label: "Agent ID" },
+                  ]}
+                  disabled={transfering}
+                />
+
+                <Input
+                  label={destinationMode === "wallet" ? "Destination Wallet Address" : "Destination Agent ID"}
+                  value={destinationValue}
+                  onChange={(event) => setDestinationValue(event.target.value)}
+                  placeholder={destinationMode === "wallet" ? "tmu_xxx or tma_xxx" : "agent_uuid"}
+                  disabled={transfering}
+                />
+
+                <Input
+                  label="Amount"
+                  type="number"
+                  min="0"
+                  step="0.00000001"
+                  value={amount}
+                  onChange={(event) => setAmount(event.target.value)}
+                  placeholder="10.0"
+                  disabled={transfering}
+                />
+
+                <Input
+                  label="Memo (Optional)"
+                  value={memo}
+                  onChange={(event) => setMemo(event.target.value)}
+                  placeholder="why this transfer is happening"
+                  disabled={transfering}
+                />
+
+                <div className="flex items-end">
+                  <Button type="submit" loading={transfering} disabled={sourceWalletOptions.length === 0} className="w-full">
+                    Send Transfer
+                  </Button>
+                </div>
+              </form>
+
+              {transferError && (
+                <div className="mt-4 rounded-lg border border-[rgba(238,68,68,0.15)] bg-[rgba(238,68,68,0.06)] px-3 py-2 text-[13px] text-[#EE4444]">
+                  {transferError}
+                </div>
+              )}
+
+              {transferSuccess && (
+                <div className="mt-4 rounded-lg border border-[rgba(0,220,130,0.15)] bg-[rgba(0,220,130,0.06)] px-3 py-2 text-[13px] text-[#00DC82]">
+                  {transferSuccess}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      <Card variant="glass" className="mb-6">
         <CardHeader>
-          <h2 className="text-base font-semibold text-white">Transfer Credits</h2>
-        </CardHeader>
-        <CardContent>
-          <form className="grid grid-cols-1 md:grid-cols-2 gap-4" onSubmit={handleTransfer}>
-            <Select
-              label="Source Wallet"
-              value={sourceWalletAddress}
-              onChange={(event) => setSourceWalletAddress(event.target.value)}
-              options={
-                sourceWalletOptions.length > 0
-                  ? sourceWalletOptions
-                  : [{ value: "", label: "No wallets" }]
-              }
-              disabled={transfering || sourceWalletOptions.length === 0}
-            />
-
-            <Select
-              label="Destination Type"
-              value={destinationMode}
-              onChange={(event) => {
-                setDestinationMode(event.target.value as "wallet" | "agent");
-                setDestinationValue("");
-              }}
-              options={[
-                { value: "wallet", label: "Wallet Address" },
-                { value: "agent", label: "Agent ID" },
-              ]}
-              disabled={transfering}
-            />
-
-            <Input
-              label={destinationMode === "wallet" ? "Destination Wallet Address" : "Destination Agent ID"}
-              value={destinationValue}
-              onChange={(event) => setDestinationValue(event.target.value)}
-              placeholder={destinationMode === "wallet" ? "tmu_xxx or tma_xxx" : "agent_uuid"}
-              disabled={transfering}
-            />
-
-            <Input
-              label="Amount"
-              type="number"
-              min="0"
-              step="0.00000001"
-              value={amount}
-              onChange={(event) => setAmount(event.target.value)}
-              placeholder="10.0"
-              disabled={transfering}
-            />
-
-            <Input
-              label="Memo (Optional)"
-              value={memo}
-              onChange={(event) => setMemo(event.target.value)}
-              placeholder="why this transfer is happening"
-              disabled={transfering}
-            />
-
-            <div className="flex items-end">
-              <Button type="submit" loading={transfering} disabled={sourceWalletOptions.length === 0} className="w-full">
-                Send Transfer
-              </Button>
-            </div>
-          </form>
-
-          {transferError && (
-            <div className="mt-4 rounded-lg border border-red-900/30 px-3 py-2 text-xs text-red-400">
-              {transferError}
-            </div>
-          )}
-
-          {transferSuccess && (
-            <div className="mt-4 rounded-lg border border-grid-green/30 px-3 py-2 text-xs text-grid-green">
-              {transferSuccess}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="mb-6">
-        <CardHeader>
-          <h2 className="text-base font-semibold text-white">Recent Wallet Transfers</h2>
+          <h2 className="text-[15px] font-medium text-[#ededed]">Recent Wallet Transfers</h2>
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
@@ -572,7 +596,7 @@ export default function CreditsPage() {
           ) : walletTransfers.length === 0 ? (
             <EmptyState
               title="No wallet transfers yet"
-              description="Transfers between main and sub-wallets will appear here."
+              description="Treasury moves between your main wallet and agent wallets will appear here once funds start moving."
             />
           ) : (
             <Table>
@@ -588,30 +612,30 @@ export default function CreditsPage() {
               </THead>
               <TBody>
                 {walletTransfers.map((transfer) => (
-                  <tr key={transfer.id} className="hover:bg-gray-900/30 transition-colors">
+                  <tr key={transfer.id} className="hover:bg-[rgba(255,255,255,0.02)] transition-colors">
                     <Td>{transferDirectionBadge(transfer, ownedWalletSet)}</Td>
                     <Td>
-                      <span className="font-mono text-sm text-gray-200">
+                      <span className="font-mono text-[13px] tabular-nums text-[#ededed]">
                         {toCreditNumber(transfer.amount).toLocaleString()}
                       </span>
                     </Td>
                     <Td>
-                      <span className="font-mono text-xs text-gray-400">
+                      <span className="font-mono text-[12px] text-[#a1a1a1]">
                         {formatAddress(transfer.from_wallet_address)}
                       </span>
                     </Td>
                     <Td>
-                      <span className="font-mono text-xs text-gray-400">
+                      <span className="font-mono text-[12px] text-[#a1a1a1]">
                         {formatAddress(transfer.to_wallet_address)}
                       </span>
                     </Td>
                     <Td>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-[13px] text-[#666]">
                         {transfer.memo ?? "--"}
                       </span>
                     </Td>
                     <Td>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-[13px] text-[#666]">
                         {formatDate(transfer.created_at)}
                       </span>
                     </Td>
@@ -623,9 +647,9 @@ export default function CreditsPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card variant="glass">
         <CardHeader>
-          <h2 className="text-base font-semibold text-white">
+          <h2 className="text-[15px] font-medium text-[#ededed]">
             Recent Credit Transactions
           </h2>
         </CardHeader>
@@ -665,21 +689,21 @@ export default function CreditsPage() {
                   return (
                     <tr
                       key={tx.id}
-                      className="hover:bg-gray-900/30 transition-colors"
+                      className="hover:bg-[rgba(255,255,255,0.02)] transition-colors"
                     >
                       <Td>{transactionTypeBadge(tx.type)}</Td>
                       <Td>
-                        <span className={`font-mono font-medium ${amountColor}`}>
+                        <span className={`font-mono font-medium tabular-nums ${amountColor}`}>
                           {amountText}
                         </span>
                       </Td>
                       <Td>
-                        <span className="text-sm text-gray-400">
+                        <span className="text-[13px] text-[#a1a1a1]">
                           {tx.description}
                         </span>
                       </Td>
                       <Td>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-[13px] text-[#666]">
                           {formatDate(tx.created_at)}
                         </span>
                       </Td>

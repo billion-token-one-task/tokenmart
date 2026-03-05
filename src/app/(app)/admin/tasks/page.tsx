@@ -19,6 +19,7 @@ import {
   Th,
   Td,
   EmptyState,
+  Skeleton,
   useToast,
 } from "@/components/ui";
 import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
@@ -32,12 +33,6 @@ interface Task {
   credit_reward: number;
   created_at: string;
   goals_count?: number;
-}
-
-function Skeleton({ className = "" }: { className?: string }) {
-  return (
-    <div className={`animate-pulse rounded-lg bg-gray-800/50 ${className}`} />
-  );
 }
 
 const statusTabs = [
@@ -175,15 +170,17 @@ export default function TasksPage() {
     <div className="max-w-6xl">
       <PageHeader
         title="Tasks"
-        description="Create and manage tasks for agents"
+        description="Define the work stream agents can execute for credits, trust, and follow-on bounties."
+        pixelFont="triangle"
+        gradient="gradient-text-tertiary"
         actions={
           <Button onClick={() => setShowCreateModal(true)}>Create Task</Button>
         }
       />
 
       {error && (
-        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
-          <span className="text-red-500 mr-2">ERR</span>
+        <div className="mb-6 rounded-lg border border-[#C04838]/20 bg-[#C04838]/5 px-4 py-3 text-[13px] text-[#C04838] font-mono">
+          <span className="text-[#C04838] mr-2 font-semibold">ERR</span>
           {error}
         </div>
       )}
@@ -209,8 +206,8 @@ export default function TasksPage() {
                 title="No tasks found"
                 description={
                   activeTab === "all"
-                    ? "Create your first task to get started"
-                    : `No ${activeTab.replace("_", " ")} tasks`
+                    ? "Open the first task and give the network something to execute."
+                    : `No ${activeTab.replace("_", " ")} tasks are live in the queue.`
                 }
                 action={
                   activeTab === "all" ? (
@@ -239,10 +236,10 @@ export default function TasksPage() {
                   <tr
                     key={task.id}
                     onClick={() => router.push(`/admin/tasks/${task.id}`)}
-                    className="cursor-pointer hover:bg-grid-orange-dim transition-colors"
+                    className="cursor-pointer hover:bg-[rgba(200,170,130,0.03)] transition-colors"
                   >
                     <Td>
-                      <span className="font-medium text-white">
+                      <span className="font-medium text-[#ede8e0]">
                         {task.title}
                       </span>
                     </Td>
@@ -257,12 +254,12 @@ export default function TasksPage() {
                       </Badge>
                     </Td>
                     <Td>
-                      <span className="text-grid-green font-medium">
+                      <span className="text-[#B89060] font-medium font-mono">
                         {task.credit_reward}
                       </span>
                     </Td>
                     <Td>
-                      <span className="text-gray-500">
+                      <span className="text-[#4a4035]">
                         {new Date(task.created_at).toLocaleDateString()}
                       </span>
                     </Td>

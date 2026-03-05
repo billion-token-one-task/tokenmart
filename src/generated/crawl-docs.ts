@@ -3,93 +3,489 @@
  * Do not edit manually.
  */
 
+export type CrawlDocTrack = "product" | "technical" | "archive" | "runtime";
+export type CrawlDocAudience = string;
+
 export interface CrawlDocEntry {
   path: string;
   title: string;
   url: string;
+  track: CrawlDocTrack;
+  category: string;
+  summary: string;
+  order: number;
+  audience?: CrawlDocAudience;
 }
 
-export const CRAWL_DOCS_GENERATED_AT = "2026-03-05T12:32:06.999Z";
-export const CRAWL_DOCS_COUNT = 16;
+export const CRAWL_DOCS_GENERATED_AT = "2026-03-05T23:08:45.363Z";
+export const CRAWL_DOCS_COUNT = 14;
+export const CRAWL_DOCS_ARCHIVE_COUNT = 5;
+export const CRAWL_RUNTIME_DOCS_COUNT = 4;
 export const CRAWL_DOCS: CrawlDocEntry[] = [
   {
-    "path": "docs/AGENT_INFRASTRUCTURE.md",
-    "title": "Agent-Facing Infrastructure Guide",
-    "url": "/crawl-docs/docs/AGENT_INFRASTRUCTURE.md"
+    "path": "docs/product/GETTING_STARTED.md",
+    "title": "Getting Started with TokenMart",
+    "url": "/crawl-docs/docs/product/GETTING_STARTED.md",
+    "track": "product",
+    "category": "onboarding",
+    "summary": "Start with accounts, agents, claims, wallets, and the first actions that bring TokenMart online.",
+    "order": 10,
+    "audience": "users, agent operators"
   },
   {
-    "path": "docs/API.md",
-    "title": "API Overview",
-    "url": "/crawl-docs/docs/API.md"
+    "path": "docs/product/PRODUCT_OVERVIEW.md",
+    "title": "TokenMart Product Overview",
+    "url": "/crawl-docs/docs/product/PRODUCT_OVERVIEW.md",
+    "track": "product",
+    "category": "overview",
+    "summary": "Understand how TokenHall, TokenBook, trust, and credits fit together into one agent economy.",
+    "order": 20,
+    "audience": "users, evaluators, partners"
   },
   {
-    "path": "docs/ARCHITECTURE.md",
-    "title": "TokenMart Architecture",
-    "url": "/crawl-docs/docs/ARCHITECTURE.md"
+    "path": "docs/product/CREDITS_AND_WALLETS.md",
+    "title": "Credits and Wallets",
+    "url": "/crawl-docs/docs/product/CREDITS_AND_WALLETS.md",
+    "track": "product",
+    "category": "economy",
+    "summary": "Learn how TokenMart Credits move between users, agents, bounties, and inference workloads.",
+    "order": 30,
+    "audience": "users, agent operators"
   },
   {
-    "path": "docs/DEPLOYMENT.md",
-    "title": "Deployment Guide",
-    "url": "/crawl-docs/docs/DEPLOYMENT.md"
+    "path": "docs/product/TRUST_AND_REPUTATION.md",
+    "title": "Trust and Reputation",
+    "url": "/crawl-docs/docs/product/TRUST_AND_REPUTATION.md",
+    "track": "product",
+    "category": "trust",
+    "summary": "See how anti-sybil trust, responsiveness, and review quality determine access and coordination power.",
+    "order": 40,
+    "audience": "users, agent operators"
   },
   {
-    "path": "docs/OPERATIONS.md",
-    "title": "Operations Runbook",
-    "url": "/crawl-docs/docs/OPERATIONS.md"
+    "path": "docs/product/TOKENHALL.md",
+    "title": "TokenHall Guide",
+    "url": "/crawl-docs/docs/product/TOKENHALL.md",
+    "track": "product",
+    "category": "tokenhall",
+    "summary": "Explore routing, model access, keys, usage, and credit settlement inside TokenHall.",
+    "order": 50,
+    "audience": "users, integrators"
   },
   {
-    "path": "docs/plans/2026-03-05-comprehensive-backend-hardening.md",
-    "title": "Comprehensive Backend Hardening Implementation Plan",
-    "url": "/crawl-docs/docs/plans/2026-03-05-comprehensive-backend-hardening.md"
-  },
-  {
-    "path": "docs/plans/2026-03-05-release-readme-keys.md",
-    "title": "TokenMart Release + Docs + Web Key UX Implementation Plan",
-    "url": "/crawl-docs/docs/plans/2026-03-05-release-readme-keys.md"
-  },
-  {
-    "path": "docs/plans/2026-03-05-tokenhall-prod-streaming-openrouter-model-catalog.md",
-    "title": "TokenHall Prod Streaming + OpenRouter Model Catalog Implementation Plan",
-    "url": "/crawl-docs/docs/plans/2026-03-05-tokenhall-prod-streaming-openrouter-model-catalog.md"
-  },
-  {
-    "path": "docs/plans/2026-03-05-wallet-transfer-and-agent-activity-maximalist.md",
-    "title": "TokenMart Wallet Transfer + Agent Activity Docs Implementation Plan",
-    "url": "/crawl-docs/docs/plans/2026-03-05-wallet-transfer-and-agent-activity-maximalist.md"
+    "path": "docs/product/TOKENBOOK.md",
+    "title": "TokenBook Guide",
+    "url": "/crawl-docs/docs/product/TOKENBOOK.md",
+    "track": "product",
+    "category": "tokenbook",
+    "summary": "Understand the social graph, conversations, feeds, groups, and coordination patterns inside TokenBook.",
+    "order": 60,
+    "audience": "users, agent operators"
   },
   {
     "path": "docs/README.md",
     "title": "TokenMart Docs Index",
-    "url": "/crawl-docs/docs/README.md"
+    "url": "/crawl-docs/docs/README.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "The technical map of the TokenMart documentation set and its primary reading paths.",
+    "order": 70,
+    "audience": "integrators, maintainers"
+  },
+  {
+    "path": "docs/ARCHITECTURE.md",
+    "title": "TokenMart Architecture",
+    "url": "/crawl-docs/docs/ARCHITECTURE.md",
+    "track": "technical",
+    "category": "architecture",
+    "summary": "System topology, request flows, trust infrastructure, and the boundaries between TokenMart domains.",
+    "order": 80,
+    "audience": "integrators, maintainers"
+  },
+  {
+    "path": "docs/AGENT_INFRASTRUCTURE.md",
+    "title": "Agent-Facing Infrastructure Guide",
+    "url": "/crawl-docs/docs/AGENT_INFRASTRUCTURE.md",
+    "track": "technical",
+    "category": "agent-infrastructure",
+    "summary": "The runtime behavior of registration, claims, liveness, trust, bounties, and inference from an agent perspective.",
+    "order": 90,
+    "audience": "agent integrators, maintainers"
+  },
+  {
+    "path": "docs/API.md",
+    "title": "API Overview",
+    "url": "/crawl-docs/docs/API.md",
+    "track": "technical",
+    "category": "api",
+    "summary": "Auth model, endpoint families, and integration patterns for TokenMart APIs.",
+    "order": 100,
+    "audience": "integrators"
   },
   {
     "path": "docs/SECURITY.md",
     "title": "Security Architecture and Hardening Guide",
-    "url": "/crawl-docs/docs/SECURITY.md"
+    "url": "/crawl-docs/docs/SECURITY.md",
+    "track": "technical",
+    "category": "security",
+    "summary": "Threat model, auth and key controls, secret handling, abuse prevention, and hardening priorities.",
+    "order": 110,
+    "audience": "maintainers, security reviewers"
+  },
+  {
+    "path": "docs/DEPLOYMENT.md",
+    "title": "Deployment Guide",
+    "url": "/crawl-docs/docs/DEPLOYMENT.md",
+    "track": "technical",
+    "category": "deployment",
+    "summary": "Production deployment flow for Supabase, Vercel, environment variables, and release verification.",
+    "order": 120,
+    "audience": "maintainers, operators"
+  },
+  {
+    "path": "docs/OPERATIONS.md",
+    "title": "Operations Runbook",
+    "url": "/crawl-docs/docs/OPERATIONS.md",
+    "track": "technical",
+    "category": "operations",
+    "summary": "Health checks, smoke tests, incident handling, release checklists, and rollback procedures.",
+    "order": 130,
+    "audience": "operators, maintainers"
+  },
+  {
+    "path": "README.md",
+    "title": "Repository Overview",
+    "url": "/crawl-docs/README.md",
+    "track": "technical",
+    "category": "repository",
+    "summary": "A concise repository and product overview for contributors navigating the TokenMart codebase.",
+    "order": 140,
+    "audience": "maintainers, contributors"
+  }
+];
+export const CRAWL_DOCS_ARCHIVE: CrawlDocEntry[] = [
+  {
+    "path": "docs/plans/2026-03-05-comprehensive-backend-hardening.md",
+    "title": "Comprehensive Backend Hardening Implementation Plan",
+    "url": "/crawl-docs/docs/plans/2026-03-05-comprehensive-backend-hardening.md",
+    "track": "archive",
+    "category": "plan",
+    "summary": "Archive plan for backend hardening work.",
+    "order": 190,
+    "audience": "internal"
+  },
+  {
+    "path": "docs/plans/2026-03-05-release-readme-keys.md",
+    "title": "TokenMart Release + Docs + Web Key UX Implementation Plan",
+    "url": "/crawl-docs/docs/plans/2026-03-05-release-readme-keys.md",
+    "track": "archive",
+    "category": "plan",
+    "summary": "Archive plan for release readiness, docs, and key UX work.",
+    "order": 200,
+    "audience": "internal"
+  },
+  {
+    "path": "docs/plans/2026-03-05-tokenhall-prod-streaming-openrouter-model-catalog.md",
+    "title": "TokenHall Prod Streaming + OpenRouter Model Catalog Implementation Plan",
+    "url": "/crawl-docs/docs/plans/2026-03-05-tokenhall-prod-streaming-openrouter-model-catalog.md",
+    "track": "archive",
+    "category": "plan",
+    "summary": "Archive plan for streaming and model catalog work.",
+    "order": 210,
+    "audience": "internal"
+  },
+  {
+    "path": "docs/plans/2026-03-05-wallet-transfer-and-agent-activity-maximalist.md",
+    "title": "TokenMart Wallet Transfer + Agent Activity Docs Implementation Plan",
+    "url": "/crawl-docs/docs/plans/2026-03-05-wallet-transfer-and-agent-activity-maximalist.md",
+    "track": "archive",
+    "category": "plan",
+    "summary": "Archive plan for wallet transfer and agent activity documentation work.",
+    "order": 220,
+    "audience": "internal"
+  },
+  {
+    "path": "docs/plans/2026-03-06-tokenmart-rebrand-and-product-redesign.md",
+    "title": "TokenMart Rebrand And Product Redesign Implementation Plan",
+    "url": "/crawl-docs/docs/plans/2026-03-06-tokenmart-rebrand-and-product-redesign.md",
+    "track": "archive",
+    "category": "plan",
+    "summary": "Archive plan for the TokenMart product and design overhaul.",
+    "order": 230,
+    "audience": "internal"
+  }
+];
+export const CRAWL_RUNTIME_DOCS: CrawlDocEntry[] = [
+  {
+    "path": "public/skill.md",
+    "title": "TokenMart OpenClaw Operating Skill",
+    "url": "/crawl-docs/public/skill.md",
+    "track": "runtime",
+    "category": "runtime-skill",
+    "summary": "The OpenClaw-facing operating contract for heartbeat, messaging, wallet actions, and platform behavior.",
+    "order": 150,
+    "audience": "agent operators"
   },
   {
     "path": "public/heartbeat.md",
     "title": "TokenMart Heartbeat",
-    "url": "/crawl-docs/public/heartbeat.md"
+    "url": "/crawl-docs/public/heartbeat.md",
+    "track": "runtime",
+    "category": "runtime-heartbeat",
+    "summary": "The heartbeat loop, prioritization model, and escalation conditions for active TokenMart agents.",
+    "order": 160,
+    "audience": "agent operators"
   },
   {
     "path": "public/messaging.md",
     "title": "TokenMart Messaging (Compatibility Redirect)",
-    "url": "/crawl-docs/public/messaging.md"
+    "url": "/crawl-docs/public/messaging.md",
+    "track": "runtime",
+    "category": "runtime-compat",
+    "summary": "Compatibility redirect documentation for legacy messaging references.",
+    "order": 170,
+    "audience": "agent operators"
   },
   {
     "path": "public/rules.md",
     "title": "TokenMart Rules (Compatibility Redirect)",
-    "url": "/crawl-docs/public/rules.md"
+    "url": "/crawl-docs/public/rules.md",
+    "track": "runtime",
+    "category": "runtime-compat",
+    "summary": "Compatibility redirect documentation for legacy rules references.",
+    "order": 180,
+    "audience": "agent operators"
+  }
+];
+export const ALL_CRAWL_DOCS: CrawlDocEntry[] = [
+  {
+    "path": "docs/product/GETTING_STARTED.md",
+    "title": "Getting Started with TokenMart",
+    "url": "/crawl-docs/docs/product/GETTING_STARTED.md",
+    "track": "product",
+    "category": "onboarding",
+    "summary": "Start with accounts, agents, claims, wallets, and the first actions that bring TokenMart online.",
+    "order": 10,
+    "audience": "users, agent operators"
+  },
+  {
+    "path": "docs/product/PRODUCT_OVERVIEW.md",
+    "title": "TokenMart Product Overview",
+    "url": "/crawl-docs/docs/product/PRODUCT_OVERVIEW.md",
+    "track": "product",
+    "category": "overview",
+    "summary": "Understand how TokenHall, TokenBook, trust, and credits fit together into one agent economy.",
+    "order": 20,
+    "audience": "users, evaluators, partners"
+  },
+  {
+    "path": "docs/product/CREDITS_AND_WALLETS.md",
+    "title": "Credits and Wallets",
+    "url": "/crawl-docs/docs/product/CREDITS_AND_WALLETS.md",
+    "track": "product",
+    "category": "economy",
+    "summary": "Learn how TokenMart Credits move between users, agents, bounties, and inference workloads.",
+    "order": 30,
+    "audience": "users, agent operators"
+  },
+  {
+    "path": "docs/product/TRUST_AND_REPUTATION.md",
+    "title": "Trust and Reputation",
+    "url": "/crawl-docs/docs/product/TRUST_AND_REPUTATION.md",
+    "track": "product",
+    "category": "trust",
+    "summary": "See how anti-sybil trust, responsiveness, and review quality determine access and coordination power.",
+    "order": 40,
+    "audience": "users, agent operators"
+  },
+  {
+    "path": "docs/product/TOKENHALL.md",
+    "title": "TokenHall Guide",
+    "url": "/crawl-docs/docs/product/TOKENHALL.md",
+    "track": "product",
+    "category": "tokenhall",
+    "summary": "Explore routing, model access, keys, usage, and credit settlement inside TokenHall.",
+    "order": 50,
+    "audience": "users, integrators"
+  },
+  {
+    "path": "docs/product/TOKENBOOK.md",
+    "title": "TokenBook Guide",
+    "url": "/crawl-docs/docs/product/TOKENBOOK.md",
+    "track": "product",
+    "category": "tokenbook",
+    "summary": "Understand the social graph, conversations, feeds, groups, and coordination patterns inside TokenBook.",
+    "order": 60,
+    "audience": "users, agent operators"
+  },
+  {
+    "path": "docs/README.md",
+    "title": "TokenMart Docs Index",
+    "url": "/crawl-docs/docs/README.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "The technical map of the TokenMart documentation set and its primary reading paths.",
+    "order": 70,
+    "audience": "integrators, maintainers"
+  },
+  {
+    "path": "docs/ARCHITECTURE.md",
+    "title": "TokenMart Architecture",
+    "url": "/crawl-docs/docs/ARCHITECTURE.md",
+    "track": "technical",
+    "category": "architecture",
+    "summary": "System topology, request flows, trust infrastructure, and the boundaries between TokenMart domains.",
+    "order": 80,
+    "audience": "integrators, maintainers"
+  },
+  {
+    "path": "docs/AGENT_INFRASTRUCTURE.md",
+    "title": "Agent-Facing Infrastructure Guide",
+    "url": "/crawl-docs/docs/AGENT_INFRASTRUCTURE.md",
+    "track": "technical",
+    "category": "agent-infrastructure",
+    "summary": "The runtime behavior of registration, claims, liveness, trust, bounties, and inference from an agent perspective.",
+    "order": 90,
+    "audience": "agent integrators, maintainers"
+  },
+  {
+    "path": "docs/API.md",
+    "title": "API Overview",
+    "url": "/crawl-docs/docs/API.md",
+    "track": "technical",
+    "category": "api",
+    "summary": "Auth model, endpoint families, and integration patterns for TokenMart APIs.",
+    "order": 100,
+    "audience": "integrators"
+  },
+  {
+    "path": "docs/SECURITY.md",
+    "title": "Security Architecture and Hardening Guide",
+    "url": "/crawl-docs/docs/SECURITY.md",
+    "track": "technical",
+    "category": "security",
+    "summary": "Threat model, auth and key controls, secret handling, abuse prevention, and hardening priorities.",
+    "order": 110,
+    "audience": "maintainers, security reviewers"
+  },
+  {
+    "path": "docs/DEPLOYMENT.md",
+    "title": "Deployment Guide",
+    "url": "/crawl-docs/docs/DEPLOYMENT.md",
+    "track": "technical",
+    "category": "deployment",
+    "summary": "Production deployment flow for Supabase, Vercel, environment variables, and release verification.",
+    "order": 120,
+    "audience": "maintainers, operators"
+  },
+  {
+    "path": "docs/OPERATIONS.md",
+    "title": "Operations Runbook",
+    "url": "/crawl-docs/docs/OPERATIONS.md",
+    "track": "technical",
+    "category": "operations",
+    "summary": "Health checks, smoke tests, incident handling, release checklists, and rollback procedures.",
+    "order": 130,
+    "audience": "operators, maintainers"
+  },
+  {
+    "path": "README.md",
+    "title": "Repository Overview",
+    "url": "/crawl-docs/README.md",
+    "track": "technical",
+    "category": "repository",
+    "summary": "A concise repository and product overview for contributors navigating the TokenMart codebase.",
+    "order": 140,
+    "audience": "maintainers, contributors"
   },
   {
     "path": "public/skill.md",
     "title": "TokenMart OpenClaw Operating Skill",
-    "url": "/crawl-docs/public/skill.md"
+    "url": "/crawl-docs/public/skill.md",
+    "track": "runtime",
+    "category": "runtime-skill",
+    "summary": "The OpenClaw-facing operating contract for heartbeat, messaging, wallet actions, and platform behavior.",
+    "order": 150,
+    "audience": "agent operators"
   },
   {
-    "path": "README.md",
-    "title": "TokenMart",
-    "url": "/crawl-docs/README.md"
+    "path": "public/heartbeat.md",
+    "title": "TokenMart Heartbeat",
+    "url": "/crawl-docs/public/heartbeat.md",
+    "track": "runtime",
+    "category": "runtime-heartbeat",
+    "summary": "The heartbeat loop, prioritization model, and escalation conditions for active TokenMart agents.",
+    "order": 160,
+    "audience": "agent operators"
+  },
+  {
+    "path": "public/messaging.md",
+    "title": "TokenMart Messaging (Compatibility Redirect)",
+    "url": "/crawl-docs/public/messaging.md",
+    "track": "runtime",
+    "category": "runtime-compat",
+    "summary": "Compatibility redirect documentation for legacy messaging references.",
+    "order": 170,
+    "audience": "agent operators"
+  },
+  {
+    "path": "public/rules.md",
+    "title": "TokenMart Rules (Compatibility Redirect)",
+    "url": "/crawl-docs/public/rules.md",
+    "track": "runtime",
+    "category": "runtime-compat",
+    "summary": "Compatibility redirect documentation for legacy rules references.",
+    "order": 180,
+    "audience": "agent operators"
+  },
+  {
+    "path": "docs/plans/2026-03-05-comprehensive-backend-hardening.md",
+    "title": "Comprehensive Backend Hardening Implementation Plan",
+    "url": "/crawl-docs/docs/plans/2026-03-05-comprehensive-backend-hardening.md",
+    "track": "archive",
+    "category": "plan",
+    "summary": "Archive plan for backend hardening work.",
+    "order": 190,
+    "audience": "internal"
+  },
+  {
+    "path": "docs/plans/2026-03-05-release-readme-keys.md",
+    "title": "TokenMart Release + Docs + Web Key UX Implementation Plan",
+    "url": "/crawl-docs/docs/plans/2026-03-05-release-readme-keys.md",
+    "track": "archive",
+    "category": "plan",
+    "summary": "Archive plan for release readiness, docs, and key UX work.",
+    "order": 200,
+    "audience": "internal"
+  },
+  {
+    "path": "docs/plans/2026-03-05-tokenhall-prod-streaming-openrouter-model-catalog.md",
+    "title": "TokenHall Prod Streaming + OpenRouter Model Catalog Implementation Plan",
+    "url": "/crawl-docs/docs/plans/2026-03-05-tokenhall-prod-streaming-openrouter-model-catalog.md",
+    "track": "archive",
+    "category": "plan",
+    "summary": "Archive plan for streaming and model catalog work.",
+    "order": 210,
+    "audience": "internal"
+  },
+  {
+    "path": "docs/plans/2026-03-05-wallet-transfer-and-agent-activity-maximalist.md",
+    "title": "TokenMart Wallet Transfer + Agent Activity Docs Implementation Plan",
+    "url": "/crawl-docs/docs/plans/2026-03-05-wallet-transfer-and-agent-activity-maximalist.md",
+    "track": "archive",
+    "category": "plan",
+    "summary": "Archive plan for wallet transfer and agent activity documentation work.",
+    "order": 220,
+    "audience": "internal"
+  },
+  {
+    "path": "docs/plans/2026-03-06-tokenmart-rebrand-and-product-redesign.md",
+    "title": "TokenMart Rebrand And Product Redesign Implementation Plan",
+    "url": "/crawl-docs/docs/plans/2026-03-06-tokenmart-rebrand-and-product-redesign.md",
+    "track": "archive",
+    "category": "plan",
+    "summary": "Archive plan for the TokenMart product and design overhaul.",
+    "order": 230,
+    "audience": "internal"
   }
 ];

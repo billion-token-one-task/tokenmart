@@ -1,8 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { PageHeader } from "@/components/page-header";
 import {
   Button,
   Input,
@@ -17,6 +17,7 @@ import {
   Th,
   Td,
   EmptyState,
+  Skeleton,
   useToast,
 } from "@/components/ui";
 import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
@@ -43,12 +44,6 @@ interface Claim {
   submitted_at?: string;
   created_at: string;
   review_status?: string;
-}
-
-function Skeleton({ className = "" }: { className?: string }) {
-  return (
-    <div className={`animate-pulse rounded-lg bg-gray-800 ${className}`} />
-  );
 }
 
 export default function BountyDetailPage() {
@@ -189,9 +184,9 @@ export default function BountyDetailPage() {
   return (
     <div className="max-w-6xl">
       {/* Back link */}
-      <a
+      <Link
         href="/admin/bounties"
-        className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-white transition-colors mb-6"
+        className="inline-flex items-center gap-1.5 text-[13px] text-[#6b6050] hover:text-[#ede8e0] transition-colors mb-6"
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path
@@ -203,10 +198,10 @@ export default function BountyDetailPage() {
           />
         </svg>
         Back to Bounties
-      </a>
+      </Link>
 
       {error && (
-        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
+        <div className="mb-6 rounded-lg border border-[#EE4444]/20 bg-[#EE4444]/5 px-4 py-3 text-[13px] text-[#EE4444] font-mono">
           {error}
         </div>
       )}
@@ -221,7 +216,7 @@ export default function BountyDetailPage() {
       ) : !bounty ? (
         <EmptyState
           title="Bounty not found"
-          description="The bounty you're looking for doesn't exist or has been removed."
+          description="This bounty is unavailable or has already been settled out of the queue."
           action={
             <Button variant="secondary" onClick={() => window.history.back()}>
               Go Back
@@ -231,11 +226,11 @@ export default function BountyDetailPage() {
       ) : (
         <>
           {/* Bounty Info */}
-          <Card className="mb-6">
+          <Card variant="glass" className="mb-6">
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div>
-                  <h1 className="text-xl font-bold text-white">
+                  <h1 className="text-2xl font-semibold tracking-tight font-pixel-triangle gradient-text-tertiary">
                     {bounty.title}
                   </h1>
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -253,10 +248,10 @@ export default function BountyDetailPage() {
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <div className="text-2xl font-bold text-grid-green">
+                  <div className="text-2xl font-semibold font-pixel-triangle gradient-text-tertiary">
                     {bounty.credit_reward}
                   </div>
-                  <div className="text-xs text-gray-500">credits</div>
+                  <div className="text-[13px] text-[#6b6050]">credits</div>
                 </div>
               </div>
             </CardHeader>
@@ -264,31 +259,31 @@ export default function BountyDetailPage() {
               <div className="flex flex-col gap-4">
                 {bounty.description && (
                   <div>
-                    <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                    <h3 className="text-[13px] font-medium text-[#6b6050] mb-1">
                       Description
                     </h3>
-                    <p className="text-sm text-gray-300 whitespace-pre-wrap">
+                    <p className="text-[13px] text-[#a09080] whitespace-pre-wrap">
                       {bounty.description}
                     </p>
                   </div>
                 )}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                    <h3 className="text-[13px] font-medium text-[#6b6050] mb-1">
                       Linked Task
                     </h3>
                     <a
                       href={`/admin/tasks/${bounty.task_id}`}
-                      className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                      className="text-[13px] text-[#0070f3] hover:text-[#0070f3]/80 transition-colors"
                     >
                       View Task
                     </a>
                   </div>
                   <div>
-                    <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                    <h3 className="text-[13px] font-medium text-[#6b6050] mb-1">
                       Created
                     </h3>
-                    <p className="text-sm text-gray-400">
+                    <p className="text-[13px] text-[#a09080]">
                       {new Date(bounty.created_at).toLocaleString()}
                     </p>
                   </div>
@@ -299,14 +294,14 @@ export default function BountyDetailPage() {
 
           {/* Actions */}
           {bounty.status === "open" && (
-            <Card className="mb-6">
+            <Card variant="glass-elevated" className="mb-6">
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-semibold text-white">
+                    <h3 className="text-[13px] font-medium text-[#ede8e0]">
                       Claim this Bounty
                     </h3>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-[13px] text-[#6b6050] mt-1">
                       Claim to start working on this bounty
                     </p>
                   </div>
@@ -319,9 +314,9 @@ export default function BountyDetailPage() {
           )}
 
           {bounty.status === "claimed" && (
-            <Card className="mb-6">
+            <Card variant="glass-elevated" className="mb-6">
               <CardHeader>
-                <h2 className="text-base font-semibold text-white">
+                <h2 className="text-[15px] font-semibold text-[#ede8e0]">
                   Submit Work
                 </h2>
               </CardHeader>
@@ -355,9 +350,9 @@ export default function BountyDetailPage() {
           )}
 
           {/* Claims Table */}
-          <Card className="mb-6">
+          <Card variant="glass" className="mb-6">
             <CardHeader>
-              <h2 className="text-base font-semibold text-white">
+              <h2 className="text-[15px] font-semibold text-[#ede8e0]">
                 Claims ({claims.length})
               </h2>
             </CardHeader>
@@ -366,7 +361,7 @@ export default function BountyDetailPage() {
                 <div className="px-6 py-8">
                   <EmptyState
                     title="No claims yet"
-                    description="No agents have claimed this bounty yet"
+                    description="No agents have staked a claim on this bounty yet."
                   />
                 </div>
               ) : (
@@ -383,7 +378,7 @@ export default function BountyDetailPage() {
                     {claims.map((claim) => (
                       <tr key={claim.id}>
                         <Td>
-                          <span className="font-medium text-white">
+                          <span className="font-medium text-[#ede8e0] font-mono text-[13px]">
                             {claim.agent_name || claim.agent_id}
                           </span>
                         </Td>
@@ -393,7 +388,7 @@ export default function BountyDetailPage() {
                           </Badge>
                         </Td>
                         <Td>
-                          <span className="text-gray-500">
+                          <span className="text-[#6b6050] text-[13px]">
                             {claim.submitted_at
                               ? new Date(
                                   claim.submitted_at
@@ -409,7 +404,7 @@ export default function BountyDetailPage() {
                               {claim.review_status}
                             </Badge>
                           ) : (
-                            <span className="text-gray-600">--</span>
+                            <span className="text-[#444]">--</span>
                           )}
                         </Td>
                       </tr>
@@ -421,9 +416,9 @@ export default function BountyDetailPage() {
           </Card>
 
           {/* Peer Reviews Section */}
-          <Card>
+          <Card variant="glass">
             <CardHeader>
-              <h2 className="text-base font-semibold text-white">
+              <h2 className="text-[15px] font-semibold text-[#ede8e0]">
                 Peer Reviews
               </h2>
             </CardHeader>
@@ -431,7 +426,7 @@ export default function BountyDetailPage() {
               {claims.filter((c) => c.review_status).length === 0 ? (
                 <EmptyState
                   title="No reviews yet"
-                  description="Reviews will appear here once submissions are reviewed by peers"
+                  description="Peer review appears here once submitted work starts clearing."
                 />
               ) : (
                 <div className="flex flex-col gap-3">
@@ -440,10 +435,10 @@ export default function BountyDetailPage() {
                     .map((claim) => (
                       <div
                         key={claim.id}
-                        className="rounded-lg border border-grid-orange/10 bg-gray-950/50 p-4"
+                        className="rounded-lg border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4"
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-white">
+                          <span className="text-[13px] font-medium text-[#ede8e0]">
                             {claim.agent_name || claim.agent_id}
                           </span>
                           <Badge
@@ -459,13 +454,13 @@ export default function BountyDetailPage() {
                             href={claim.submission_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs text-blue-400 hover:text-blue-300 transition-colors break-all"
+                            className="text-[13px] text-[#0070f3] hover:text-[#0070f3]/80 transition-colors break-all"
                           >
                             {claim.submission_url}
                           </a>
                         )}
                         {claim.submission_notes && (
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-[13px] text-[#6b6050] mt-1">
                             {claim.submission_notes}
                           </p>
                         )}

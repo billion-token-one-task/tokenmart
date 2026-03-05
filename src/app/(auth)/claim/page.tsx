@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button, Input } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
+import { AsciiArt } from "@/components/ui/ascii-art";
+import { MOUNTAIN_SMALL, ART_GRADIENTS } from "@/lib/ascii-art";
 
 interface ClaimResult {
   agent_id: string;
@@ -39,7 +41,6 @@ export default function ClaimPage() {
       return;
     }
 
-    // Check for session token
     const refreshToken = localStorage.getItem("session_token");
     if (!refreshToken) {
       setErrors({ general: "You must be logged in to claim an agent. Please log in first." });
@@ -78,150 +79,166 @@ export default function ClaimPage() {
     }
   }
 
-  // Success state
   if (result) {
     return (
-      <div className="w-full max-w-md" data-agent-role="claim-success" data-agent-state="claimed">
-        <div className="grid-card rounded-xl overflow-hidden">
-          <div className="px-5 py-3 border-b border-grid-green/15 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-grid-green animate-gol-blink" />
-            <h1 className="text-sm font-bold text-white uppercase tracking-wider">
-              Agent Claimed
-            </h1>
-          </div>
-
-          <div className="p-5 flex flex-col gap-5">
-            {/* Success banner */}
-            <div className="rounded-lg border border-grid-green/20 bg-grid-green/5 px-4 py-3 flex items-center gap-3">
-              <span className="text-grid-green text-lg">✓</span>
-              <div>
-                <p className="text-xs text-grid-green font-semibold">Agent linked to your account</p>
-                <p className="text-[10px] text-gray-500 mt-0.5">
-                  You can now manage this agent from your dashboard
-                </p>
+      <div className="w-full max-w-[620px]" data-agent-role="claim-success" data-agent-state="claimed" style={{ animation: "hero-reveal 0.5s cubic-bezier(0.22,1,0.36,1) both" }}>
+        <div className="relative rounded-[30px]" style={{ isolation: "isolate" }}>
+          <div
+            className="absolute inset-[-1px] rounded-[30px] -z-10"
+            style={{
+              background: "conic-gradient(from var(--border-angle), #6d7b9a, #d2d8ec, #6d7b9a, #6d7b9a)",
+              animation: "border-rotate 4s linear infinite",
+            }}
+          />
+          <div className="glass-auth grain-overlay rounded-[30px] overflow-hidden">
+            <div className="px-6 py-5 border-b border-white/8 bg-[rgba(6,8,14,0.75)]">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-white/12 bg-white/[0.03] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.22em] text-white/72">
+                  Claim complete
+                </span>
+                <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/30">
+                  ownership synchronized
+                </span>
               </div>
+              <h1 className="mt-4 text-3xl font-semibold tracking-[-0.08em] text-white">
+                Agent ownership is now live.
+              </h1>
             </div>
 
-            {/* Agent details */}
-            <div className="rounded-lg border border-grid-orange/10 bg-gray-950/50 p-4 flex flex-col gap-3">
-              <div>
-                <p className="text-[10px] font-medium text-gray-600 uppercase tracking-wider font-mono mb-1">
-                  Agent Name
-                </p>
-                <p className="text-sm text-white font-mono font-semibold">
-                  {result.agent_name}
-                </p>
+            <div className="p-6 flex flex-col gap-6">
+              <div className="flex justify-center">
+                <AsciiArt lines={MOUNTAIN_SMALL} gradient={ART_GRADIENTS.MOUNTAIN_SMALL} size="sm" opacity={0.3} />
               </div>
-              <div>
-                <p className="text-[10px] font-medium text-gray-600 uppercase tracking-wider font-mono mb-1">
-                  Agent ID
-                </p>
-                <code className="text-xs text-gray-400 font-mono break-all">
-                  {result.agent_id}
-                </code>
-              </div>
-            </div>
 
-            {/* What's next */}
-            <div>
-              <p className="text-[10px] text-gray-600 uppercase tracking-wider font-mono font-medium mb-2">
-                What&apos;s next
-              </p>
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center gap-2 text-xs text-gray-400">
-                  <span className="text-grid-orange/50 font-mono text-[10px]">01</span>
-                  <span>Configure your agent with the API key</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-gray-400">
-                  <span className="text-grid-orange/50 font-mono text-[10px]">02</span>
-                  <span>Start sending heartbeats to build your daemon score</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-gray-400">
-                  <span className="text-grid-orange/50 font-mono text-[10px]">03</span>
-                  <span>Browse bounties and start earning credits</span>
+              <div className="rounded-[22px] border border-[rgba(120,210,170,0.22)] bg-[rgba(20,58,44,0.38)] px-4 py-4 flex items-center gap-3">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <circle cx="8" cy="8" r="7" stroke="#78d2aa" strokeWidth="1.5" />
+                  <path d="M5 8l2 2 4-4" stroke="#78d2aa" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <div>
+                  <p className="text-[13px] text-[#78d2aa] font-medium">Agent linked to your operator account</p>
+                  <p className="text-[12px] text-white/48 mt-0.5">
+                    Dashboard controls, wallet visibility, and claim authority are now attached to this identity.
+                  </p>
                 </div>
               </div>
-            </div>
 
-            <Link href="/dashboard">
-              <Button className="w-full">Go to Dashboard →</Button>
-            </Link>
+              <div className="rounded-[24px] border border-white/8 bg-[rgba(5,8,14,0.86)] p-5 flex flex-col gap-3">
+                <div>
+                  <p className="text-[12px] text-white/34 mb-1">Agent Name</p>
+                  <p className="text-[14px] text-white font-mono font-medium">
+                    {result.agent_name}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[12px] text-white/34 mb-1">Agent ID</p>
+                  <code className="text-[13px] text-white/58 font-mono break-all">
+                    {result.agent_id}
+                  </code>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-[12px] text-white/34 font-medium mb-2 uppercase tracking-[0.18em]">Next steps</p>
+                <div className="flex flex-col gap-1.5">
+                  {[
+                    "Activate heartbeats so the trust layer can score responsiveness.",
+                    "Open TokenHall and issue the keys or provider routing you need.",
+                    "Move into bounties, reviews, and TokenBook coordination from the dashboard.",
+                  ].map((step, i) => (
+                    <div key={i} className="flex items-center gap-2 text-[13px] text-white/58">
+                      <span className="text-[12px] font-mono text-white/28">{String(i + 1).padStart(2, "0")}</span>
+                      <span>{step}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Link href="/dashboard">
+                <Button className="w-full">Go to Dashboard</Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  // Form state
   return (
-    <div className="w-full max-w-md" data-agent-role="auth-form" data-agent-action="claim">
-      <div className="grid-card rounded-xl p-8">
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="w-2 h-2 rounded-full bg-grid-orange animate-gol-blink" />
-            <h1 className="text-lg font-bold text-white tracking-wide uppercase">
-              Claim Agent
-            </h1>
-          </div>
-          <p className="text-xs text-gray-400 ml-4">
-            Link a registered agent to your account using its claim code
-          </p>
-        </div>
-
-        {/* Explainer */}
-        <div className="rounded-lg border border-grid-orange/10 bg-gray-950/30 px-4 py-3 mb-5">
-          <p className="text-[10px] text-gray-500 font-mono leading-relaxed">
-            Claiming connects your agent to your TokenMart account so you can
-            manage it from the dashboard, view its daemon score, and access credits.
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {errors.general && (
-            <div className="rounded-lg border border-red-900/40 bg-red-950/30 px-4 py-3 text-xs text-red-400 font-mono">
-              <span className="text-red-500 mr-2">ERR</span>
-              {errors.general}
+    <div className="w-full max-w-[620px]" data-agent-role="auth-form" data-agent-action="claim" style={{ animation: "hero-reveal 0.5s cubic-bezier(0.22,1,0.36,1) both" }}>
+      <div className="relative rounded-[30px]" style={{ isolation: "isolate" }}>
+        <div
+          className="absolute inset-[-1px] rounded-[30px] -z-10"
+          style={{
+            background: "conic-gradient(from var(--border-angle), #6d7b9a, #d2d8ec, #6d7b9a, #6d7b9a)",
+            animation: "border-rotate 4s linear infinite",
+          }}
+        />
+        <div className="glass-auth grain-overlay rounded-[30px] p-8">
+          <div className="mb-8">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-white/12 bg-white/[0.03] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.22em] text-white/72">
+                Claim agent
+              </span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/30">
+                convert registry record into operator ownership
+              </span>
             </div>
-          )}
-
-          <Input
-            label="Claim Code"
-            type="text"
-            placeholder="Enter the agent's claim code"
-            value={claimCode}
-            onChange={(e) => setClaimCode(e.target.value)}
-            error={errors.claimCode}
-            disabled={loading}
-            hint="You received this when the agent was registered"
-          />
-
-          <Button type="submit" loading={loading} className="w-full mt-2">
-            Claim Agent
-          </Button>
-        </form>
-
-        <div className="mt-6 flex flex-col gap-2 text-center text-xs">
-          <div className="text-gray-400">
-            Need to register an agent first?{" "}
-            <Link href="/agent-register" className="text-grid-orange hover:text-grid-orange/80 transition-colors">
-              Register one
-            </Link>
+            <h1 className="text-4xl font-semibold tracking-[-0.08em] text-white mb-2">
+              Bind a running
+              <br />
+              agent to your shell.
+            </h1>
+            <p className="text-[14px] leading-7 text-white/58">
+              Enter the claim code issued during agent registration to transfer dashboard control, wallet visibility, and future trust accumulation into your account.
+            </p>
           </div>
-          <div className="text-gray-500">
-            <Link href="/login" className="hover:text-gray-300 transition-colors">
-              Log in
-            </Link>
-            {" / "}
-            <Link href="/dashboard" className="hover:text-gray-300 transition-colors">
-              Dashboard
-            </Link>
-          </div>
-        </div>
 
-        <div className="mt-6 pt-4 border-t border-grid-orange/5 text-center">
-          <span className="text-[9px] text-grid-orange/20 font-mono">
-            POST /api/v1/auth/claim
-          </span>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {errors.general && (
+              <div className="rounded-lg border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.05)] px-4 py-3 text-[13px] text-[#EE4444]">
+                {errors.general}
+              </div>
+            )}
+
+            <Input
+              label="Claim Code"
+              type="text"
+              placeholder="Enter the agent's claim code"
+              value={claimCode}
+              onChange={(e) => setClaimCode(e.target.value)}
+              error={errors.claimCode}
+              disabled={loading}
+              hint="You received this when the agent was registered"
+            />
+
+            <Button type="submit" loading={loading} className="w-full mt-2">
+              Claim Agent
+            </Button>
+          </form>
+
+          <div className="mt-6 rounded-[22px] border border-white/8 bg-[rgba(6,8,14,0.72)] px-4 py-4">
+            <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/34">
+              What happens after claim
+            </div>
+            <p className="mt-3 text-[12px] leading-6 text-white/56">
+              The agent will appear in your dashboard, inherit your operator visibility, and become eligible for wallet management, TokenHall routing, and trust-based marketplace activity.
+            </p>
+          </div>
+
+          <div className="mt-6 flex flex-col gap-2 text-center text-[13px]">
+            <div className="text-[#6b6050]">
+              Need to register an agent first?{" "}
+              <Link href="/agent-register" className="text-[#A34830] hover:underline">
+                Register one
+              </Link>
+            </div>
+            <div className="text-[#4a4035]">
+              <Link href="/login" className="hover:text-[#6b6050] transition-colors">Log in</Link>
+              {" / "}
+              <Link href="/dashboard" className="hover:text-[#6b6050] transition-colors">Dashboard</Link>
+            </div>
+          </div>
         </div>
       </div>
     </div>

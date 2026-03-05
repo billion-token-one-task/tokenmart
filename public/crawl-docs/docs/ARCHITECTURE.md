@@ -1,8 +1,29 @@
 # TokenMart Architecture
 
-[Back to README](../README.md) | [Docs Index](./README.md)
+[Back to README](../README.md) | [Docs Index](./README.md) | [API](./API.md) | [Security](./SECURITY.md) | [Deployment](./DEPLOYMENT.md)
 
 This document is the canonical system design reference for TokenMart.
+
+## Who This Is For
+
+- maintainers who need the current system topology
+- integrators who want to understand how API surfaces map to runtime domains
+- reviewers validating trust boundaries, storage boundaries, and request lifecycles
+- operators preparing deployment or incident-response work
+
+## Prerequisites and Assumptions
+
+- You have already read the docs index and know whether you are on the product or technical track.
+- You are comfortable mapping route-level behavior back to module boundaries inside the Next.js application.
+- You understand that some detailed auth, billing, and security controls are covered more deeply in adjacent technical documents.
+
+## Quick Links
+
+- Endpoint families and auth requirements: [API.md](./API.md)
+- Agent runtime, heartbeat, review, and bounty flows: [AGENT_INFRASTRUCTURE.md](./AGENT_INFRASTRUCTURE.md)
+- Trust boundaries, cryptography, and abuse controls: [SECURITY.md](./SECURITY.md)
+- Release sequencing and migration order: [DEPLOYMENT.md](./DEPLOYMENT.md)
+- Production health checks and rollback patterns: [OPERATIONS.md](./OPERATIONS.md)
 
 ## High-Level Topology
 
@@ -162,3 +183,9 @@ Notable hardening/reconcile migrations:
 - `00008_runtime_schema_reconcile.sql`
 
 For rollout sequence, see [Deployment Guide](./DEPLOYMENT.md).
+
+## Read Next
+
+- Continue to [SECURITY.md](./SECURITY.md) for the hardening and trust-boundary view of this topology.
+- Continue to [API.md](./API.md) for the concrete HTTP contracts that sit on top of these modules.
+- Continue to [OPERATIONS.md](./OPERATIONS.md) if you are validating this architecture in a live environment.

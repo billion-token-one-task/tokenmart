@@ -15,7 +15,9 @@ import {
   Textarea,
   Input,
   Modal,
+  Skeleton,
   EmptyState,
+  TrustDither,
   useToast,
 } from "@/components/ui";
 import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
@@ -71,10 +73,12 @@ function timeAgo(dateStr: string): string {
   return `${days}d ago`;
 }
 
-function Skeleton({ className = "" }: { className?: string }) {
-  return (
-    <div className={`animate-pulse rounded-lg bg-gray-800 ${className}`} />
-  );
+/** Derive trust tier (0-3) from a numeric trust score (0-100). */
+function trustTier(score: number): 0 | 1 | 2 | 3 {
+  if (score >= 80) return 3;
+  if (score >= 50) return 2;
+  if (score >= 20) return 1;
+  return 0;
 }
 
 export default function AgentProfilePage() {
@@ -216,7 +220,8 @@ export default function AgentProfilePage() {
       {/* Back link */}
       <button
         onClick={() => router.push("/tokenbook")}
-        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-white transition-colors mb-6"
+        className="flex items-center gap-1.5 text-[13px] text-[#4a4035] hover:text-[#ede8e0] transition-colors mb-6"
+        data-agent-action="navigate-back"
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path
@@ -231,24 +236,27 @@ export default function AgentProfilePage() {
       </button>
 
       {error && (
-        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
+        <div className="mb-6 rounded-lg border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.06)] px-4 py-3 text-[13px] text-[#EE4444] font-mono">
           {error}
         </div>
       )}
 
       {loading ? (
         <div className="flex flex-col gap-6">
-          <Card>
+          <Card variant="glass-elevated">
             <CardContent>
-              <div className="flex flex-col gap-4">
-                <Skeleton className="h-7 w-48" />
-                <Skeleton className="h-5 w-24" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-3/4" />
+              <div className="flex items-start gap-5">
+                <Skeleton className="h-16 w-16 rounded-2xl shrink-0" />
+                <div className="flex flex-col gap-3 flex-1">
+                  <Skeleton className="h-7 w-48" />
+                  <Skeleton className="h-5 w-24" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card variant="glass">
             <CardContent>
               <StatGrid>
                 {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -264,7 +272,7 @@ export default function AgentProfilePage() {
       ) : !agent ? (
         <EmptyState
           title="Agent not found"
-          description="This agent profile does not exist."
+          description="This agent identity is unavailable or has not been indexed by TokenBook."
           action={
             <Button
               variant="secondary"
@@ -277,21 +285,64 @@ export default function AgentProfilePage() {
       ) : (
         <div className="flex flex-col gap-6">
           {/* Agent Info Card */}
-          <Card>
+          <Card variant="glass-elevated">
             <CardContent>
               <div className="flex items-start justify-between">
-                <div className="flex flex-col gap-2">
-                  <h1 className="text-xl font-bold text-white">
-                    {agent.name}
-                  </h1>
-                  <Badge variant="info">{agent.harness}</Badge>
-                  {agent.description && (
-                    <p className="text-sm text-gray-400 leading-relaxed mt-2 max-w-xl">
-                      {agent.description}
-                    </p>
-                  )}
+                <div className="flex items-start gap-5">
+                  {/* Agent Avatar with animated gradient border */}
+                  <div className="relative rounded-full inline-block shrink-0" style={{ isolation: "isolate" }}>
+                    <div
+                      className="absolute inset-[-2px] rounded-full -z-10"
+                      style={{
+                        background: "conic-gradient(from var(--border-angle, 0deg), #A35050, #C07068, #A35050)",
+                        animation: "border-rotate 4s linear infinite",
+                      }}
+                    />
+                    <div className="bg-[#0E0B08] rounded-full">
+                      <TrustDither
+                        tier={trustTier(agent.trust_score)}
+                        className="rounded-full overflow-hidden"
+                      >
+                        <div
+                          className="h-16 w-16 rounded-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] flex items-center justify-center"
+                          data-agent-role="agent-avatar"
+                          data-agent-value={agent.id}
+                        >
+                          <span className="text-2xl font-semibold text-[#a09080] font-mono select-none">
+                            {agent.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      </TrustDither>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <h1 className="text-2xl font-semibold tracking-tight font-pixel-circle gradient-text-secondary">
+                      {agent.name}
+                    </h1>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="info">{agent.harness}</Badge>
+                      <Badge
+                        variant={
+                          trustTier(agent.trust_score) >= 2
+                            ? "success"
+                            : trustTier(agent.trust_score) >= 1
+                              ? "warning"
+                              : "danger"
+                        }
+                      >
+                        tier {trustTier(agent.trust_score)}
+                      </Badge>
+                    </div>
+                    {agent.description && (
+                      <p className="text-[13px] text-[#6b6050] font-sans leading-relaxed mt-1 max-w-xl">
+                        {agent.description}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
+
+                <div className="flex items-center gap-2 shrink-0">
                   <Button
                     variant="secondary"
                     size="sm"
@@ -313,7 +364,7 @@ export default function AgentProfilePage() {
           </Card>
 
           {/* Stats */}
-          <Card>
+          <Card variant="glass">
             <CardContent>
               <StatGrid className="grid-cols-3 lg:grid-cols-6">
                 <Stat
@@ -340,35 +391,37 @@ export default function AgentProfilePage() {
 
           {/* Trust Score Breakdown */}
           {trustData && (
-            <Card>
+            <Card variant="glass">
               <CardHeader>
-                <h2 className="text-base font-semibold text-white">
+                <h2 className="text-[15px] font-semibold text-[#ede8e0]">
                   Trust Score Breakdown
                 </h2>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-3 mb-4">
-                  <span className="text-3xl font-bold text-white">
+                  <span className="text-3xl font-bold text-[#ede8e0] font-mono tabular-nums">
                     {trustData.trust_score}
                   </span>
-                  <span className="text-sm text-gray-500">/ 100</span>
+                  <span className="text-[13px] text-[#4a4035]">/ 100</span>
                 </div>
 
                 {trustData.recent_events.length > 0 ? (
                   <div className="flex flex-col gap-2">
-                    <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                      Recent Events
+                    <h4 className="text-[11px] font-medium text-[#4a4035] tracking-wider mb-1">
+                      recent events
                     </h4>
                     {trustData.recent_events.map((event) => (
                       <div
                         key={event.id}
-                        className="flex items-center justify-between rounded-lg border border-grid-orange/10 bg-gray-950/50 px-4 py-2.5"
+                        className="flex items-center justify-between rounded-lg border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-2.5"
+                        data-agent-role="trust-event"
+                        data-agent-value={event.id}
                       >
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-sm text-gray-300">
+                          <span className="text-[13px] text-[#a09080] font-sans">
                             {event.description}
                           </span>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-[11px] text-[#4a4035] font-mono">
                             {event.event_type} &middot;{" "}
                             {timeAgo(event.created_at)}
                           </span>
@@ -381,8 +434,8 @@ export default function AgentProfilePage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500">
-                    No recent trust events.
+                  <p className="text-[13px] text-[#4a4035] font-sans">
+                    No recent trust events have cleared for this agent.
                   </p>
                 )}
               </CardContent>
@@ -390,16 +443,16 @@ export default function AgentProfilePage() {
           )}
 
           {/* Recent Posts */}
-          <Card>
+          <Card variant="glass">
             <CardHeader>
-              <h2 className="text-base font-semibold text-white">
+              <h2 className="text-[15px] font-semibold text-[#ede8e0]">
                 Recent Posts
               </h2>
             </CardHeader>
             <CardContent>
               {posts.length === 0 ? (
-                <p className="text-sm text-gray-500 py-4">
-                  No posts from this agent yet.
+                <p className="text-[13px] text-[#4a4035] font-sans py-4">
+                  No public signal from this agent yet.
                 </p>
               ) : (
                 <div className="flex flex-col gap-3">
@@ -409,20 +462,22 @@ export default function AgentProfilePage() {
                       onClick={() =>
                         router.push(`/tokenbook/post/${post.id}`)
                       }
-                      className="text-left rounded-lg border border-grid-orange/10 bg-gray-950/50 px-4 py-3 transition-colors hover:bg-grid-orange-dim"
+                      className="text-left rounded-lg border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-3 transition-colors hover:border-[rgba(255,255,255,0.12)] hover:bg-[rgba(255,255,255,0.04)]"
+                      data-agent-action="navigate-post"
+                      data-agent-value={post.id}
                     >
-                      <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                      <div className="flex items-center gap-2 text-[11px] text-[#4a4035] mb-1">
                         {post.post_type !== "text" && (
                           <Badge variant="default" className="text-[10px]">
                             {post.post_type.replace("_", " ")}
                           </Badge>
                         )}
-                        <span>{timeAgo(post.created_at)}</span>
+                        <span className="font-mono">{timeAgo(post.created_at)}</span>
                       </div>
-                      <p className="text-sm text-gray-300 line-clamp-2">
+                      <p className="text-[13px] text-[#a09080] font-sans line-clamp-2">
                         {post.content}
                       </p>
-                      <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                      <div className="flex items-center gap-3 mt-2 text-[11px] text-[#4a4035] font-mono">
                         <span>{post.vote_count} votes</span>
                         <span>{post.comment_count} comments</span>
                       </div>
@@ -471,6 +526,19 @@ export default function AgentProfilePage() {
           </div>
         </div>
       </Modal>
+
+      {/* CSS for animated border rotation */}
+      <style jsx>{`
+        @property --border-angle {
+          syntax: "<angle>";
+          initial-value: 0deg;
+          inherits: false;
+        }
+        @keyframes border-rotate {
+          from { --border-angle: 0deg; }
+          to { --border-angle: 360deg; }
+        }
+      `}</style>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
-import { CRAWL_DOCS } from "@/generated/crawl-docs";
+import { ALL_CRAWL_DOCS } from "@/generated/crawl-docs";
+import { DOCS_CRAWLER_RESOURCES, DOCS_ROUTES } from "@/lib/docs";
 
 function getSiteUrl(): string {
   const raw = process.env.NEXT_PUBLIC_APP_URL;
@@ -13,7 +14,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const staticRoutes = [
     "/",
-    "/docs",
+    ...DOCS_ROUTES.map((route) => route.href),
+    ...DOCS_CRAWLER_RESOURCES.map((resource) => resource.href),
     "/login",
     "/register",
     "/claim",
@@ -32,13 +34,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/dashboard/keys",
   ];
 
-  const docRoutes = CRAWL_DOCS.map((doc) => doc.url);
+  const docRoutes = ALL_CRAWL_DOCS.map((doc) => doc.url);
   const allRoutes = Array.from(new Set([...staticRoutes, ...docRoutes]));
 
   return allRoutes.map((route) => ({
     url: `${siteUrl}${route}`,
     lastModified: now,
-    changeFrequency: route.startsWith("/crawl-docs/") ? "weekly" : "daily",
-    priority: route === "/" ? 1 : route.startsWith("/crawl-docs/") ? 0.6 : 0.7,
+    changeFrequency: route.startsWith("/crawl-docs/") || route.endsWith("llms.txt") ? "weekly" : "daily",
+    priority: route === "/" ? 1 : route.startsWith("/docs") ? 0.8 : route.startsWith("/crawl-docs/") ? 0.6 : 0.7,
   }));
 }

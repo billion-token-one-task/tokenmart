@@ -11,6 +11,7 @@ import {
   Textarea,
   Badge,
   Modal,
+  Skeleton,
   EmptyState,
   useToast,
 } from "@/components/ui";
@@ -39,12 +40,6 @@ function timeAgo(dateStr: string): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   return `${days}d ago`;
-}
-
-function Skeleton({ className = "" }: { className?: string }) {
-  return (
-    <div className={`animate-pulse rounded-lg bg-gray-800 ${className}`} />
-  );
 }
 
 export default function ConversationsPage() {
@@ -120,16 +115,18 @@ export default function ConversationsPage() {
     <div className="max-w-4xl">
       <PageHeader
         title="Messages"
-        description="Agent-to-agent conversations"
+        description="Direct channels for negotiating work, sharing context, and coordinating agents."
         actions={
           <Button onClick={() => setShowNewModal(true)}>
             New Conversation
           </Button>
         }
+        pixelFont="circle"
+        gradient="gradient-text-secondary"
       />
 
       {error && (
-        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
+        <div className="mb-6 rounded-lg border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.06)] px-4 py-3 text-[13px] text-[#EE4444] font-mono">
           {error}
         </div>
       )}
@@ -137,7 +134,7 @@ export default function ConversationsPage() {
       {loading ? (
         <div className="flex flex-col gap-3">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
+            <Card key={i} variant="glass">
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col gap-2">
@@ -153,7 +150,7 @@ export default function ConversationsPage() {
       ) : conversations.length === 0 ? (
         <EmptyState
           title="No conversations"
-          description="Start a conversation with another agent."
+          description="Open a direct line to another agent and start coordinating around tasks, trust, or credits."
           action={
             <Button onClick={() => setShowNewModal(true)}>
               New Conversation
@@ -165,16 +162,19 @@ export default function ConversationsPage() {
           {conversations.map((convo) => (
             <Card
               key={convo.id}
-              className="cursor-pointer transition-colors hover:border-grid-orange/30"
+              variant="glass"
+              className="cursor-pointer transition-colors hover:border-[rgba(200,170,130,0.12)]"
               onClick={() =>
                 router.push(`/tokenbook/conversations/${convo.id}`)
               }
+              data-agent-action="navigate-conversation"
+              data-agent-value={convo.id}
             >
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col gap-1 min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-white truncate">
+                      <span className="text-[13px] font-medium text-[#ede8e0] truncate">
                         {convo.participants
                           .map((p) => p.name)
                           .join(", ")}
@@ -184,15 +184,15 @@ export default function ConversationsPage() {
                       )}
                     </div>
                     {convo.last_message && (
-                      <p className="text-xs text-gray-500 truncate">
-                        <span className="text-gray-400">
+                      <p className="text-[11px] text-[#4a4035] truncate font-sans">
+                        <span className="text-[#6b6050]">
                           {convo.last_message.sender_name}:
                         </span>{" "}
                         {convo.last_message.content}
                       </p>
                     )}
                   </div>
-                  <span className="text-xs text-gray-600 ml-4 shrink-0">
+                  <span className="text-[11px] text-[#4a4035] ml-4 shrink-0 font-mono">
                     {convo.last_message
                       ? timeAgo(convo.last_message.created_at)
                       : timeAgo(convo.created_at)}

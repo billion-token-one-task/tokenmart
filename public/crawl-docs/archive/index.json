@@ -1,0 +1,62 @@
+{
+  "generated_at": "2026-03-05T23:08:45.363Z",
+  "app_base_url": "https://www.tokenmart.net",
+  "count": 5,
+  "documents": [
+    {
+      "path": "docs/plans/2026-03-05-comprehensive-backend-hardening.md",
+      "title": "Comprehensive Backend Hardening Implementation Plan",
+      "url": "/crawl-docs/docs/plans/2026-03-05-comprehensive-backend-hardening.md",
+      "track": "archive",
+      "category": "plan",
+      "summary": "Archive plan for backend hardening work.",
+      "order": 190,
+      "audience": "internal",
+      "absolute_url": "https://www.tokenmart.net/crawl-docs/docs/plans/2026-03-05-comprehensive-backend-hardening.md"
+    },
+    {
+      "path": "docs/plans/2026-03-05-release-readme-keys.md",
+      "title": "TokenMart Release + Docs + Web Key UX Implementation Plan",
+      "url": "/crawl-docs/docs/plans/2026-03-05-release-readme-keys.md",
+      "track": "archive",
+      "category": "plan",
+      "summary": "Archive plan for release readiness, docs, and key UX work.",
+      "order": 200,
+      "audience": "internal",
+      "absolute_url": "https://www.tokenmart.net/crawl-docs/docs/plans/2026-03-05-release-readme-keys.md"
+    },
+    {
+      "path": "docs/plans/2026-03-05-tokenhall-prod-streaming-openrouter-model-catalog.md",
+      "title": "TokenHall Prod Streaming + OpenRouter Model Catalog Implementation Plan",
+      "url": "/crawl-docs/docs/plans/2026-03-05-tokenhall-prod-streaming-openrouter-model-catalog.md",
+      "track": "archive",
+      "category": "plan",
+      "summary": "Archive plan for streaming and model catalog work.",
+      "order": 210,
+      "audience": "internal",
+      "absolute_url": "https://www.tokenmart.net/crawl-docs/docs/plans/2026-03-05-tokenhall-prod-streaming-openrouter-model-catalog.md"
+    },
+    {
+      "path": "docs/plans/2026-03-05-wallet-transfer-and-agent-activity-maximalist.md",
+      "title": "TokenMart Wallet Transfer + Agent Activity Docs Implementation Plan",
+      "url": "/crawl-docs/docs/plans/2026-03-05-wallet-transfer-and-agent-activity-maximalist.md",
+      "track": "archive",
+      "category": "plan",
+      "summary": "Archive plan for wallet transfer and agent activity documentation work.",
+      "order": 220,
+      "audience": "internal",
+      "absolute_url": "https://www.tokenmart.net/crawl-docs/docs/plans/2026-03-05-wallet-transfer-and-agent-activity-maximalist.md"
+    },
+    {
+      "path": "docs/plans/2026-03-06-tokenmart-rebrand-and-product-redesign.md",
+      "title": "TokenMart Rebrand And Product Redesign Implementation Plan",
+      "url": "/crawl-docs/docs/plans/2026-03-06-tokenmart-rebrand-and-product-redesign.md",
+      "track": "archive",
+      "category": "plan",
+      "summary": "Archive plan for the TokenMart product and design overhaul.",
+      "order": 230,
+      "audience": "internal",
+      "absolute_url": "https://www.tokenmart.net/crawl-docs/docs/plans/2026-03-06-tokenmart-rebrand-and-product-redesign.md"
+    }
+  ]
+}

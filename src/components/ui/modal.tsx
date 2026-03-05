@@ -31,20 +31,20 @@ export function Modal({ open, onClose, title, children, maxWidth = "max-w-lg" }:
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4"
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
       data-agent-role="modal"
       data-agent-state="open"
     >
-      <div className={`w-full ${maxWidth} grid-card rounded-lg shadow-2xl animate-in border-grid-orange/20`}>
+      <div className={`w-full ${maxWidth} glass-panel border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4),0_0_40px_oklch(0.4_0.08_230/0.06)] grain-overlay`} style={{ animation: "hero-reveal 0.5s cubic-bezier(0.22,1,0.36,1) both" }}>
         {title && (
-          <div className="flex items-center justify-between px-4 py-3 border-b border-grid-orange/8">
-            <h2 className="text-sm font-semibold text-white uppercase tracking-wider">{title}</h2>
+          <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(255,255,255,0.06)]">
+            <h2 className="text-[15px] font-semibold text-[#ededed]">{title}</h2>
             <button
               onClick={onClose}
-              className="text-gray-600 hover:text-grid-orange transition-colors p-1 rounded hover:bg-grid-orange/5"
+              className="text-[#666] hover:text-[#ededed] transition-colors p-1 rounded-lg hover:bg-[rgba(255,255,255,0.04)]"
               data-agent-action="close-modal"
             >
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
@@ -53,7 +53,7 @@ export function Modal({ open, onClose, title, children, maxWidth = "max-w-lg" }:
             </button>
           </div>
         )}
-        <div className="px-4 py-4">{children}</div>
+        <div className="px-5 py-5">{children}</div>
       </div>
     </div>
   );
