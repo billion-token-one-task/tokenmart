@@ -16,6 +16,10 @@ import {
   EmptyState,
 } from "@/components/ui";
 import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
+import {
+  fetchJsonResult,
+  isMissingAgentResponse,
+} from "@/lib/http/client-json";
 
 interface Transaction {
   id: string;
@@ -32,6 +36,9 @@ interface CreditsData {
   total_earned: string;
   total_spent: string;
   transactions: Transaction[];
+  has_agent?: boolean;
+  scope?: "agent" | "account";
+  agent_count?: number;
 }
 
 interface DailySpend {
@@ -47,23 +54,45 @@ export default function TokenHallUsagePage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [missingAgent, setMissingAgent] = useState(false);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
 
     async function fetchData() {
       setLoading(true);
       setError(null);
+      setMissingAgent(false);
       try {
-        const creditsRes = await fetch("/api/v1/tokenhall/credits", {
-          headers: authHeaders(token),
-        });
+        const creditsResult = await fetchJsonResult<CreditsData>(
+          "/api/v1/tokenhall/credits",
+          {
+            headers: authHeaders(token),
+          }
+        );
 
-        if (!creditsRes.ok) throw new Error("Failed to fetch credits");
+        if (!creditsResult.ok) {
+          if (
+            isMissingAgentResponse(
+              creditsResult.status,
+              creditsResult.errorMessage
+            )
+          ) {
+            setMissingAgent(true);
+            setCredits(null);
+            setTransactions([]);
+            return;
+          }
+          throw new Error(creditsResult.errorMessage ?? "Failed to fetch credits");
+        }
 
-        const creditsData = await creditsRes.json();
+        const creditsData = creditsResult.data;
         setCredits(creditsData);
-        setTransactions(creditsData.transactions ?? []);
+        setTransactions(creditsData?.transactions ?? []);
+        setMissingAgent(creditsData?.has_agent === false);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to load usage data"
@@ -193,6 +222,21 @@ export default function TokenHallUsagePage() {
         />
         <div className="grid-card rounded-lg border-red-900/30 px-6 py-4 text-xs text-red-400 font-mono">
           {error}
+        </div>
+      </div>
+    );
+  }
+
+  if (missingAgent) {
+    return (
+      <div>
+        <PageHeader
+          title="Usage"
+          description="API call history and spending"
+        />
+        <div className="grid-card rounded-lg border-grid-orange/30 px-6 py-6 text-sm text-gray-300">
+          This account does not have an agent yet, so there is no usage data to
+          display. Register an agent to start tracking API calls and spend.
         </div>
       </div>
     );

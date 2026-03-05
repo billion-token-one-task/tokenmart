@@ -17,18 +17,26 @@ import {
   EmptyState,
 } from "@/components/ui";
 import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
+import {
+  fetchJsonResult,
+  isMissingAgentResponse,
+} from "@/lib/http/client-json";
 
 interface CreditsData {
-  balance: number;
-  total_purchased: number;
-  total_earned: number;
-  total_spent: number;
+  balance: number | string;
+  total_purchased: number | string;
+  total_earned: number | string;
+  total_spent: number | string;
+  has_agent?: boolean;
+  scope?: "agent" | "account";
+  agent_count?: number;
+  transactions?: Transaction[];
 }
 
 interface Transaction {
   id: string;
   type: "purchase" | "bounty_reward" | "api_usage" | "admin_grant";
-  amount: number;
+  amount: number | string;
   description: string;
   created_at: string;
 }
@@ -86,26 +94,53 @@ export default function CreditsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [missingAgent, setMissingAgent] = useState(false);
+
+  function toCreditNumber(value: number | string | null | undefined): number {
+    if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+    if (typeof value === "string") {
+      const parsed = Number.parseFloat(value);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+    return 0;
+  }
 
   const fetchData = useCallback(async () => {
-    if (!token) return;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
+    setMissingAgent(false);
     try {
-      const creditsRes = await fetch("/api/v1/tokenhall/credits", {
-        headers: authHeaders(token),
-      });
+      const creditsResult = await fetchJsonResult<CreditsData>(
+        "/api/v1/tokenhall/credits",
+        {
+          headers: authHeaders(token),
+        }
+      );
 
-      if (!creditsRes.ok) throw new Error("Failed to load credits data");
-
-      const creditsData = await creditsRes.json();
-      setCredits(creditsData);
-
-      // Transactions may come from the credits endpoint or a separate one.
-      // If transactions are included in the response, use them.
-      if (creditsData.transactions) {
-        setTransactions(creditsData.transactions);
+      if (!creditsResult.ok) {
+        if (
+          isMissingAgentResponse(
+            creditsResult.status,
+            creditsResult.errorMessage
+          )
+        ) {
+          setMissingAgent(true);
+          setCredits(null);
+          setTransactions([]);
+          return;
+        }
+        throw new Error(creditsResult.errorMessage ?? "Failed to load credits data");
       }
+
+      const creditsData = creditsResult.data;
+      setCredits(creditsData);
+      setTransactions(creditsData?.transactions ?? []);
+      setMissingAgent(creditsData?.has_agent === false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -130,6 +165,13 @@ export default function CreditsPage() {
         </div>
       )}
 
+      {missingAgent && (
+        <div className="mb-6 grid-card rounded-lg border-grid-orange/30 px-4 py-3 text-xs text-grid-orange/90">
+          No agent is linked to this account yet. Register an agent to start
+          earning and spending credits.
+        </div>
+      )}
+
       {/* Stats Grid */}
       <Card className="mb-6">
         <CardContent>
@@ -145,24 +187,24 @@ export default function CreditsPage() {
               <>
                 <Stat
                   label="Balance"
-                  value={credits ? credits.balance.toLocaleString() : "--"}
+                  value={credits ? toCreditNumber(credits.balance).toLocaleString() : "--"}
                   changeType="neutral"
                 />
                 <Stat
                   label="Total Earned"
-                  value={credits ? credits.total_earned.toLocaleString() : "--"}
+                  value={credits ? toCreditNumber(credits.total_earned).toLocaleString() : "--"}
                   change={credits ? "from bounties & rewards" : ""}
                   changeType="positive"
                 />
                 <Stat
                   label="Total Spent"
-                  value={credits ? credits.total_spent.toLocaleString() : "--"}
+                  value={credits ? toCreditNumber(credits.total_spent).toLocaleString() : "--"}
                   change={credits ? "API usage & fees" : ""}
                   changeType="negative"
                 />
                 <Stat
                   label="Total Purchased"
-                  value={credits ? credits.total_purchased.toLocaleString() : "--"}
+                  value={credits ? toCreditNumber(credits.total_purchased).toLocaleString() : "--"}
                   changeType="neutral"
                 />
               </>
@@ -189,8 +231,12 @@ export default function CreditsPage() {
             </div>
           ) : transactions.length === 0 ? (
             <EmptyState
-              title="No transactions yet"
-              description="Your credit transaction history will appear here once you start earning or spending credits."
+              title={missingAgent ? "No agent registered" : "No transactions yet"}
+              description={
+                missingAgent
+                  ? "Register an agent to enable credits and transaction tracking."
+                  : "Your credit transaction history will appear here once you start earning or spending credits."
+              }
             />
           ) : (
             <Table>
@@ -205,7 +251,7 @@ export default function CreditsPage() {
               <TBody>
                 {transactions.map((tx) => {
                   const { text: amountText, color: amountColor } = formatAmount(
-                    tx.amount
+                    toCreditNumber(tx.amount)
                   );
                   return (
                     <tr

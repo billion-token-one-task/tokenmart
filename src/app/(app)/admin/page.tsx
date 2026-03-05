@@ -1,17 +1,17 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 import { PageHeader } from "@/components/page-header";
 import {
   Card,
-  CardHeader,
   CardContent,
   Stat,
   StatGrid,
   Badge,
-  Button,
 } from "@/components/ui";
 import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
+import { fetchJsonResult } from "@/lib/http/client-json";
 
 interface AdminStats {
   totalTasks: number;
@@ -67,33 +67,33 @@ export default function AdminPage() {
   const [recentBounties, setRecentBounties] = useState<Bounty[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
-    if (!token) return;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
+    setWarning(null);
     try {
-      const [tasksRes, bountiesRes, reviewsRes] = await Promise.all([
-        fetch("/api/v1/admin/tasks", { headers: authHeaders(token) }),
-        fetch("/api/v1/admin/bounties", { headers: authHeaders(token) }),
-        fetch("/api/v1/agents/reviews/pending", {
+      const [tasksResult, bountiesResult, reviewsResult] = await Promise.all([
+        fetchJsonResult<{ tasks?: Task[] }>("/api/v1/admin/tasks", {
+          headers: authHeaders(token),
+        }),
+        fetchJsonResult<{ bounties?: Bounty[] }>("/api/v1/admin/bounties", {
+          headers: authHeaders(token),
+        }),
+        fetchJsonResult<{ reviews?: Review[] }>("/api/v1/admin/reviews/pending", {
           headers: authHeaders(token),
         }),
       ]);
 
-      if (!tasksRes.ok) throw new Error("Failed to load tasks");
-      if (!bountiesRes.ok) throw new Error("Failed to load bounties");
-      if (!reviewsRes.ok) throw new Error("Failed to load reviews");
-
-      const [tasksData, bountiesData, reviewsData] = await Promise.all([
-        tasksRes.json(),
-        bountiesRes.json(),
-        reviewsRes.json(),
-      ]);
-
-      const tasks: Task[] = tasksData.tasks || [];
-      const bounties: Bounty[] = bountiesData.bounties || [];
-      const reviews: Review[] = reviewsData.reviews || [];
+      const tasks: Task[] = tasksResult.data?.tasks ?? [];
+      const bounties: Bounty[] = bountiesResult.data?.bounties ?? [];
+      const reviews: Review[] = reviewsResult.data?.reviews ?? [];
 
       setStats({
         totalTasks: tasks.length,
@@ -121,6 +121,25 @@ export default function AdminPage() {
           )
           .slice(0, 5)
       );
+
+      const warnings: string[] = [];
+      if (!tasksResult.ok) {
+        warnings.push(tasksResult.errorMessage ?? "Failed to load tasks");
+      }
+      if (!bountiesResult.ok) {
+        warnings.push(bountiesResult.errorMessage ?? "Failed to load bounties");
+      }
+      if (!reviewsResult.ok) {
+        warnings.push(
+          reviewsResult.errorMessage ?? "Failed to load pending review stats"
+        );
+      }
+
+      if (!tasksResult.ok && !bountiesResult.ok && !reviewsResult.ok) {
+        setError(warnings.join(" · "));
+      } else if (warnings.length > 0) {
+        setWarning(warnings.join(" · "));
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -163,6 +182,13 @@ export default function AdminPage() {
         </div>
       )}
 
+      {warning && (
+        <div className="mb-6 grid-card rounded-lg border-amber-900/30 px-4 py-3 text-xs text-amber-300 font-mono">
+          <span className="text-amber-400 mr-2">WARN</span>
+          {warning}
+        </div>
+      )}
+
       {/* Stats */}
       <Card className="mb-6">
         <CardContent>
@@ -195,7 +221,7 @@ export default function AdminPage() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <a href="/admin/tasks">
+        <Link href="/admin/tasks">
           <div className="grid-card rounded-lg p-4 hover:border-grid-orange/35 transition-colors cursor-pointer group">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-grid-orange/15 bg-grid-orange-dim text-grid-orange group-hover:border-grid-orange/30 transition-colors">
@@ -211,9 +237,9 @@ export default function AdminPage() {
               </div>
             </div>
           </div>
-        </a>
+        </Link>
 
-        <a href="/admin/bounties">
+        <Link href="/admin/bounties">
           <div className="grid-card rounded-lg p-4 hover:border-grid-orange/35 transition-colors cursor-pointer group">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-grid-green/15 bg-grid-green-dim text-grid-green group-hover:border-grid-green/30 transition-colors">
@@ -229,9 +255,9 @@ export default function AdminPage() {
               </div>
             </div>
           </div>
-        </a>
+        </Link>
 
-        <a href="/admin/credits">
+        <Link href="/admin/credits">
           <div className="grid-card rounded-lg p-4 hover:border-grid-orange/35 transition-colors cursor-pointer group">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-grid-orange/15 bg-grid-orange-dim text-grid-orange group-hover:border-grid-orange/30 transition-colors">
@@ -247,7 +273,7 @@ export default function AdminPage() {
               </div>
             </div>
           </div>
-        </a>
+        </Link>
       </div>
 
       {/* Recent Activity */}
@@ -258,12 +284,12 @@ export default function AdminPage() {
             <h2 className="text-xs font-semibold text-white uppercase tracking-wider">
               Recent Tasks
             </h2>
-            <a
+            <Link
               href="/admin/tasks"
               className="text-[9px] text-gray-500 hover:text-grid-orange transition-colors font-mono"
             >
               View all →
-            </a>
+            </Link>
           </div>
           <div className="p-4">
             {loading ? (
@@ -313,12 +339,12 @@ export default function AdminPage() {
             <h2 className="text-xs font-semibold text-white uppercase tracking-wider">
               Recent Bounties
             </h2>
-            <a
+            <Link
               href="/admin/bounties"
               className="text-[9px] text-gray-500 hover:text-grid-orange transition-colors font-mono"
             >
               View all →
-            </a>
+            </Link>
           </div>
           <div className="p-4">
             {loading ? (

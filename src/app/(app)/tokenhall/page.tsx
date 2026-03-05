@@ -4,19 +4,25 @@ import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
 import {
   Card,
-  CardHeader,
   CardContent,
   Stat,
   StatGrid,
   Badge,
 } from "@/components/ui";
 import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
+import {
+  fetchJsonResult,
+  isMissingAgentResponse,
+} from "@/lib/http/client-json";
 
 interface CreditsData {
   balance: number;
   total_purchased: number;
   total_earned: number;
   total_spent: number;
+  has_agent?: boolean;
+  scope?: "agent" | "account";
+  agent_count?: number;
 }
 
 interface ModelItem {
@@ -45,33 +51,79 @@ export default function TokenHallPage() {
   const [keys, setKeys] = useState<KeyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
+  const [missingAgentCredits, setMissingAgentCredits] = useState(false);
+
+  const toCreditNumber = (value: number | string): number => {
+    if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
 
     async function fetchData() {
       setLoading(true);
       setError(null);
+      setWarning(null);
+      setMissingAgentCredits(false);
       try {
-        const [creditsRes, modelsRes, keysRes] = await Promise.all([
-          fetch("/api/v1/tokenhall/credits", { headers: authHeaders(token) }),
-          fetch("/api/v1/tokenhall/models", { headers: authHeaders(token) }),
-          fetch("/api/v1/tokenhall/keys", { headers: authHeaders(token) }),
+        const [creditsResult, modelsResult, keysResult] = await Promise.all([
+          fetchJsonResult<CreditsData>("/api/v1/tokenhall/credits", {
+            headers: authHeaders(token),
+          }),
+          fetchJsonResult<{ models?: ModelItem[] }>("/api/v1/tokenhall/models", {
+            headers: authHeaders(token),
+          }),
+          fetchJsonResult<{ keys?: KeyItem[] }>("/api/v1/tokenhall/keys", {
+            headers: authHeaders(token),
+          }),
         ]);
 
-        if (!creditsRes.ok || !modelsRes.ok || !keysRes.ok) {
-          throw new Error("Failed to fetch TokenHall data");
+        const warnings: string[] = [];
+
+        if (modelsResult.ok) {
+          setModels(modelsResult.data?.models ?? []);
+        } else {
+          setModels([]);
+          warnings.push(modelsResult.errorMessage ?? "Failed to load models");
         }
 
-        const [creditsData, modelsData, keysData] = await Promise.all([
-          creditsRes.json(),
-          modelsRes.json(),
-          keysRes.json(),
-        ]);
+        if (keysResult.ok) {
+          setKeys(keysResult.data?.keys ?? []);
+        } else {
+          setKeys([]);
+          warnings.push(keysResult.errorMessage ?? "Failed to load keys");
+        }
 
-        setCredits(creditsData);
-        setModels(modelsData.models || []);
-        setKeys(keysData.keys || []);
+        if (creditsResult.ok && creditsResult.data) {
+          const nextCredits = creditsResult.data;
+          setCredits(nextCredits);
+          setMissingAgentCredits(nextCredits.has_agent === false);
+        } else {
+          setCredits(null);
+          const isMissingAgentCreditsError = isMissingAgentResponse(
+            creditsResult.status,
+            creditsResult.errorMessage
+          );
+          if (isMissingAgentCreditsError) {
+            setMissingAgentCredits(true);
+          } else {
+            warnings.push(
+              creditsResult.errorMessage ?? "Failed to load credits summary"
+            );
+          }
+        }
+
+        if (!creditsResult.ok && !modelsResult.ok && !keysResult.ok) {
+          setError(warnings.join(" · ") || "Failed to fetch TokenHall data");
+        } else if (warnings.length > 0) {
+          setWarning(warnings.join(" · "));
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load data");
       } finally {
@@ -138,13 +190,27 @@ export default function TokenHallPage() {
         </div>
       )}
 
+      {warning && (
+        <div className="mb-6 grid-card rounded-lg border-amber-900/30 px-4 py-3 text-xs text-amber-300 font-mono">
+          <span className="text-amber-400 mr-2">WARN</span>
+          {warning}
+        </div>
+      )}
+
+      {missingAgentCredits && (
+        <div className="mb-6 grid-card rounded-lg border-grid-orange/30 px-4 py-3 text-xs text-grid-orange/90">
+          Credits are unavailable until you register an agent. Models and API key
+          management remain available.
+        </div>
+      )}
+
       {/* Stats */}
       <StatGrid className="mb-8">
         <Card>
           <CardContent>
             <Stat
               label="Credit Balance"
-              value={credits ? `${credits.balance.toLocaleString()} cr` : "--"}
+              value={credits ? `${toCreditNumber(credits.balance).toLocaleString()} cr` : "--"}
             />
           </CardContent>
         </Card>
@@ -163,7 +229,7 @@ export default function TokenHallPage() {
             <Stat
               label="Total Spent"
               value={
-                credits ? `${credits.total_spent.toLocaleString()} cr` : "--"
+                credits ? `${toCreditNumber(credits.total_spent).toLocaleString()} cr` : "--"
               }
             />
           </CardContent>
