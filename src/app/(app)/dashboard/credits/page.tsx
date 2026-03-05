@@ -65,7 +65,7 @@ function transactionTypeBadge(type: string) {
 
 function formatAmount(amount: number): { text: string; color: string } {
   if (amount >= 0) {
-    return { text: `+${amount.toLocaleString()}`, color: "text-emerald-400" };
+    return { text: `+${amount.toLocaleString()}`, color: "text-grid-green" };
   }
   return { text: amount.toLocaleString(), color: "text-red-400" };
 }
@@ -118,14 +118,14 @@ export default function CreditsPage() {
   }, [fetchData]);
 
   return (
-    <div className="p-6 lg:p-10 max-w-6xl">
+    <div className="max-w-6xl">
       <PageHeader
         title="Credits"
         description="Track your credit balance and transaction history"
       />
 
       {error && (
-        <div className="mb-6 rounded-lg border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-300">
+        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
           {error}
         </div>
       )}

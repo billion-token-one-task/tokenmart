@@ -107,13 +107,36 @@ export async function deductCredits(
 ): Promise<boolean> {
   if (!Number.isFinite(amount) || amount <= 0) return true;
 
-  // Enforce optional per-key spending caps before settlement.
+  const supabase = createAdminClient();
+
+  if (keyId) {
+    // Preferred keyed settlement path: atomically enforce key caps + balance deduction.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const keyedRpc = await (supabase.rpc as any)("deduct_credits_with_key_limit", {
+      p_agent_id: agentId,
+      p_key_id: keyId,
+      p_amount: amount.toFixed(10),
+      p_description: description,
+      p_reference_id: referenceId ?? null,
+    });
+
+    if (!keyedRpc.error) {
+      return Boolean(keyedRpc.data);
+    }
+
+    if (!isMissingRpcFunction(keyedRpc.error, "deduct_credits_with_key_limit")) {
+      console.error(
+        `deduct_credits_with_key_limit RPC failed (${keyedRpc.error.message})`,
+      );
+      return false;
+    }
+  }
+
+  // Enforce optional per-key spending caps before legacy settlement paths.
   if (keyId) {
     const allowedByKeyLimit = await checkKeyCreditLimit(keyId, amount);
     if (!allowedByKeyLimit) return false;
   }
-
-  const supabase = createAdminClient();
 
   // Try the RPC function first -- this is the preferred path because it
   // handles atomicity and balance checks in SQL.
@@ -127,7 +150,12 @@ export async function deductCredits(
     p_reference_id: referenceId ?? null,
   });
 
-  if (!rpcError) return true;
+  if (!rpcError) {
+    if (keyId) {
+      await incrementKeySpentCredits(keyId, amount);
+    }
+    return true;
+  }
 
   // If the RPC function doesn't exist yet (e.g. migrations haven't run),
   // fall back to a manual two-step update.  This is NOT atomic but prevents
@@ -163,6 +191,10 @@ export async function deductCredits(
 
   if (updateError) return false;
 
+  if (keyId) {
+    await incrementKeySpentCredits(keyId, amount);
+  }
+
   // Record the transaction.
   await supabase.from("credit_transactions").insert({
     agent_id: agentId,
@@ -189,6 +221,45 @@ async function checkKeyCreditLimit(
 
   const { data: keyRow, error: keyError } = await supabase
     .from("tokenhall_api_keys")
+    .select("credit_limit, spent_credits")
+    .eq("id", keyId)
+    .single();
+
+  if (keyError || !keyRow) {
+    return legacyCheckKeyCreditLimit(keyId, additionalCost);
+  }
+
+  const parsedKeyRow = keyRow as {
+    credit_limit?: string | number | null;
+    spent_credits?: string | number | null;
+  };
+
+  const rawLimit =
+    typeof parsedKeyRow.credit_limit === "number"
+      ? parsedKeyRow.credit_limit
+      : parseFloat(parsedKeyRow.credit_limit ?? "NaN");
+  if (!Number.isFinite(rawLimit)) return true;
+  if (rawLimit <= 0) return false;
+
+  const trackedSpent =
+    typeof parsedKeyRow.spent_credits === "number"
+      ? parsedKeyRow.spent_credits
+      : parseFloat(parsedKeyRow.spent_credits ?? "NaN");
+  if (Number.isFinite(trackedSpent)) {
+    return trackedSpent + additionalCost <= rawLimit + 1e-9;
+  }
+
+  return legacyCheckKeyCreditLimit(keyId, additionalCost);
+}
+
+async function legacyCheckKeyCreditLimit(
+  keyId: string,
+  additionalCost: number,
+): Promise<boolean> {
+  const supabase = createAdminClient();
+
+  const { data: keyRow, error: keyError } = await supabase
+    .from("tokenhall_api_keys")
     .select("credit_limit")
     .eq("id", keyId)
     .single();
@@ -208,7 +279,7 @@ async function checkKeyCreditLimit(
     .eq("tokenhall_key_id", keyId)
     .eq("status", "success");
 
-  if (genError) return false;
+  if (genError) return true;
 
   const spent = (generationRows ?? []).reduce((sum, row) => {
     const cost =
@@ -219,6 +290,33 @@ async function checkKeyCreditLimit(
   }, 0);
 
   return spent + additionalCost <= rawLimit + 1e-9;
+}
+
+function isMissingRpcFunction(error: { code?: string; message?: string }, fnName: string): boolean {
+  const message = error.message ?? "";
+  return error.code === "PGRST202" || message.includes(fnName);
+}
+
+async function incrementKeySpentCredits(keyId: string, amount: number): Promise<void> {
+  const supabase = createAdminClient();
+  const { data: keyRow } = await supabase
+    .from("tokenhall_api_keys")
+    .select("spent_credits")
+    .eq("id", keyId)
+    .maybeSingle();
+  const previousSpent = parseFloat(
+    (keyRow as { spent_credits?: string } | null)?.spent_credits ?? "0",
+  ) || 0;
+  try {
+    await supabase
+      .from("tokenhall_api_keys")
+      .update({
+        spent_credits: (previousSpent + amount).toFixed(10),
+      } as never)
+      .eq("id", keyId);
+  } catch {
+    // Best-effort in legacy fallback paths.
+  }
 }
 
 /**

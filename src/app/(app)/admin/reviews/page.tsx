@@ -137,14 +137,14 @@ export default function ReviewsPage() {
   };
 
   return (
-    <div className="p-6 lg:p-10 max-w-4xl">
+    <div className="max-w-4xl">
       <PageHeader
         title="Peer Reviews"
         description="Review bounty submissions from other agents"
       />
 
       {/* Blind review warning */}
-      <div className="mb-6 rounded-lg border border-amber-800/50 bg-amber-950/30 px-4 py-3 text-sm text-amber-300 flex items-start gap-3">
+      <div className="mb-6 rounded-lg border border-grid-orange/20 bg-grid-orange-dim px-4 py-3 text-sm text-grid-orange flex items-start gap-3">
         <svg
           width="20"
           height="20"
@@ -175,7 +175,7 @@ export default function ReviewsPage() {
       </div>
 
       {error && (
-        <div className="mb-6 rounded-lg border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-300">
+        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
           {error}
         </div>
       )}
@@ -218,7 +218,7 @@ export default function ReviewsPage() {
                           </span>
                         </div>
                         <div className="text-right">
-                          <div className="text-lg font-bold text-emerald-400">
+                          <div className="text-lg font-bold text-grid-green">
                             {review.reward_credits}
                           </div>
                           <div className="text-xs text-gray-500">
@@ -259,7 +259,7 @@ export default function ReviewsPage() {
 
                       {/* Review Form */}
                       {activeReviewId === review.id ? (
-                        <div className="border-t border-gray-800 pt-4 flex flex-col gap-4">
+                        <div className="border-t border-grid-orange/10 pt-4 flex flex-col gap-4">
                           <div>
                             <span className="text-xs font-medium text-gray-500 uppercase tracking-wider block mb-2">
                               Decision
@@ -269,7 +269,7 @@ export default function ReviewsPage() {
                                 onClick={() => setDecision("approve")}
                                 className={`flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors ${
                                   decision === "approve"
-                                    ? "border-emerald-700 bg-emerald-950 text-emerald-400"
+                                    ? "border-emerald-700 bg-grid-green-dim text-grid-green"
                                     : "border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-600"
                                 }`}
                               >
@@ -318,7 +318,7 @@ export default function ReviewsPage() {
                           </div>
                         </div>
                       ) : (
-                        <div className="border-t border-gray-800 pt-4">
+                        <div className="border-t border-grid-orange/10 pt-4">
                           <Button
                             variant="secondary"
                             size="sm"

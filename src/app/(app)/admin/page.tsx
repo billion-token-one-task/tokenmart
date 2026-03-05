@@ -47,7 +47,7 @@ interface Review {
 
 function Skeleton({ className = "" }: { className?: string }) {
   return (
-    <div className={`animate-pulse rounded-lg bg-gray-800 ${className}`} />
+    <div className={`animate-pulse rounded-lg bg-gray-800/50 ${className}`} />
   );
 }
 
@@ -149,14 +149,16 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="p-6 lg:p-10 max-w-6xl">
+    <div className="max-w-6xl">
       <PageHeader
         title="Admin Panel"
         description="Manage tasks, bounties, reviews, and credits"
+        agentEndpoint="GET /api/v1/admin/tasks"
       />
 
       {error && (
-        <div className="mb-6 rounded-lg border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-300">
+        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
+          <span className="text-red-500 mr-2">ERR</span>
           {error}
         </div>
       )}
@@ -194,132 +196,76 @@ export default function AdminPage() {
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <a href="/admin/tasks">
-          <Card className="hover:border-gray-700 transition-colors cursor-pointer">
-            <CardContent>
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-950 text-blue-400">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                  >
-                    <path
-                      d="M10 3v14M3 10h14"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-white">
-                    Create Task
-                  </h3>
-                  <p className="text-xs text-gray-500">
-                    Define new work for agents
-                  </p>
-                </div>
+          <div className="grid-card rounded-lg p-4 hover:border-grid-orange/35 transition-colors cursor-pointer group">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-grid-orange/15 bg-grid-orange-dim text-grid-orange group-hover:border-grid-orange/30 transition-colors">
+                <span className="text-lg">+</span>
               </div>
-            </CardContent>
-          </Card>
+              <div>
+                <h3 className="text-sm font-semibold text-white">
+                  Create Task
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Define new work for agents
+                </p>
+              </div>
+            </div>
+          </div>
         </a>
 
         <a href="/admin/bounties">
-          <Card className="hover:border-gray-700 transition-colors cursor-pointer">
-            <CardContent>
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-950 text-emerald-400">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                  >
-                    <circle
-                      cx="10"
-                      cy="10"
-                      r="7"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                    />
-                    <path
-                      d="M10 7v6M7 10h6"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-white">
-                    Create Bounty
-                  </h3>
-                  <p className="text-xs text-gray-500">
-                    Post a bounty for agents
-                  </p>
-                </div>
+          <div className="grid-card rounded-lg p-4 hover:border-grid-orange/35 transition-colors cursor-pointer group">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-grid-green/15 bg-grid-green-dim text-grid-green group-hover:border-grid-green/30 transition-colors">
+                <span className="text-lg">★</span>
               </div>
-            </CardContent>
-          </Card>
+              <div>
+                <h3 className="text-sm font-semibold text-white">
+                  Create Bounty
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Post a bounty for agents
+                </p>
+              </div>
+            </div>
+          </div>
         </a>
 
         <a href="/admin/credits">
-          <Card className="hover:border-gray-700 transition-colors cursor-pointer">
-            <CardContent>
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-950 text-amber-400">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                  >
-                    <path
-                      d="M10 2a8 8 0 100 16 8 8 0 000-16z"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                    />
-                    <path
-                      d="M10 6v8M7 9h6M7 12h6"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-white">
-                    Grant Credits
-                  </h3>
-                  <p className="text-xs text-gray-500">
-                    Manage agent credit balances
-                  </p>
-                </div>
+          <div className="grid-card rounded-lg p-4 hover:border-grid-orange/35 transition-colors cursor-pointer group">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-grid-orange/15 bg-grid-orange-dim text-grid-orange group-hover:border-grid-orange/30 transition-colors">
+                <span className="text-lg">$</span>
               </div>
-            </CardContent>
-          </Card>
+              <div>
+                <h3 className="text-sm font-semibold text-white">
+                  Grant Credits
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Manage agent credit balances
+                </p>
+              </div>
+            </div>
+          </div>
         </a>
       </div>
 
       {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Tasks */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-white">
-                Recent Tasks
-              </h2>
-              <a
-                href="/admin/tasks"
-                className="text-xs text-gray-500 hover:text-white transition-colors"
-              >
-                View all
-              </a>
-            </div>
-          </CardHeader>
-          <CardContent>
+        <div className="grid-card rounded-lg overflow-hidden">
+          <div className="px-4 py-3 border-b border-grid-orange/10 flex items-center justify-between">
+            <h2 className="text-xs font-semibold text-white uppercase tracking-wider">
+              Recent Tasks
+            </h2>
+            <a
+              href="/admin/tasks"
+              className="text-[9px] text-gray-500 hover:text-grid-orange transition-colors font-mono"
+            >
+              View all →
+            </a>
+          </div>
+          <div className="p-4">
             {loading ? (
               <div className="flex flex-col gap-3">
                 <Skeleton className="h-12 w-full" />
@@ -327,7 +273,7 @@ export default function AdminPage() {
                 <Skeleton className="h-12 w-full" />
               </div>
             ) : recentTasks.length === 0 ? (
-              <p className="text-sm text-gray-500 py-4 text-center">
+              <p className="text-xs text-gray-500 py-4 text-center font-mono">
                 No tasks yet
               </p>
             ) : (
@@ -336,7 +282,7 @@ export default function AdminPage() {
                   <a
                     key={task.id}
                     href={`/admin/tasks/${task.id}`}
-                    className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-900/50 px-4 py-3 transition-colors hover:bg-gray-800/60"
+                    className="flex items-center justify-between rounded-lg border border-grid-orange/8 bg-gray-950/50 px-4 py-3 transition-colors hover:bg-grid-orange-dim hover:border-grid-orange/20"
                   >
                     <div className="flex flex-col gap-1 min-w-0">
                       <span className="text-sm text-white truncate">
@@ -358,25 +304,23 @@ export default function AdminPage() {
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Recent Bounties */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-white">
-                Recent Bounties
-              </h2>
-              <a
-                href="/admin/bounties"
-                className="text-xs text-gray-500 hover:text-white transition-colors"
-              >
-                View all
-              </a>
-            </div>
-          </CardHeader>
-          <CardContent>
+        <div className="grid-card rounded-lg overflow-hidden">
+          <div className="px-4 py-3 border-b border-grid-orange/10 flex items-center justify-between">
+            <h2 className="text-xs font-semibold text-white uppercase tracking-wider">
+              Recent Bounties
+            </h2>
+            <a
+              href="/admin/bounties"
+              className="text-[9px] text-gray-500 hover:text-grid-orange transition-colors font-mono"
+            >
+              View all →
+            </a>
+          </div>
+          <div className="p-4">
             {loading ? (
               <div className="flex flex-col gap-3">
                 <Skeleton className="h-12 w-full" />
@@ -384,7 +328,7 @@ export default function AdminPage() {
                 <Skeleton className="h-12 w-full" />
               </div>
             ) : recentBounties.length === 0 ? (
-              <p className="text-sm text-gray-500 py-4 text-center">
+              <p className="text-xs text-gray-500 py-4 text-center font-mono">
                 No bounties yet
               </p>
             ) : (
@@ -393,7 +337,7 @@ export default function AdminPage() {
                   <a
                     key={bounty.id}
                     href={`/admin/bounties/${bounty.id}`}
-                    className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-900/50 px-4 py-3 transition-colors hover:bg-gray-800/60"
+                    className="flex items-center justify-between rounded-lg border border-grid-orange/8 bg-gray-950/50 px-4 py-3 transition-colors hover:bg-grid-orange-dim hover:border-grid-orange/20"
                   >
                     <div className="flex flex-col gap-1 min-w-0">
                       <span className="text-sm text-white truncate">
@@ -406,15 +350,15 @@ export default function AdminPage() {
                         <Badge variant="outline">{bounty.type}</Badge>
                       </div>
                     </div>
-                    <span className="text-sm font-medium text-emerald-400 shrink-0 ml-4">
+                    <span className="text-sm font-medium text-grid-green shrink-0 ml-4">
                       {bounty.credit_reward} cr
                     </span>
                   </a>
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

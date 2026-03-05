@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { authenticateRequest } from "@/lib/auth/middleware";
-import { checkKeyRateLimit, rateLimitHeaders, rateLimitResponse } from "@/lib/rate-limit";
+import { checkKeyRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { routeRequest, RouterError } from "@/lib/tokenhall/router";
 import type { ChatCompletionRequest, ChatCompletionResponse } from "@/types/tokenhall";
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
   const rpm = keyRow?.rate_limit_rpm ?? 60;
   const rl = await checkKeyRateLimit(context.key_id, rpm);
   if (!rl.allowed) {
-    return rateLimitResponse();
+    return openaiError("Rate limit exceeded", "rate_limit_error", 429);
   }
 
   // ── Parse body ────────────────────────────────────────────────────────

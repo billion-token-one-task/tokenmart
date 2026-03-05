@@ -119,12 +119,12 @@ export default function TokenHallModelsPage() {
 
   if (!token) {
     return (
-      <div className="p-8">
+      <div>
         <PageHeader
           title="Models"
           description="Browse available LLM models"
         />
-        <div className="rounded-lg border border-gray-800 bg-gray-950 px-6 py-12 text-center">
+        <div className="rounded-lg grid-card px-6 py-12 text-center">
           <p className="text-gray-400">
             Please log in to browse models.
           </p>
@@ -135,7 +135,7 @@ export default function TokenHallModelsPage() {
 
   if (loading) {
     return (
-      <div className="p-8">
+      <div>
         <PageHeader
           title="Models"
           description="Browse available LLM models"
@@ -167,12 +167,12 @@ export default function TokenHallModelsPage() {
 
   if (error) {
     return (
-      <div className="p-8">
+      <div>
         <PageHeader
           title="Models"
           description="Browse available LLM models"
         />
-        <div className="rounded-lg border border-red-800 bg-red-950 px-6 py-4 text-sm text-red-300">
+        <div className="grid-card rounded-lg border-red-900/30 px-6 py-4 text-xs text-red-400 font-mono">
           {error}
         </div>
       </div>
@@ -180,7 +180,7 @@ export default function TokenHallModelsPage() {
   }
 
   return (
-    <div className="p-8">
+    <div>
       <PageHeader
         title="Models"
         description="Browse available LLM models"
@@ -236,7 +236,7 @@ export default function TokenHallModelsPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {filteredModels.map((model) => (
-            <Card key={model.id} className="hover:border-gray-700 transition-colors">
+            <Card key={model.id} className="hover:border-grid-orange/30 transition-colors">
               <CardContent>
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1 min-w-0">

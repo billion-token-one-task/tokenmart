@@ -31,26 +31,29 @@ export function Modal({ open, onClose, title, children, maxWidth = "max-w-lg" }:
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
+      data-agent-role="modal"
+      data-agent-state="open"
     >
-      <div className={`w-full ${maxWidth} bg-gray-950 border border-gray-800 rounded-xl shadow-2xl animate-in`}>
+      <div className={`w-full ${maxWidth} grid-card rounded-lg shadow-2xl animate-in border-grid-orange/20`}>
         {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
-            <h2 className="text-lg font-semibold text-white">{title}</h2>
+          <div className="flex items-center justify-between px-4 py-3 border-b border-grid-orange/8">
+            <h2 className="text-sm font-semibold text-white uppercase tracking-wider">{title}</h2>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-gray-800"
+              className="text-gray-600 hover:text-grid-orange transition-colors p-1 rounded hover:bg-grid-orange/5"
+              data-agent-action="close-modal"
             >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                 <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
             </button>
           </div>
         )}
-        <div className="px-6 py-4">{children}</div>
+        <div className="px-4 py-4">{children}</div>
       </div>
     </div>
   );

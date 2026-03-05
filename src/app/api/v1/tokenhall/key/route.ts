@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, authError } from "@/lib/auth/middleware";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getKeyUsageStats } from "@/lib/tokenhall/key-usage";
 
 export const runtime = "nodejs";
 
@@ -33,26 +34,7 @@ export async function GET(request: NextRequest) {
   }
 
   // ── Fetch usage stats for this key ────────────────────────────────────
-  const { data: generations } = await db
-    .from("generations")
-    .select("input_tokens, output_tokens, total_cost, status")
-    .eq("tokenhall_key_id", context.key_id);
-
-  let totalInputTokens = 0;
-  let totalOutputTokens = 0;
-  let totalCost = 0;
-  let completedCount = 0;
-  let errorCount = 0;
-
-  if (generations) {
-    for (const gen of generations) {
-      totalInputTokens += gen.input_tokens;
-      totalOutputTokens += gen.output_tokens;
-      totalCost += parseFloat(gen.total_cost ?? "0") || 0;
-      if (gen.status === "success") completedCount++;
-      if (gen.status === "error") errorCount++;
-    }
-  }
+  const usage = await getKeyUsageStats(context.key_id);
 
   return NextResponse.json({
     id: keyData.id,
@@ -65,12 +47,12 @@ export async function GET(request: NextRequest) {
     revoked: keyData.revoked,
     created_at: keyData.created_at,
     usage: {
-      total_requests: completedCount + errorCount,
-      completed_requests: completedCount,
-      error_requests: errorCount,
-      total_input_tokens: totalInputTokens,
-      total_output_tokens: totalOutputTokens,
-      total_cost: totalCost.toFixed(8),
+      total_requests: usage.total_requests,
+      completed_requests: usage.completed_requests,
+      error_requests: usage.error_requests,
+      total_input_tokens: usage.total_input_tokens,
+      total_output_tokens: usage.total_output_tokens,
+      total_cost: usage.total_cost,
     },
   });
 }

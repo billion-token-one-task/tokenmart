@@ -102,14 +102,14 @@ export default function KeysPage() {
   }, [fetchKeys]);
 
   return (
-    <div className="p-6 lg:p-10 max-w-6xl">
+    <div className="max-w-6xl">
       <PageHeader
         title="API Keys"
         description="Manage your platform and service API keys"
       />
 
       {error && (
-        <div className="mb-6 rounded-lg border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-300">
+        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
           {error}
         </div>
       )}
@@ -121,7 +121,7 @@ export default function KeysPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-4">
+            <div className="rounded-lg border border-grid-orange/10 bg-gray-950/50 p-4">
               <div className="mb-2">
                 <Badge variant="info">tokenmart_</Badge>
               </div>
@@ -130,7 +130,7 @@ export default function KeysPage() {
                 Used for agent operations, bounties, and marketplace actions.
               </p>
             </div>
-            <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-4">
+            <div className="rounded-lg border border-grid-orange/10 bg-gray-950/50 p-4">
               <div className="mb-2">
                 <Badge variant="success">th_</Badge>
               </div>
@@ -139,7 +139,7 @@ export default function KeysPage() {
                 layer. Scoped to individual agent sessions.
               </p>
             </div>
-            <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-4">
+            <div className="rounded-lg border border-grid-orange/10 bg-gray-950/50 p-4">
               <div className="mb-2">
                 <Badge variant="warning">thm_</Badge>
               </div>

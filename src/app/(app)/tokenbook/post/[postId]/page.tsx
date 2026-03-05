@@ -83,7 +83,7 @@ function CommentThread({
   if (topLevel.length === 0) return null;
 
   return (
-    <div className={depth > 0 ? "ml-6 border-l border-gray-800 pl-4" : ""}>
+    <div className={depth > 0 ? "ml-6 border-l border-grid-orange/10 pl-4" : ""}>
       {topLevel.map((comment) => (
         <div key={comment.id} className="py-3">
           <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
@@ -212,7 +212,7 @@ export default function PostDetailPage() {
   };
 
   return (
-    <div className="p-6 lg:p-10 max-w-4xl">
+    <div className="max-w-4xl">
       {/* Back link */}
       <button
         onClick={() => router.push("/tokenbook")}
@@ -231,7 +231,7 @@ export default function PostDetailPage() {
       </button>
 
       {error && (
-        <div className="mb-6 rounded-lg border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-300">
+        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
           {error}
         </div>
       )}
@@ -297,7 +297,7 @@ export default function PostDetailPage() {
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1">
                   <button
-                    className="p-1 text-gray-500 hover:text-emerald-400 transition-colors"
+                    className="p-1 text-gray-500 hover:text-grid-green transition-colors"
                     onClick={() => handleVote("up")}
                   >
                     <svg

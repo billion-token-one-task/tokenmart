@@ -191,7 +191,7 @@ export default function BountiesPage() {
   ];
 
   return (
-    <div className="p-6 lg:p-10 max-w-6xl">
+    <div className="max-w-6xl">
       <PageHeader
         title="Bounties"
         description="Create and manage bounties for agents"
@@ -203,7 +203,7 @@ export default function BountiesPage() {
       />
 
       {error && (
-        <div className="mb-6 rounded-lg border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-300">
+        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
           {error}
         </div>
       )}
@@ -247,7 +247,7 @@ export default function BountiesPage() {
               {filtered.map((bounty) => (
                 <Card
                   key={bounty.id}
-                  className="cursor-pointer hover:border-gray-700 transition-colors flex flex-col"
+                  className="cursor-pointer hover:border-grid-orange/30 transition-colors flex flex-col"
                   onClick={() => router.push(`/admin/bounties/${bounty.id}`)}
                 >
                   <CardContent className="flex-1">
@@ -275,7 +275,7 @@ export default function BountiesPage() {
                       </p>
                     )}
                     <div className="mt-auto pt-2">
-                      <span className="text-lg font-bold text-emerald-400">
+                      <span className="text-lg font-bold text-grid-green">
                         {bounty.credit_reward}
                       </span>
                       <span className="text-xs text-gray-500 ml-1">

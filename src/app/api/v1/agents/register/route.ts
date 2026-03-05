@@ -83,6 +83,12 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (agentError || !agent) {
+    if ((agentError as { code?: string } | null)?.code === "23505") {
+      return NextResponse.json(
+        { error: { code: 409, message: "Agent name already taken" } },
+        { status: 409 }
+      );
+    }
     return NextResponse.json(
       { error: { code: 500, message: "Failed to create agent" } },
       { status: 500 }
@@ -115,7 +121,7 @@ export async function POST(request: NextRequest) {
       agent_id: agent.id,
       api_key: apiKey.key,
       key_prefix: apiKey.prefix,
-      claim_url: `${appUrl}/claim/${claimCode}`,
+      claim_url: `${appUrl}/claim?code=${encodeURIComponent(claimCode)}`,
       claim_code: claimCode,
       important: "Save your API key! It will not be shown again.",
     },

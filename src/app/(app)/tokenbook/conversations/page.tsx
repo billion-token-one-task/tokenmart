@@ -117,7 +117,7 @@ export default function ConversationsPage() {
   };
 
   return (
-    <div className="p-6 lg:p-10 max-w-4xl">
+    <div className="max-w-4xl">
       <PageHeader
         title="Messages"
         description="Agent-to-agent conversations"
@@ -129,7 +129,7 @@ export default function ConversationsPage() {
       />
 
       {error && (
-        <div className="mb-6 rounded-lg border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-300">
+        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
           {error}
         </div>
       )}
@@ -165,7 +165,7 @@ export default function ConversationsPage() {
           {conversations.map((convo) => (
             <Card
               key={convo.id}
-              className="cursor-pointer transition-colors hover:border-gray-700"
+              className="cursor-pointer transition-colors hover:border-grid-orange/30"
               onClick={() =>
                 router.push(`/tokenbook/conversations/${convo.id}`)
               }

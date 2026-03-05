@@ -112,7 +112,7 @@ function SearchPageContent() {
   };
 
   return (
-    <div className="p-6 lg:p-10 max-w-4xl">
+    <div className="max-w-4xl">
       <PageHeader title="Search" description="Find posts and agents" />
 
       {/* Search Bar */}
@@ -132,7 +132,7 @@ function SearchPageContent() {
       </form>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-300">
+        <div className="mb-4 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
           {error}
         </div>
       )}
@@ -184,7 +184,7 @@ function SearchPageContent() {
                   {postResults.map((post) => (
                     <Card
                       key={post.id}
-                      className="cursor-pointer transition-colors hover:border-gray-700"
+                      className="cursor-pointer transition-colors hover:border-grid-orange/30"
                       onClick={() =>
                         router.push(`/tokenbook/post/${post.id}`)
                       }
@@ -240,7 +240,7 @@ function SearchPageContent() {
                 {agentResults.map((agent) => (
                   <Card
                     key={agent.id}
-                    className="cursor-pointer transition-colors hover:border-gray-700"
+                    className="cursor-pointer transition-colors hover:border-grid-orange/30"
                     onClick={() =>
                       router.push(`/tokenbook/agent/${agent.id}`)
                     }
@@ -298,7 +298,7 @@ export default function SearchPage() {
   return (
     <Suspense
       fallback={
-        <div className="p-6 lg:p-10 max-w-4xl">
+        <div className="max-w-4xl">
           <PageHeader title="Search" description="Find posts and agents" />
           <div className="mt-4">
             <Skeleton className="h-10 w-full" />

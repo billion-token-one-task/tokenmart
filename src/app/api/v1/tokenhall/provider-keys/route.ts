@@ -134,27 +134,6 @@ export async function POST(request: NextRequest) {
 
   const encrypted = encryptProviderKey(plaintextKey);
   const db = createAdminClient();
-
-  const existingQuery = db
-    .from("provider_keys")
-    .select("id")
-    .eq("provider", provider)
-    .limit(1);
-
-  const existingScoped =
-    scope === "agent"
-      ? existingQuery.eq("agent_id", context.agent_id as string).is("account_id", null)
-      : existingQuery.eq("account_id", context.account_id as string).is("agent_id", null);
-
-  const { data: existingRows, error: existingError } = await existingScoped;
-  if (existingError) {
-    return NextResponse.json(
-      { error: { code: 500, message: "Failed to inspect existing provider keys" } },
-      { status: 500 }
-    );
-  }
-
-  const existing = (existingRows ?? [])[0];
   const payload = {
     provider,
     label: body.label?.trim() || null,
@@ -164,17 +143,74 @@ export async function POST(request: NextRequest) {
     account_id: scope === "account" ? context.account_id : null,
   };
 
-  const mutation = existing
-    ? db.from("provider_keys").update(payload).eq("id", existing.id)
-    : db.from("provider_keys").insert(payload);
+  const selectColumns = "id, provider, label, agent_id, account_id, created_at";
+  const { data: inserted, error: insertError } = await db
+    .from("provider_keys")
+    .insert(payload)
+    .select(selectColumns)
+    .single();
 
-  const { data: saved, error: saveError } = await mutation
-    .select("id, provider, label, agent_id, account_id, created_at")
+  if (!insertError && inserted) {
+    return NextResponse.json(
+      {
+        key: {
+          id: inserted.id,
+          provider: inserted.provider,
+          label: inserted.label,
+          scope: inserted.agent_id ? "agent" : "account",
+          agent_id: inserted.agent_id,
+          account_id: inserted.account_id,
+          created_at: inserted.created_at,
+        },
+        updated: false,
+      },
+      { status: 201 }
+    );
+  }
+
+  if ((insertError as { code?: string } | null)?.code !== "23505") {
+    return NextResponse.json(
+      { error: { code: 500, message: "Failed to save provider key" } },
+      { status: 500 }
+    );
+  }
+
+  // Unique conflict: update the existing scoped provider key deterministically.
+  let existingScopedQuery = db
+    .from("provider_keys")
+    .select("id")
+    .eq("provider", provider)
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  existingScopedQuery =
+    scope === "agent"
+      ? existingScopedQuery
+          .eq("agent_id", context.agent_id as string)
+          .is("account_id", null)
+      : existingScopedQuery
+          .eq("account_id", context.account_id as string)
+          .is("agent_id", null);
+
+  const { data: scopedRows, error: scopedError } = await existingScopedQuery;
+  if (scopedError || !scopedRows || scopedRows.length === 0) {
+    return NextResponse.json(
+      { error: { code: 500, message: "Failed to resolve existing scoped provider key" } },
+      { status: 500 }
+    );
+  }
+
+  const scopedId = scopedRows[0].id;
+  const { data: saved, error: saveError } = await db
+    .from("provider_keys")
+    .update(payload)
+    .eq("id", scopedId)
+    .select(selectColumns)
     .single();
 
   if (saveError || !saved) {
     return NextResponse.json(
-      { error: { code: 500, message: "Failed to save provider key" } },
+      { error: { code: 500, message: "Failed to update existing provider key" } },
       { status: 500 }
     );
   }
@@ -190,8 +226,8 @@ export async function POST(request: NextRequest) {
         account_id: saved.account_id,
         created_at: saved.created_at,
       },
-      updated: Boolean(existing),
+      updated: true,
     },
-    { status: existing ? 200 : 201 }
+    { status: 200 }
   );
 }

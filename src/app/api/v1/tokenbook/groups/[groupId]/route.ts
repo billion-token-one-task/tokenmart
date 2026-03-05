@@ -4,6 +4,14 @@ import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { updateBehavioralVector } from "@/lib/sybil/behavioral-vectors";
 
+function isMissingRpcFunction(
+  error: { code?: string; message?: string } | null,
+  fnName: string
+): boolean {
+  if (!error) return false;
+  return error.code === "PGRST202" || (error.message ?? "").includes(fnName);
+}
+
 /**
  * GET /api/v1/tokenbook/groups/[groupId]
  * Get group details with members list.
@@ -108,6 +116,115 @@ export async function POST(
     // No body or invalid JSON is fine for join (default action)
   }
 
+  if (body.action === "leave") {
+    // Prefer atomic leave path when RPC is available.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rpcResult = await (db.rpc as any)("leave_group_atomic", {
+      p_group_id: groupId,
+      p_agent_id: agentId,
+    });
+
+    if (!rpcResult.error) {
+      const row = Array.isArray(rpcResult.data) ? rpcResult.data[0] : rpcResult.data;
+      if (row?.ok) {
+        return NextResponse.json({
+          left: true,
+          group_id: groupId,
+          member_count: row.member_count ?? 0,
+        });
+      }
+
+      const code = row?.code as string | undefined;
+      if (code === "group_not_found") {
+        return NextResponse.json(
+          { error: { code: 404, message: "Group not found" } },
+          { status: 404 }
+        );
+      }
+      if (code === "not_member") {
+        return NextResponse.json(
+          { error: { code: 404, message: "Not a member of this group" } },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json(
+        { error: { code: 500, message: "Failed to leave group" } },
+        { status: 500 }
+      );
+    }
+
+    if (!isMissingRpcFunction(rpcResult.error, "leave_group_atomic")) {
+      return NextResponse.json(
+        { error: { code: 500, message: "Failed to leave group" } },
+        { status: 500 }
+      );
+    }
+  } else {
+    // Prefer atomic join path when RPC is available.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rpcResult = await (db.rpc as any)("join_group_atomic", {
+      p_group_id: groupId,
+      p_agent_id: agentId,
+    });
+
+    if (!rpcResult.error) {
+      const row = Array.isArray(rpcResult.data) ? rpcResult.data[0] : rpcResult.data;
+      if (row?.ok) {
+        updateBehavioralVector(agentId, "tokenbook_group_join", {
+          group_id: groupId,
+        }).catch(() => {});
+
+        return NextResponse.json(
+          {
+            joined: true,
+            group_id: groupId,
+            role: "member",
+            member_count: row.member_count ?? 0,
+          },
+          { status: 201 }
+        );
+      }
+
+      const code = row?.code as string | undefined;
+      if (code === "group_not_found") {
+        return NextResponse.json(
+          { error: { code: 404, message: "Group not found" } },
+          { status: 404 }
+        );
+      }
+      if (code === "group_private") {
+        return NextResponse.json(
+          { error: { code: 403, message: "This group is private. Auto-join is not available." } },
+          { status: 403 }
+        );
+      }
+      if (code === "group_full") {
+        return NextResponse.json(
+          { error: { code: 409, message: "Group has reached its maximum member capacity" } },
+          { status: 409 }
+        );
+      }
+      if (code === "already_member") {
+        return NextResponse.json(
+          { error: { code: 409, message: "Already a member of this group" } },
+          { status: 409 }
+        );
+      }
+      return NextResponse.json(
+        { error: { code: 500, message: "Failed to join group" } },
+        { status: 500 }
+      );
+    }
+
+    if (!isMissingRpcFunction(rpcResult.error, "join_group_atomic")) {
+      return NextResponse.json(
+        { error: { code: 500, message: "Failed to join group" } },
+        { status: 500 }
+      );
+    }
+  }
+
+  // Legacy fallback path for environments that don't have atomic RPCs yet.
   const { data: group } = await db
     .from("groups" as any)
     .select("*")

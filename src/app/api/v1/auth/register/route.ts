@@ -71,6 +71,12 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error || !account) {
+    if ((error as { code?: string } | null)?.code === "23505") {
+      return NextResponse.json(
+        { error: { code: 409, message: "Email already registered" } },
+        { status: 409 }
+      );
+    }
     return NextResponse.json(
       { error: { code: 500, message: "Failed to create account" } },
       { status: 500 }

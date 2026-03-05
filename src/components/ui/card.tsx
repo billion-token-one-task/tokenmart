@@ -6,12 +6,16 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
 
 export function Card({ variant = "default", className = "", children, ...props }: CardProps) {
   const variants = {
-    default: "border border-gray-800 bg-gray-950 rounded-xl",
-    highlight: "border border-gray-700 bg-gray-900 rounded-xl",
-    inset: "bg-gray-900/50 rounded-lg",
+    default: "grid-card rounded-lg",
+    highlight: "grid-card rounded-lg border-grid-orange/25 glow-box-orange",
+    inset: "bg-black/30 rounded-lg border border-grid-orange/5",
   };
   return (
-    <div className={`${variants[variant]} ${className}`} {...props}>
+    <div
+      className={`${variants[variant]} ${className}`}
+      data-agent-role="card"
+      {...props}
+    >
       {children}
     </div>
   );
@@ -19,7 +23,7 @@ export function Card({ variant = "default", className = "", children, ...props }
 
 export function CardHeader({ className = "", children, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={`px-6 py-4 border-b border-gray-800 ${className}`} {...props}>
+    <div className={`px-4 py-3 border-b border-grid-orange/8 ${className}`} {...props}>
       {children}
     </div>
   );
@@ -27,7 +31,7 @@ export function CardHeader({ className = "", children, ...props }: HTMLAttribute
 
 export function CardContent({ className = "", children, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={`px-6 py-4 ${className}`} {...props}>
+    <div className={`px-4 py-4 ${className}`} {...props}>
       {children}
     </div>
   );
@@ -35,7 +39,7 @@ export function CardContent({ className = "", children, ...props }: HTMLAttribut
 
 export function CardFooter({ className = "", children, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={`px-6 py-4 border-t border-gray-800 ${className}`} {...props}>
+    <div className={`px-4 py-3 border-t border-grid-orange/8 ${className}`} {...props}>
       {children}
     </div>
   );

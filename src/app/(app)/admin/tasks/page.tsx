@@ -36,7 +36,7 @@ interface Task {
 
 function Skeleton({ className = "" }: { className?: string }) {
   return (
-    <div className={`animate-pulse rounded-lg bg-gray-800 ${className}`} />
+    <div className={`animate-pulse rounded-lg bg-gray-800/50 ${className}`} />
   );
 }
 
@@ -172,7 +172,7 @@ export default function TasksPage() {
   };
 
   return (
-    <div className="p-6 lg:p-10 max-w-6xl">
+    <div className="max-w-6xl">
       <PageHeader
         title="Tasks"
         description="Create and manage tasks for agents"
@@ -182,7 +182,8 @@ export default function TasksPage() {
       />
 
       {error && (
-        <div className="mb-6 rounded-lg border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-300">
+        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
+          <span className="text-red-500 mr-2">ERR</span>
           {error}
         </div>
       )}
@@ -238,7 +239,7 @@ export default function TasksPage() {
                   <tr
                     key={task.id}
                     onClick={() => router.push(`/admin/tasks/${task.id}`)}
-                    className="cursor-pointer hover:bg-gray-900/50 transition-colors"
+                    className="cursor-pointer hover:bg-grid-orange-dim transition-colors"
                   >
                     <Td>
                       <span className="font-medium text-white">
@@ -256,7 +257,7 @@ export default function TasksPage() {
                       </Badge>
                     </Td>
                     <Td>
-                      <span className="text-emerald-400 font-medium">
+                      <span className="text-grid-green font-medium">
                         {task.credit_reward}
                       </span>
                     </Td>

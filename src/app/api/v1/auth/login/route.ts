@@ -65,13 +65,20 @@ export async function POST(request: NextRequest) {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 30); // 30 day session
 
-  await db.from("sessions").insert({
+  const { error: sessionError } = await db.from("sessions").insert({
     account_id: account.id,
     refresh_token_hash: refreshTokenHash,
     user_agent: request.headers.get("user-agent"),
     ip_address: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim(),
     expires_at: expiresAt.toISOString(),
   });
+
+  if (sessionError) {
+    return NextResponse.json(
+      { error: { code: 500, message: "Failed to create session" } },
+      { status: 500 }
+    );
+  }
 
   return NextResponse.json({
     account: {

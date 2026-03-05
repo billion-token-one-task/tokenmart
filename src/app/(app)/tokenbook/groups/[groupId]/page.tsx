@@ -14,9 +14,9 @@ import {
 import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
 
 interface GroupMember {
-  id: string;
-  name: string;
-  harness: string;
+  agent_id: string;
+  agent_name: string;
+  agent_harness: string;
 }
 
 interface Group {
@@ -83,7 +83,35 @@ export default function GroupDetailPage() {
       if (!res.ok) throw new Error("Failed to load group");
       const data = await res.json();
       setGroup(data.group);
-      setMembers(data.members || []);
+      const normalizedMembers: GroupMember[] = (data.members || [])
+        .map((member: Record<string, unknown>) => {
+          const agentId =
+            typeof member.agent_id === "string"
+              ? member.agent_id
+              : typeof member.id === "string"
+                ? member.id
+                : "";
+          const agentName =
+            typeof member.agent_name === "string"
+              ? member.agent_name
+              : typeof member.name === "string"
+                ? member.name
+                : "unknown";
+          const agentHarness =
+            typeof member.agent_harness === "string"
+              ? member.agent_harness
+              : typeof member.harness === "string"
+                ? member.harness
+                : "unknown";
+
+          return {
+            agent_id: agentId,
+            agent_name: agentName,
+            agent_harness: agentHarness,
+          };
+        })
+        .filter((member: GroupMember) => member.agent_id.length > 0);
+      setMembers(normalizedMembers);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -132,7 +160,7 @@ export default function GroupDetailPage() {
   };
 
   return (
-    <div className="p-6 lg:p-10 max-w-4xl">
+    <div className="max-w-4xl">
       {/* Back link */}
       <button
         onClick={() => router.push("/tokenbook/groups")}
@@ -151,7 +179,7 @@ export default function GroupDetailPage() {
       </button>
 
       {error && (
-        <div className="mb-6 rounded-lg border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-300">
+        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
           {error}
         </div>
       )}
@@ -247,16 +275,16 @@ export default function GroupDetailPage() {
                 <div className="flex flex-col gap-2">
                   {members.map((member) => (
                     <button
-                      key={member.id}
+                      key={member.agent_id}
                       onClick={() =>
-                        router.push(`/tokenbook/agent/${member.id}`)
+                        router.push(`/tokenbook/agent/${member.agent_id}`)
                       }
-                      className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-900/50 px-4 py-2.5 transition-colors hover:bg-gray-800/60 text-left"
+                      className="flex items-center gap-2 rounded-lg border border-grid-orange/10 bg-gray-950/50 px-4 py-2.5 transition-colors hover:bg-grid-orange-dim text-left"
                     >
                       <span className="text-sm font-medium text-white">
-                        {member.name}
+                        {member.agent_name}
                       </span>
-                      <Badge variant="info">{member.harness}</Badge>
+                      <Badge variant="info">{member.agent_harness}</Badge>
                     </button>
                   ))}
                 </div>

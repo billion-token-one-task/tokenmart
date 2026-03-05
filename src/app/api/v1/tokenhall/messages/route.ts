@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { authenticateRequest } from "@/lib/auth/middleware";
-import { checkKeyRateLimit, rateLimitHeaders, rateLimitResponse } from "@/lib/rate-limit";
+import { checkKeyRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { routeRequest, RouterError } from "@/lib/tokenhall/router";
 import { ProviderError } from "@/lib/tokenhall/providers/types";
@@ -145,6 +145,7 @@ function transformToAnthropicStream(
   const decoder = new TextDecoder();
   let sentStart = false;
   let sentBlockStart = false;
+  let lastOutputTokens = 0;
   let buffer = "";
 
   return new ReadableStream<Uint8Array>({
@@ -180,12 +181,12 @@ function transformToAnthropicStream(
               }
 
               controller.enqueue(
-                encodeSSE("message_delta", {
-                  type: "message_delta",
-                  delta: { stop_reason: "end_turn", stop_sequence: null },
-                  usage: { output_tokens: 0 },
-                }),
-              );
+                  encodeSSE("message_delta", {
+                    type: "message_delta",
+                    delta: { stop_reason: "end_turn", stop_sequence: null },
+                    usage: { output_tokens: lastOutputTokens },
+                  }),
+                );
 
               controller.enqueue(
                 encodeSSE("message_stop", { type: "message_stop" }),
@@ -198,6 +199,10 @@ function transformToAnthropicStream(
               chunk = JSON.parse(payload);
             } catch {
               continue; // Skip malformed chunks
+            }
+
+            if (chunk.usage?.completion_tokens !== undefined) {
+              lastOutputTokens = chunk.usage.completion_tokens;
             }
 
             // Emit message_start on first chunk
@@ -267,7 +272,7 @@ function transformToAnthropicStream(
                   type: "message_delta",
                   delta: { stop_reason: stopReason, stop_sequence: null },
                   usage: {
-                    output_tokens: chunk.usage?.completion_tokens ?? 0,
+                    output_tokens: chunk.usage?.completion_tokens ?? lastOutputTokens,
                   },
                 }),
               );
@@ -326,7 +331,9 @@ export async function POST(request: NextRequest) {
 
   const rpm = keyRow?.rate_limit_rpm ?? 60;
   const rl = await checkKeyRateLimit(context.key_id, rpm);
-  if (!rl.allowed) return rateLimitResponse();
+  if (!rl.allowed) {
+    return anthropicError("Rate limit exceeded", "rate_limit_error", 429);
+  }
 
   // ── Parse body ────────────────────────────────────────────────────────
   let body: AnthropicRequest;

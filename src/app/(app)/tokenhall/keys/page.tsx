@@ -363,9 +363,9 @@ export default function TokenHallKeysPage() {
 
   if (!token) {
     return (
-      <div className="p-8">
+      <div>
         <PageHeader title="TokenHall Keys" />
-        <div className="rounded-lg border border-gray-800 bg-gray-950 px-6 py-12 text-center">
+        <div className="rounded-lg grid-card px-6 py-12 text-center">
           <p className="text-gray-400">Please log in to manage your keys.</p>
         </div>
       </div>
@@ -373,7 +373,7 @@ export default function TokenHallKeysPage() {
   }
 
   return (
-    <div className="p-8">
+    <div>
       <PageHeader
         title="TokenHall Keys"
         description="Manage platform keys (th_/thm_) and provider BYOK keys"
@@ -406,7 +406,7 @@ export default function TokenHallKeysPage() {
       </Card>
 
       {error && (
-        <div className="rounded-lg border border-red-800 bg-red-950 px-6 py-4 text-sm text-red-300 mb-6">
+        <div className="grid-card rounded-lg border-red-900/30 px-6 py-4 text-xs text-red-400 font-mono mb-6">
           {error}
         </div>
       )}
@@ -444,7 +444,7 @@ export default function TokenHallKeysPage() {
                   <tr key={key.id}>
                     <Td>{key.name}</Td>
                     <Td>
-                      <code className="text-xs bg-gray-900 border border-gray-800 rounded px-2 py-1 text-gray-400">
+                      <code className="text-xs bg-gray-900 border border-grid-orange/10 rounded px-2 py-1 text-gray-400">
                         {key.prefix}...
                       </code>
                     </Td>
@@ -668,7 +668,7 @@ export default function TokenHallKeysPage() {
         title="API Key Created"
       >
         <div className="flex flex-col gap-4">
-          <div className="rounded-lg border border-amber-800 bg-amber-950 px-4 py-3 text-sm text-amber-300">
+          <div className="rounded-lg border border-amber-800 bg-amber-950 px-4 py-3 text-sm text-grid-orange">
             Copy this key now. It will not be shown again.
           </div>
 
@@ -676,7 +676,7 @@ export default function TokenHallKeysPage() {
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-gray-300">Your API Key</label>
               <div className="flex items-center gap-2">
-                <code className="flex-1 text-sm bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-emerald-400 break-all select-all">
+                <code className="flex-1 text-sm bg-gray-900 border border-grid-orange/15 rounded-lg px-4 py-3 text-grid-green break-all select-all">
                   {createdKey.raw_key}
                 </code>
                 <Button variant="secondary" size="sm" onClick={() => copyToClipboard(createdKey.raw_key)}>

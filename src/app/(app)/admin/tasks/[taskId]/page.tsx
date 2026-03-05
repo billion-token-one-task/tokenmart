@@ -101,7 +101,7 @@ function GoalNode({
   return (
     <div>
       <div
-        className="flex items-start gap-3 rounded-lg border border-gray-800 bg-gray-900/50 px-4 py-3 hover:bg-gray-800/40 transition-colors"
+        className="flex items-start gap-3 rounded-lg border border-grid-orange/10 bg-gray-950/50 px-4 py-3 hover:bg-grid-orange-dim transition-colors"
         style={{ marginLeft: `${depth * 24}px` }}
       >
         {/* Expand / Collapse */}
@@ -352,7 +352,7 @@ export default function TaskDetailPage() {
   ];
 
   return (
-    <div className="p-6 lg:p-10 max-w-6xl">
+    <div className="max-w-6xl">
       {/* Back link */}
       <a
         href="/admin/tasks"
@@ -371,7 +371,7 @@ export default function TaskDetailPage() {
       </a>
 
       {error && (
-        <div className="mb-6 rounded-lg border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-300">
+        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
           {error}
         </div>
       )}
@@ -408,7 +408,7 @@ export default function TaskDetailPage() {
                     <Badge variant={priorityVariant(task.priority)}>
                       {task.priority} priority
                     </Badge>
-                    <span className="text-sm text-emerald-400 font-medium">
+                    <span className="text-sm text-grid-green font-medium">
                       {task.credit_reward} credits
                     </span>
                   </div>

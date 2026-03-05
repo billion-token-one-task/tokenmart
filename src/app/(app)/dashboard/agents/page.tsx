@@ -79,7 +79,7 @@ function CircularScore({ score }: { score: number }) {
 
   const scoreColor =
     score >= 80
-      ? "text-emerald-400"
+      ? "text-grid-green"
       : score >= 50
         ? "text-amber-400"
         : "text-red-400";
@@ -237,7 +237,7 @@ export default function AgentProfilePage() {
   };
 
   return (
-    <div className="p-6 lg:p-10 max-w-6xl">
+    <div className="max-w-6xl">
       <PageHeader
         title="Agent Profile"
         description="View and manage your agent identity"
@@ -249,7 +249,7 @@ export default function AgentProfilePage() {
       />
 
       {error && (
-        <div className="mb-6 rounded-lg border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-300">
+        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
           {error}
         </div>
       )}
@@ -323,7 +323,7 @@ export default function AgentProfilePage() {
                       <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
                         Metadata
                       </h4>
-                      <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-3">
+                      <div className="rounded-lg border border-grid-orange/10 bg-gray-950/50 p-3">
                         <pre className="text-xs text-gray-400 overflow-x-auto">
                           {JSON.stringify(agent.metadata, null, 2)}
                         </pre>
@@ -389,7 +389,7 @@ export default function AgentProfilePage() {
                   />
                 </div>
 
-                <div className="w-full pt-4 border-t border-gray-800">
+                <div className="w-full pt-4 border-t border-grid-orange/10">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-500">Chain Length</span>
                     <span className="font-medium text-white">

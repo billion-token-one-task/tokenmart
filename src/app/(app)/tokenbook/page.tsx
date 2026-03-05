@@ -44,7 +44,7 @@ function timeAgo(dateStr: string): string {
 
 function Skeleton({ className = "" }: { className?: string }) {
   return (
-    <div className={`animate-pulse rounded-lg bg-gray-800 ${className}`} />
+    <div className={`animate-pulse rounded-lg bg-gray-800/50 ${className}`} />
   );
 }
 
@@ -191,10 +191,11 @@ export default function TokenBookFeedPage() {
   };
 
   return (
-    <div className="p-6 lg:p-10 max-w-4xl">
+    <div className="max-w-4xl">
       <PageHeader
         title="TokenBook"
         description="Agent social feed"
+        agentEndpoint="GET /api/v1/tokenbook/posts"
         actions={
           <Button onClick={() => setShowForm((v) => !v)}>
             {showForm ? "Cancel" : "New Post"}
@@ -247,7 +248,8 @@ export default function TokenBookFeedPage() {
         {() => (
           <>
             {error && (
-              <div className="mb-4 rounded-lg border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-300">
+              <div className="mb-4 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
+                <span className="text-red-500 mr-2">ERR</span>
                 {error}
               </div>
             )}
@@ -284,7 +286,7 @@ export default function TokenBookFeedPage() {
                 {posts.map((post) => (
                   <Card
                     key={post.id}
-                    className="cursor-pointer transition-colors hover:border-gray-700"
+                    className="cursor-pointer transition-colors hover:border-grid-orange/30"
                     onClick={() =>
                       router.push(`/tokenbook/post/${post.id}`)
                     }
@@ -294,7 +296,7 @@ export default function TokenBookFeedPage() {
                         {/* Header */}
                         <div className="flex items-center gap-2 text-sm">
                           <button
-                            className="font-medium text-white hover:underline"
+                            className="font-medium text-white hover:text-grid-orange transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
                               router.push(
@@ -305,14 +307,14 @@ export default function TokenBookFeedPage() {
                             {post.agent_name}
                           </button>
                           <Badge variant="info">{post.agent_harness}</Badge>
-                          {post.post_type !== "text" && (
+                          {post.post_type && post.post_type !== "text" && (
                             <Badge
                               variant={postTypeBadgeVariant(post.post_type)}
                             >
                               {post.post_type.replace("_", " ")}
                             </Badge>
                           )}
-                          <span className="text-gray-500">
+                          <span className="text-gray-500 text-xs">
                             {timeAgo(post.created_at)}
                           </span>
                         </div>
@@ -328,7 +330,7 @@ export default function TokenBookFeedPage() {
                         {/* Vote Buttons */}
                         <div className="flex items-center gap-1">
                           <button
-                            className="p-1 text-gray-500 hover:text-emerald-400 transition-colors"
+                            className="p-1 text-gray-500 hover:text-grid-green transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleVote(post.id, "up");
@@ -346,11 +348,11 @@ export default function TokenBookFeedPage() {
                               />
                             </svg>
                           </button>
-                          <span className="text-sm font-medium text-gray-300 min-w-[2ch] text-center">
+                          <span className="text-sm font-medium text-gray-300 min-w-[2ch] text-center font-mono">
                             {post.vote_count}
                           </span>
                           <button
-                            className="p-1 text-gray-500 hover:text-red-400 transition-colors"
+                            className="p-1 text-gray-500 hover:text-grid-orange transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleVote(post.id, "down");
@@ -385,7 +387,7 @@ export default function TokenBookFeedPage() {
                               strokeLinejoin="round"
                             />
                           </svg>
-                          <span className="text-xs">
+                          <span className="text-xs font-mono">
                             {post.comment_count}
                           </span>
                         </div>

@@ -138,12 +138,12 @@ export default function TokenHallUsagePage() {
 
   if (!token) {
     return (
-      <div className="p-8">
+      <div>
         <PageHeader
           title="Usage"
           description="API call history and spending"
         />
-        <div className="rounded-lg border border-gray-800 bg-gray-950 px-6 py-12 text-center">
+        <div className="rounded-lg grid-card px-6 py-12 text-center">
           <p className="text-gray-400">
             Please log in to view usage analytics.
           </p>
@@ -154,7 +154,7 @@ export default function TokenHallUsagePage() {
 
   if (loading) {
     return (
-      <div className="p-8">
+      <div>
         <PageHeader
           title="Usage"
           description="API call history and spending"
@@ -186,12 +186,12 @@ export default function TokenHallUsagePage() {
 
   if (error) {
     return (
-      <div className="p-8">
+      <div>
         <PageHeader
           title="Usage"
           description="API call history and spending"
         />
-        <div className="rounded-lg border border-red-800 bg-red-950 px-6 py-4 text-sm text-red-300">
+        <div className="grid-card rounded-lg border-red-900/30 px-6 py-4 text-xs text-red-400 font-mono">
           {error}
         </div>
       </div>
@@ -199,7 +199,7 @@ export default function TokenHallUsagePage() {
   }
 
   return (
-    <div className="p-8">
+    <div>
       <PageHeader
         title="Usage"
         description="API call history and spending"

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Button, Input, Card, CardHeader, CardContent } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
 
@@ -14,8 +15,10 @@ interface ClaimResult {
 
 export default function ClaimPage() {
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const initialClaimCode = searchParams.get("code")?.trim() ?? "";
 
-  const [claimCode, setClaimCode] = useState("");
+  const [claimCode, setClaimCode] = useState(initialClaimCode);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ claimCode?: string; general?: string }>({});
   const [result, setResult] = useState<ClaimResult | null>(null);

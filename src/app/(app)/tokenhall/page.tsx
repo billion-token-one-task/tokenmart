@@ -84,13 +84,13 @@ export default function TokenHallPage() {
 
   if (!token) {
     return (
-      <div className="p-8">
+      <div>
         <PageHeader
           title="TokenHall"
           description="OpenRouter-compatible LLM API"
         />
-        <div className="rounded-lg border border-gray-800 bg-gray-950 px-6 py-12 text-center">
-          <p className="text-gray-400">Please log in to access TokenHall.</p>
+        <div className="grid-card rounded-lg px-6 py-12 text-center">
+          <p className="text-gray-400 text-sm">Please log in to access TokenHall.</p>
         </div>
       </div>
     );
@@ -98,31 +98,15 @@ export default function TokenHallPage() {
 
   if (loading) {
     return (
-      <div className="p-8">
+      <div>
         <PageHeader
           title="TokenHall"
           description="OpenRouter-compatible LLM API"
         />
         <div className="flex items-center justify-center py-20">
-          <svg
-            className="animate-spin h-6 w-6 text-gray-400"
-            viewBox="0 0 24 24"
-            fill="none"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-            />
-          </svg>
+          <div className="text-grid-orange/60 font-mono text-xs animate-pulse-subtle">
+            loading...
+          </div>
         </div>
       </div>
     );
@@ -130,12 +114,13 @@ export default function TokenHallPage() {
 
   if (error) {
     return (
-      <div className="p-8">
+      <div>
         <PageHeader
           title="TokenHall"
           description="OpenRouter-compatible LLM API"
         />
-        <div className="rounded-lg border border-red-800 bg-red-950 px-6 py-4 text-sm text-red-300">
+        <div className="grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
+          <span className="text-red-500 mr-2">ERR</span>
           {error}
         </div>
       </div>
@@ -154,10 +139,11 @@ export default function TokenHallPage() {
   }'`;
 
   return (
-    <div className="p-8">
+    <div>
       <PageHeader
         title="TokenHall"
         description="OpenRouter-compatible LLM API"
+        agentEndpoint="GET /api/v1/tokenhall/models"
       />
 
       {/* Stats */}
@@ -193,81 +179,91 @@ export default function TokenHallPage() {
       </StatGrid>
 
       {/* Quick Start */}
-      <Card className="mb-8">
-        <CardHeader>
-          <h2 className="text-lg font-semibold text-white">Quick Start</h2>
-          <p className="text-sm text-gray-400 mt-1">
+      <div className="grid-card rounded-lg overflow-hidden mb-8">
+        <div className="px-4 py-3 border-b border-grid-orange/10 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-grid-orange text-sm">⚡</span>
+            <h2 className="text-xs font-semibold text-white uppercase tracking-wider">
+              Quick Start
+            </h2>
+          </div>
+          <span className="text-[9px] text-gray-600 font-mono">
+            chat/completions
+          </span>
+        </div>
+        <div className="p-4">
+          <p className="text-xs text-gray-400 mb-3">
             Use any OpenAI-compatible client to call 400+ LLM models
           </p>
-        </CardHeader>
-        <div className="bg-gray-950 border-t border-gray-800">
-          <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
+        </div>
+        <div className="bg-gray-950 border-t border-grid-orange/10">
+          <div className="px-4 py-2 border-b border-grid-orange/5 flex items-center gap-2">
             <div className="flex gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-gray-800" />
-              <div className="w-3 h-3 rounded-full bg-gray-800" />
-              <div className="w-3 h-3 rounded-full bg-gray-800" />
+              <div className="w-2.5 h-2.5 rounded-full bg-grid-orange/30" />
+              <div className="w-2.5 h-2.5 rounded-full bg-grid-green/30" />
+              <div className="w-2.5 h-2.5 rounded-full bg-gray-700" />
             </div>
-            <span className="text-xs text-gray-600 ml-2">
-              chat/completions
+            <span className="text-[9px] text-gray-600 ml-1 font-mono">
+              quick_start.sh
             </span>
           </div>
-          <pre className="p-6 text-sm text-gray-300 overflow-x-auto leading-relaxed">
+          <pre className="p-5 text-xs text-gray-300 overflow-x-auto leading-relaxed">
             <code>{curlExample}</code>
           </pre>
         </div>
-      </Card>
+      </div>
 
       {/* Supported Formats */}
-      <Card>
-        <CardHeader>
-          <h2 className="text-lg font-semibold text-white">
+      <div className="grid-card rounded-lg overflow-hidden">
+        <div className="px-4 py-3 border-b border-grid-orange/10">
+          <h2 className="text-xs font-semibold text-white uppercase tracking-wider">
             Supported Formats
           </h2>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-[10px] text-gray-500 mt-1">
             TokenHall supports multiple API formats out of the box
           </p>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="border border-gray-800 rounded-lg p-4">
+        </div>
+        <div className="p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="border border-grid-orange/10 rounded-lg p-4 hover:border-grid-orange/25 transition-colors">
               <div className="flex items-center gap-2 mb-2">
                 <Badge variant="info">OpenAI</Badge>
               </div>
               <h3 className="text-sm font-medium text-white mb-1">
                 OpenAI-Compatible
               </h3>
-              <p className="text-xs text-gray-500 leading-relaxed">
+              <p className="text-xs text-gray-400 leading-relaxed">
                 Drop-in replacement for the OpenAI API. Use any
                 OpenAI-compatible SDK or client library.
               </p>
             </div>
-            <div className="border border-gray-800 rounded-lg p-4">
+            <div className="border border-grid-orange/10 rounded-lg p-4 hover:border-grid-orange/25 transition-colors">
               <div className="flex items-center gap-2 mb-2">
                 <Badge variant="success">Anthropic</Badge>
               </div>
               <h3 className="text-sm font-medium text-white mb-1">
                 Anthropic Messages
               </h3>
-              <p className="text-xs text-gray-500 leading-relaxed">
+              <p className="text-xs text-gray-400 leading-relaxed">
                 Native support for the Anthropic Messages API format. Use
                 Claude models with the native API.
               </p>
             </div>
-            <div className="border border-gray-800 rounded-lg p-4">
+            <div className="border border-grid-orange/10 rounded-lg p-4 hover:border-grid-orange/25 transition-colors">
               <div className="flex items-center gap-2 mb-2">
                 <Badge variant="warning">Streaming</Badge>
               </div>
               <h3 className="text-sm font-medium text-white mb-1">
                 SSE Streaming
               </h3>
-              <p className="text-xs text-gray-500 leading-relaxed">
+              <p className="text-xs text-gray-400 leading-relaxed">
                 Full Server-Sent Events streaming support for real-time token
                 generation across all models.
               </p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

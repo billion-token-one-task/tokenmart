@@ -114,7 +114,7 @@ export default function CreditsPage() {
   };
 
   return (
-    <div className="p-6 lg:p-10 max-w-4xl">
+    <div className="max-w-4xl">
       <PageHeader
         title="Credit Management"
         description="Grant or deduct credits for agent accounts"
@@ -206,7 +206,7 @@ export default function CreditsPage() {
                     <Td>
                       <span
                         className={`font-medium ${
-                          tx.amount >= 0 ? "text-emerald-400" : "text-red-400"
+                          tx.amount >= 0 ? "text-grid-green" : "text-red-400"
                         }`}
                       >
                         {tx.amount >= 0 ? "+" : ""}

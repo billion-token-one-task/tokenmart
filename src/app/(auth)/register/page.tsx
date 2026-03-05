@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Button, Input, Card, CardHeader, CardContent } from "@/components/ui";
+import { Button, Input } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
 
 export default function RegisterPage() {
@@ -27,7 +27,6 @@ export default function RegisterPage() {
     e.preventDefault();
     setErrors({});
 
-    // Client-side validation
     const newErrors: typeof errors = {};
     if (!email) newErrors.email = "Email is required";
     if (!password) newErrors.password = "Password is required";
@@ -43,7 +42,6 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // Step 1: Register the account
       const registerRes = await fetch("/api/v1/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -63,7 +61,6 @@ export default function RegisterPage() {
         return;
       }
 
-      // Step 2: Log in automatically after registration
       const loginRes = await fetch("/api/v1/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -73,13 +70,11 @@ export default function RegisterPage() {
       const loginData = await loginRes.json();
 
       if (!loginRes.ok) {
-        // Registration succeeded but auto-login failed
         toast("Account created! Please log in.", "success");
         router.push("/login");
         return;
       }
 
-      // Store session data in localStorage
       localStorage.setItem("session_token", loginData.refresh_token);
       localStorage.setItem("account", JSON.stringify(loginData.account));
       localStorage.removeItem("selected_agent_id");
@@ -97,85 +92,96 @@ export default function RegisterPage() {
 
   return (
     <div className="w-full max-w-md">
-      <Card>
-        <CardHeader>
-          <h1 className="text-xl font-bold text-white">Create your account</h1>
-          <p className="text-sm text-gray-400 mt-1">
+      <div className="grid-card rounded-xl p-8" data-agent-role="auth-form" data-agent-action="register">
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="w-2 h-2 rounded-full bg-grid-green animate-gol-blink" />
+            <h1 className="text-lg font-bold text-white tracking-wide uppercase">
+              Create Account
+            </h1>
+          </div>
+          <p className="text-xs text-gray-400 ml-4">
             Join TokenMart to manage and scale your AI agents
           </p>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {errors.general && (
-              <div className="rounded-lg border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-300">
-                {errors.general}
-              </div>
-            )}
+        </div>
 
-            <Input
-              label="Name"
-              type="text"
-              placeholder="Your display name (optional)"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              error={errors.name}
-              disabled={loading}
-              autoComplete="name"
-            />
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {errors.general && (
+            <div className="rounded-lg border border-red-900/40 bg-red-950/30 px-4 py-3 text-xs text-red-400 font-mono">
+              <span className="text-red-500 mr-2">ERR</span>
+              {errors.general}
+            </div>
+          )}
 
-            <Input
-              label="Email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              error={errors.email}
-              disabled={loading}
-              autoComplete="email"
-            />
+          <Input
+            label="Name"
+            type="text"
+            placeholder="Your display name (optional)"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            error={errors.name}
+            disabled={loading}
+            autoComplete="name"
+          />
 
-            <Input
-              label="Password"
-              type="password"
-              placeholder="Minimum 8 characters"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              error={errors.password}
-              hint="Must be at least 8 characters"
-              disabled={loading}
-              autoComplete="new-password"
-            />
+          <Input
+            label="Email"
+            type="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            error={errors.email}
+            disabled={loading}
+            autoComplete="email"
+          />
 
-            <Input
-              label="Confirm password"
-              type="password"
-              placeholder="Re-enter your password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              error={errors.confirmPassword}
-              disabled={loading}
-              autoComplete="new-password"
-            />
+          <Input
+            label="Password"
+            type="password"
+            placeholder="Minimum 8 characters"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            error={errors.password}
+            hint="Must be at least 8 characters"
+            disabled={loading}
+            autoComplete="new-password"
+          />
 
-            <Button type="submit" loading={loading} className="w-full mt-2">
-              Create account
-            </Button>
-          </form>
+          <Input
+            label="Confirm password"
+            type="password"
+            placeholder="Re-enter your password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            error={errors.confirmPassword}
+            disabled={loading}
+            autoComplete="new-password"
+          />
 
-          <div className="mt-6 text-center text-sm text-gray-400">
-            Already have an account?{" "}
-            <Link href="/login" className="text-white hover:underline">
-              Log in
-            </Link>
-          </div>
+          <Button type="submit" loading={loading} className="w-full mt-2">
+            Create account
+          </Button>
+        </form>
 
-          <div className="mt-3 text-center text-sm text-gray-500">
-            <Link href="/agent-register" className="hover:text-gray-300 transition-colors">
-              Register an Agent instead
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
+        <div className="mt-6 text-center text-xs text-gray-500">
+          Already have an account?{" "}
+          <Link href="/login" className="text-grid-orange hover:text-grid-orange/80 transition-colors">
+            Log in
+          </Link>
+        </div>
+
+        <div className="mt-3 text-center text-xs text-gray-600">
+          <Link href="/agent-register" className="hover:text-gray-400 transition-colors">
+            Register an Agent instead
+          </Link>
+        </div>
+
+        <div className="mt-6 pt-4 border-t border-grid-orange/5 text-center">
+          <span className="text-[9px] text-grid-orange/20 font-mono">
+            POST /api/v1/auth/register
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

@@ -338,8 +338,10 @@ async function resolveApiKey(
     .select("encrypted_key, iv")
     .eq("agent_id", agentId)
     .eq("provider", providerName)
+    .is("account_id", null)
+    .order("created_at", { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
 
   if (providerKey) {
     try {
@@ -366,8 +368,10 @@ async function resolveApiKey(
       .select("encrypted_key, iv")
       .eq("account_id", agent.owner_account_id)
       .eq("provider", providerName)
+      .is("agent_id", null)
+      .order("created_at", { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (accountKey) {
       try {

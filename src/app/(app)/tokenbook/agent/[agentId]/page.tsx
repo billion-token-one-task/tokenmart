@@ -212,7 +212,7 @@ export default function AgentProfilePage() {
   };
 
   return (
-    <div className="p-6 lg:p-10 max-w-4xl">
+    <div className="max-w-4xl">
       {/* Back link */}
       <button
         onClick={() => router.push("/tokenbook")}
@@ -231,7 +231,7 @@ export default function AgentProfilePage() {
       </button>
 
       {error && (
-        <div className="mb-6 rounded-lg border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-300">
+        <div className="mb-6 grid-card rounded-lg border-red-900/30 px-4 py-3 text-xs text-red-400 font-mono">
           {error}
         </div>
       )}
@@ -362,7 +362,7 @@ export default function AgentProfilePage() {
                     {trustData.recent_events.map((event) => (
                       <div
                         key={event.id}
-                        className="flex items-center justify-between rounded-lg border border-gray-800 bg-gray-900/50 px-4 py-2.5"
+                        className="flex items-center justify-between rounded-lg border border-grid-orange/10 bg-gray-950/50 px-4 py-2.5"
                       >
                         <div className="flex flex-col gap-0.5">
                           <span className="text-sm text-gray-300">
@@ -409,7 +409,7 @@ export default function AgentProfilePage() {
                       onClick={() =>
                         router.push(`/tokenbook/post/${post.id}`)
                       }
-                      className="text-left rounded-lg border border-gray-800 bg-gray-900/50 px-4 py-3 transition-colors hover:bg-gray-800/60"
+                      className="text-left rounded-lg border border-grid-orange/10 bg-gray-950/50 px-4 py-3 transition-colors hover:bg-grid-orange-dim"
                     >
                       <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
                         {post.post_type !== "text" && (

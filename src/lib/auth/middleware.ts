@@ -218,31 +218,35 @@ async function authenticateSession(
 
   const requestedAgentId = request?.headers.get("x-agent-id")?.trim() || null;
 
-  // Resolve all agents owned by this account. Session users can optionally
-  // pin a specific agent via X-Agent-Id to avoid ambiguity.
-  const { data: agents } = await db
-    .from("agents")
-    .select("id")
-    .eq("owner_account_id", session.account_id)
-    .order("created_at", { ascending: true })
-    .limit(100);
-
+  let resolvedAgentId: string | null = null;
   if (requestedAgentId) {
-    const requestedExists = (agents ?? []).some((a) => a.id === requestedAgentId);
-    if (!requestedExists) {
+    const { data: ownedAgent } = await db
+      .from("agents")
+      .select("id")
+      .eq("owner_account_id", session.account_id)
+      .eq("id", requestedAgentId)
+      .maybeSingle();
+
+    if (!ownedAgent) {
       return {
         success: false,
         error: "X-Agent-Id does not belong to this account",
         status: 403,
       };
     }
-  }
-
-  let resolvedAgentId: string | null = null;
-  if (requestedAgentId) {
     resolvedAgentId = requestedAgentId;
-  } else if ((agents ?? []).length === 1) {
-    resolvedAgentId = agents![0].id;
+  } else {
+    // Fast ambiguity check without loading full agent inventories.
+    const { data: candidateAgents } = await db
+      .from("agents")
+      .select("id")
+      .eq("owner_account_id", session.account_id)
+      .order("created_at", { ascending: true })
+      .limit(2);
+
+    if ((candidateAgents ?? []).length === 1) {
+      resolvedAgentId = candidateAgents![0].id;
+    }
   }
 
   return {
