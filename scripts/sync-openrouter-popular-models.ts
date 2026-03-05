@@ -193,7 +193,34 @@ async function run() {
     .upsert(withIds, { onConflict: "model_id" });
 
   if (upsertError) {
-    throw new Error(`Supabase upsert failed: ${upsertError.message}`);
+    const message = upsertError.message || "";
+    const isLegacyUpdatedAtMismatch =
+      message.includes("has no field \"updated_at\"") ||
+      message.includes("record \"new\" has no field \"updated_at\"");
+
+    if (!isLegacyUpdatedAtMismatch) {
+      throw new Error(`Supabase upsert failed: ${upsertError.message}`);
+    }
+
+    console.warn(
+      "Upsert hit legacy models trigger mismatch (updated_at). Falling back to delete+insert.",
+    );
+
+    const targetModelIds = rows.map((r) => r.model_id);
+    const { error: deleteError } = await supabase
+      .from("models")
+      .delete()
+      .in("model_id", targetModelIds);
+    if (deleteError) {
+      throw new Error(`Fallback delete failed: ${deleteError.message}`);
+    }
+
+    const { error: insertError } = await supabase
+      .from("models")
+      .insert(withIds);
+    if (insertError) {
+      throw new Error(`Fallback insert failed: ${insertError.message}`);
+    }
   }
 
   console.log(`\nApplied successfully. Upserted ${rows.length} model rows.`);
