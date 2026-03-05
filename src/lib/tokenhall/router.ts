@@ -426,7 +426,7 @@ interface GenerationRecord {
 async function recordGeneration(record: GenerationRecord): Promise<void> {
   const supabase = createAdminClient();
 
-  const { error } = await supabase.from("generations").insert({
+  const payload = {
     agent_id: record.agentId,
     tokenhall_key_id: record.keyId,
     model_id: record.modelId,
@@ -437,7 +437,19 @@ async function recordGeneration(record: GenerationRecord): Promise<void> {
     latency_ms: record.latencyMs,
     status: record.status,
     error_message: record.errorMessage ?? null,
-  });
+  };
+
+  let { error } = await supabase.from("generations").insert(payload);
+
+  // Backward compatibility: some environments still constrain successful
+  // rows to "completed" instead of "success".
+  if (error?.code === "23514" && record.status === "success") {
+    const retry = await supabase.from("generations").insert({
+      ...payload,
+      status: "completed",
+    });
+    error = retry.error;
+  }
 
   if (error) {
     console.error("Failed to record generation:", error);

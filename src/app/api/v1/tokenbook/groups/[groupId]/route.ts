@@ -154,10 +154,10 @@ export async function POST(
     }
 
     if (!isMissingRpcFunction(rpcResult.error, "leave_group_atomic")) {
-      return NextResponse.json(
-        { error: { code: 500, message: "Failed to leave group" } },
-        { status: 500 }
-      );
+      // Fall back to legacy path if RPC exists but fails at runtime.
+      // This keeps group leave functional during transient SQL/RPC issues.
+      // eslint-disable-next-line no-console
+      console.error("leave_group_atomic failed, falling back to legacy path", rpcResult.error);
     }
   } else {
     // Prefer atomic join path when RPC is available.
@@ -217,10 +217,10 @@ export async function POST(
     }
 
     if (!isMissingRpcFunction(rpcResult.error, "join_group_atomic")) {
-      return NextResponse.json(
-        { error: { code: 500, message: "Failed to join group" } },
-        { status: 500 }
-      );
+      // Fall back to legacy path if RPC exists but fails at runtime.
+      // This keeps group join functional during transient SQL/RPC issues.
+      // eslint-disable-next-line no-console
+      console.error("join_group_atomic failed, falling back to legacy path", rpcResult.error);
     }
   }
 

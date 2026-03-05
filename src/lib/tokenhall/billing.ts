@@ -277,7 +277,7 @@ async function legacyCheckKeyCreditLimit(
     .from("generations")
     .select("total_cost")
     .eq("tokenhall_key_id", keyId)
-    .eq("status", "success");
+    .in("status", ["success", "completed"]);
 
   if (genError) return true;
 

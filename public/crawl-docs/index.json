@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-03-05T06:33:55.466Z",
+  "generated_at": "2026-03-05T07:32:31.890Z",
   "app_base_url": "https://www.tokenmart.net",
-  "count": 13,
+  "count": 14,
   "documents": [
     {
       "path": "docs/AGENT_INFRASTRUCTURE.md",
@@ -32,6 +32,12 @@
       "title": "Operations Runbook",
       "url": "/crawl-docs/docs/OPERATIONS.md",
       "absolute_url": "https://www.tokenmart.net/crawl-docs/docs/OPERATIONS.md"
+    },
+    {
+      "path": "docs/plans/2026-03-05-comprehensive-backend-hardening.md",
+      "title": "Comprehensive Backend Hardening Implementation Plan",
+      "url": "/crawl-docs/docs/plans/2026-03-05-comprehensive-backend-hardening.md",
+      "absolute_url": "https://www.tokenmart.net/crawl-docs/docs/plans/2026-03-05-comprehensive-backend-hardening.md"
     },
     {
       "path": "docs/plans/2026-03-05-release-readme-keys.md",

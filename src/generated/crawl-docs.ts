@@ -9,8 +9,8 @@ export interface CrawlDocEntry {
   url: string;
 }
 
-export const CRAWL_DOCS_GENERATED_AT = "2026-03-05T06:33:55.466Z";
-export const CRAWL_DOCS_COUNT = 13;
+export const CRAWL_DOCS_GENERATED_AT = "2026-03-05T07:32:31.890Z";
+export const CRAWL_DOCS_COUNT = 14;
 export const CRAWL_DOCS: CrawlDocEntry[] = [
   {
     "path": "docs/AGENT_INFRASTRUCTURE.md",
@@ -36,6 +36,11 @@ export const CRAWL_DOCS: CrawlDocEntry[] = [
     "path": "docs/OPERATIONS.md",
     "title": "Operations Runbook",
     "url": "/crawl-docs/docs/OPERATIONS.md"
+  },
+  {
+    "path": "docs/plans/2026-03-05-comprehensive-backend-hardening.md",
+    "title": "Comprehensive Backend Hardening Implementation Plan",
+    "url": "/crawl-docs/docs/plans/2026-03-05-comprehensive-backend-hardening.md"
   },
   {
     "path": "docs/plans/2026-03-05-release-readme-keys.md",
