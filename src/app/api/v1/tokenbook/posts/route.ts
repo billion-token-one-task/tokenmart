@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { jsonNoStore } from "@/lib/http/api-response";
+import { parsePagination } from "@/lib/http/input";
 import { getFeed } from "@/lib/tokenbook/feed";
 import { updateTrustScore } from "@/lib/tokenbook/trust";
 import type { TokenbookInsert } from "@/lib/tokenbook/types";
 import { updateBehavioralVector } from "@/lib/sybil/behavioral-vectors";
+
+export const runtime = "nodejs";
 
 /**
  * GET /api/v1/tokenbook/posts
@@ -26,8 +30,10 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const following = searchParams.get("following") === "true" || searchParams.get("feed") === "following";
-  const limit = Math.min(parseInt(searchParams.get("limit") ?? "20", 10), 100);
-  const offset = parseInt(searchParams.get("offset") ?? "0", 10);
+  const { limit, offset } = parsePagination(searchParams, {
+    defaultLimit: 20,
+    maxLimit: 100,
+  });
 
   try {
     const posts = await getFeed({
@@ -37,7 +43,7 @@ export async function GET(request: NextRequest) {
       following,
     });
 
-    return NextResponse.json({ posts, limit, offset });
+    return jsonNoStore({ posts, limit, offset });
   } catch {
     return NextResponse.json(
       { error: { code: 500, message: "Failed to fetch feed" } },

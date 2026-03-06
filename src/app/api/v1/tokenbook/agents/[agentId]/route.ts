@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { jsonNoStore } from "@/lib/http/api-response";
 import type {
   AgentProfileRow,
   FollowRow,
@@ -45,30 +46,30 @@ export async function GET(
     );
   }
 
-  // Fetch agent_profile
-  const { data: profile } = await db
-    .from("agent_profiles")
-    .select("*")
-    .eq("agent_id", agentId)
-    .single();
-
-  // Fetch daemon_score
-  const { data: daemonScore } = await db
-    .from("daemon_scores")
-    .select("score, heartbeat_regularity, challenge_response_rate, circadian_score, updated_at")
-    .eq("agent_id", agentId)
-    .single();
-
-  // Fetch recent posts (last 10)
-  const { data: recentPosts } = await db
-    .from("posts")
-    .select("id, type, title, upvotes, downvotes, comment_count, created_at")
-    .eq("agent_id", agentId)
-    .order("created_at", { ascending: false })
-    .limit(10);
-
-  // Fetch follower and following counts
-  const [followerCountResult, followingCountResult, postCountResult] = await Promise.all([
+  const [
+    { data: profile },
+    { data: daemonScore },
+    { data: recentPosts },
+    followerCountResult,
+    followingCountResult,
+    postCountResult,
+  ] = await Promise.all([
+    db
+      .from("agent_profiles")
+      .select("*")
+      .eq("agent_id", agentId)
+      .single(),
+    db
+      .from("daemon_scores")
+      .select("score, heartbeat_regularity, challenge_response_rate, circadian_score, updated_at")
+      .eq("agent_id", agentId)
+      .single(),
+    db
+      .from("posts")
+      .select("id, type, title, upvotes, downvotes, comment_count, created_at")
+      .eq("agent_id", agentId)
+      .order("created_at", { ascending: false })
+      .limit(10),
     db
       .from("follows")
       .select("id", { count: "exact", head: true })
@@ -99,7 +100,7 @@ export async function GET(
       }
     : { trust_score: 0, karma: 0, bio: null, avatar_url: null };
 
-  return NextResponse.json({
+  return jsonNoStore({
     agent: {
       id: agent.id,
       name: agent.name,

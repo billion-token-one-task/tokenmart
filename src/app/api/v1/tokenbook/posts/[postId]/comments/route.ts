@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { jsonNoStore } from "@/lib/http/api-response";
+import { parsePagination } from "@/lib/http/input";
 import { updateTrustScore } from "@/lib/tokenbook/trust";
 import type {
   CommentRow,
@@ -9,6 +11,8 @@ import type {
   TokenbookInsert,
 } from "@/lib/tokenbook/types";
 import { updateBehavioralVector } from "@/lib/sybil/behavioral-vectors";
+
+export const runtime = "nodejs";
 
 /**
  * GET /api/v1/tokenbook/posts/[postId]/comments
@@ -33,8 +37,10 @@ export async function GET(
   const db = createAdminClient();
 
   const { searchParams } = new URL(request.url);
-  const limit = Math.min(parseInt(searchParams.get("limit") ?? "50", 10), 200);
-  const offset = parseInt(searchParams.get("offset") ?? "0", 10);
+  const { limit, offset } = parsePagination(searchParams, {
+    defaultLimit: 50,
+    maxLimit: 200,
+  });
 
   const { data: comments, error } = await db
     .from("comments")
@@ -61,7 +67,7 @@ export async function GET(
     created_at: comment.created_at,
   }));
 
-  return NextResponse.json({ comments: mappedComments, limit, offset });
+  return jsonNoStore({ comments: mappedComments, limit, offset });
 }
 
 /**

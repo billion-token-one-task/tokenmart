@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { jsonNoStore } from "@/lib/http/api-response";
 import { hashKey, detectKeyType } from "./keys";
 import { extractBearerToken } from "./verify";
 import type { AuthContext, KeyType } from "@/types/auth";
@@ -62,6 +63,7 @@ export async function authenticateRequest(
     permissions: string[];
     revoked: boolean;
     expires_at: string | null;
+    rate_limit_rpm: number | null;
   } | null = null;
 
   if (keyType === "tokenmart") {
@@ -70,12 +72,14 @@ export async function authenticateRequest(
       .select("id, agent_id, account_id, permissions, revoked, expires_at")
       .eq("key_hash", keyHash)
       .single();
-    keyData = data;
+    keyData = data ? { ...data, rate_limit_rpm: null } : null;
   } else {
     // th_ or thm_ keys
     const primary = await db
       .from("tokenhall_api_keys")
-      .select("id, agent_id, account_id, revoked, expires_at, is_management_key")
+      .select(
+        "id, agent_id, account_id, revoked, expires_at, is_management_key, rate_limit_rpm",
+      )
       .eq("key_hash", keyHash)
       .single();
 
@@ -83,7 +87,7 @@ export async function authenticateRequest(
     const fallback = primary.error
       ? await db
           .from("tokenhall_api_keys")
-          .select("id, agent_id, account_id, revoked, is_management_key")
+          .select("id, agent_id, account_id, revoked, is_management_key, rate_limit_rpm")
           .eq("key_hash", keyHash)
           .single()
       : null;
@@ -99,6 +103,7 @@ export async function authenticateRequest(
           revoked: boolean;
           expires_at: string | null;
           is_management_key: boolean;
+          rate_limit_rpm: number | null;
         }
       | null;
 
@@ -121,6 +126,7 @@ export async function authenticateRequest(
         permissions: isManagement ? ["manage"] : ["chat"],
         revoked: data.revoked,
         expires_at: data.expires_at,
+        rate_limit_rpm: data.rate_limit_rpm ?? null,
       };
     }
   }
@@ -149,15 +155,27 @@ export async function authenticateRequest(
 
   // Update last_used_at (fire and forget)
   if (keyType === "tokenmart") {
-    db.from("auth_api_keys")
-      .update({ last_used_at: new Date().toISOString() })
-      .eq("id", keyData.id)
-      .then();
+    void (async () => {
+      try {
+        await db
+          .from("auth_api_keys")
+          .update({ last_used_at: new Date().toISOString() })
+          .eq("id", keyData.id);
+      } catch {
+        // Best-effort audit update.
+      }
+    })();
   } else {
-    db.from("tokenhall_api_keys")
-      .update({ last_used_at: new Date().toISOString() })
-      .eq("id", keyData.id)
-      .then();
+    void (async () => {
+      try {
+        await db
+          .from("tokenhall_api_keys")
+          .update({ last_used_at: new Date().toISOString() })
+          .eq("id", keyData.id);
+      } catch {
+        // Best-effort audit update.
+      }
+    })();
   }
 
   return {
@@ -168,6 +186,7 @@ export async function authenticateRequest(
       account_id: keyData.account_id,
       key_id: keyData.id,
       permissions: keyData.permissions,
+      rate_limit_rpm: keyData.rate_limit_rpm,
     },
   };
 }
@@ -257,6 +276,7 @@ async function authenticateSession(
       account_id: session.account_id,
       key_id: session.id,
       permissions: ["*"],
+      rate_limit_rpm: null,
     },
   };
 }
@@ -265,5 +285,5 @@ async function authenticateSession(
  * Helper to create a JSON error response.
  */
 export function authError(message: string, status: number): NextResponse {
-  return NextResponse.json({ error: { code: status, message } }, { status });
+  return jsonNoStore({ error: { code: status, message } }, { status });
 }

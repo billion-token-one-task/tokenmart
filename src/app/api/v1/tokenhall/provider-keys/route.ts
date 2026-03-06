@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, authError } from "@/lib/auth/middleware";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { jsonNoStore } from "@/lib/http/api-response";
 import { encryptProviderKey } from "@/lib/tokenhall/encryption";
 
 export const runtime = "nodejs";
@@ -70,7 +71,7 @@ export async function GET(request: NextRequest) {
     created_at: row.created_at,
   }));
 
-  return NextResponse.json({ keys });
+  return jsonNoStore({ keys });
 }
 
 export async function POST(request: NextRequest) {
@@ -151,7 +152,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (!insertError && inserted) {
-    return NextResponse.json(
+    return jsonNoStore(
       {
         key: {
           id: inserted.id,
@@ -215,7 +216,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  return NextResponse.json(
+  return jsonNoStore(
     {
       key: {
         id: saved.id,

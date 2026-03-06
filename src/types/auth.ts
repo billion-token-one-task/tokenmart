@@ -95,6 +95,7 @@ export interface AuthContext {
   account_id: string | null;
   key_id: string;
   permissions: string[];
+  rate_limit_rpm?: number | null;
 }
 
 export interface AgentRegistrationRequest {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, authError } from "@/lib/auth/middleware";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { jsonNoStore } from "@/lib/http/api-response";
 import {
   ensureAccountWallet,
   ensureAgentWallet,
@@ -140,7 +141,7 @@ export async function GET(request: NextRequest) {
 
   const responseBalance = scope === "account" ? combinedWalletBalance : agentWalletBalance;
 
-  return NextResponse.json({
+  return jsonNoStore({
     balance: formatCreditAmount(responseBalance),
     total_purchased: formatCreditAmount(totals.totalPurchased),
     total_earned: formatCreditAmount(totals.totalEarned),

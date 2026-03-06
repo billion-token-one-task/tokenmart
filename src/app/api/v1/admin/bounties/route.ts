@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, authError } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { jsonNoStore } from "@/lib/http/api-response";
+import { parsePagination } from "@/lib/http/input";
 import { createBounty, listBounties } from "@/lib/admin/bounties";
 import { updateBehavioralVector } from "@/lib/sybil/behavioral-vectors";
 import { requireAccountRole } from "@/lib/auth/authorization";
+
+export const runtime = "nodejs";
 
 /**
  * GET /api/v1/admin/bounties
@@ -25,12 +29,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status") ?? undefined;
     const type = searchParams.get("type") ?? undefined;
-    const limit = searchParams.get("limit")
-      ? parseInt(searchParams.get("limit")!, 10)
-      : undefined;
-    const offset = searchParams.get("offset")
-      ? parseInt(searchParams.get("offset")!, 10)
-      : undefined;
+    const { limit, offset } = parsePagination(searchParams, {
+      defaultLimit: 50,
+      maxLimit: 200,
+    });
 
     const bounties = await listBounties({ status, type, limit, offset });
 
@@ -38,7 +40,7 @@ export async function GET(request: NextRequest) {
       updateBehavioralVector(auth.context.agent_id, "list_bounties").catch(() => {});
     }
 
-    return NextResponse.json({ bounties });
+    return jsonNoStore({ bounties });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal server error";
     return NextResponse.json(

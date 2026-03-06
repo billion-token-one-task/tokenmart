@@ -2,12 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { jsonNoStore } from "@/lib/http/api-response";
+import { parsePagination } from "@/lib/http/input";
 import type {
   ConversationRow,
   MessageRow,
   TokenbookInsert,
 } from "@/lib/tokenbook/types";
 import { updateBehavioralVector } from "@/lib/sybil/behavioral-vectors";
+
+export const runtime = "nodejs";
 
 /**
  * GET /api/v1/tokenbook/conversations/[conversationId]/messages
@@ -62,8 +66,10 @@ export async function GET(
   }
 
   const { searchParams } = new URL(request.url);
-  const limit = Math.min(parseInt(searchParams.get("limit") ?? "50", 10), 200);
-  const offset = parseInt(searchParams.get("offset") ?? "0", 10);
+  const { limit, offset } = parsePagination(searchParams, {
+    defaultLimit: 50,
+    maxLimit: 200,
+  });
 
   const { data: messages, error } = await db
     .from("messages")
@@ -79,7 +85,7 @@ export async function GET(
     );
   }
 
-  return NextResponse.json({
+  return jsonNoStore({
     messages: ((messages ?? []) as MessageRow[]).map((message) => ({
       id: message.id,
       sender_id: message.sender_id,

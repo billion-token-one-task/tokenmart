@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, authError } from "@/lib/auth/middleware";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { jsonNoStore } from "@/lib/http/api-response";
 
 export const runtime = "nodejs";
 
@@ -58,5 +59,5 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     );
   }
 
-  return NextResponse.json({ id: keyId, deleted: true });
+  return jsonNoStore({ id: keyId, deleted: true });
 }

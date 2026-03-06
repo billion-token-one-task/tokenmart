@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, authError } from "@/lib/auth/middleware";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { jsonNoStore } from "@/lib/http/api-response";
+import { asFiniteNumber, readJsonObject } from "@/lib/http/input";
 import { getKeyUsageStats } from "@/lib/tokenhall/key-usage";
 
 export const runtime = "nodejs";
@@ -46,7 +48,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
   const usage = await getKeyUsageStats(keyId);
 
-  return NextResponse.json({
+  return jsonNoStore({
     id: keyData.id,
     key_prefix: keyData.key_prefix,
     agent_id: keyData.agent_id,
@@ -108,24 +110,48 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     );
   }
 
-  let body: PatchKeyBody;
-  try {
-    body = await request.json();
-  } catch {
+  const parsedBody = await readJsonObject<PatchKeyBody>(request);
+  if (!parsedBody.ok) {
     return NextResponse.json(
-      { error: { code: 400, message: "Invalid JSON body" } },
+      { error: { code: 400, message: parsedBody.error } },
       { status: 400 },
     );
   }
+  const body = parsedBody.data;
 
   // Build update object
   const updates: Record<string, unknown> = {};
   if (body.credit_limit !== undefined) {
-    updates.credit_limit =
-      body.credit_limit != null ? String(body.credit_limit) : null;
+    if (body.credit_limit === null) {
+      updates.credit_limit = null;
+    } else {
+      const creditLimit = asFiniteNumber(body.credit_limit);
+      if (creditLimit === null || creditLimit < 0) {
+        return NextResponse.json(
+          { error: { code: 400, message: "credit_limit must be a non-negative number" } },
+          { status: 400 },
+        );
+      }
+      updates.credit_limit = String(creditLimit);
+    }
   }
   if (body.rate_limit_rpm !== undefined) {
-    updates.rate_limit_rpm = body.rate_limit_rpm;
+    if (body.rate_limit_rpm === null) {
+      updates.rate_limit_rpm = null;
+    } else {
+      const rateLimitRpm = asFiniteNumber(body.rate_limit_rpm);
+      if (
+        rateLimitRpm === null ||
+        !Number.isInteger(rateLimitRpm) ||
+        rateLimitRpm < 1
+      ) {
+        return NextResponse.json(
+          { error: { code: 400, message: "rate_limit_rpm must be a positive integer" } },
+          { status: 400 },
+        );
+      }
+      updates.rate_limit_rpm = rateLimitRpm;
+    }
   }
   if (body.revoked !== undefined) updates.revoked = body.revoked;
 
@@ -152,7 +178,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     );
   }
 
-  return NextResponse.json(updated);
+  return jsonNoStore(updated);
 }
 
 // ── DELETE: Revoke a key (soft delete) ──────────────────────────────────
@@ -210,7 +236,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     );
   }
 
-  return NextResponse.json({ id: keyId, revoked: true });
+  return jsonNoStore({ id: keyId, revoked: true });
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────

@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
 import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkKeyRateLimit, rateLimitHeaders } from "@/lib/rate-limit";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { routeRequest, RouterError } from "@/lib/tokenhall/router";
 import { ProviderError } from "@/lib/tokenhall/providers/types";
 import type {
@@ -13,6 +12,7 @@ import type {
 import { randomUUID } from "crypto";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 // ── Anthropic-format types ──────────────────────────────────────────────
 
@@ -322,15 +322,7 @@ export async function POST(request: NextRequest) {
   }
 
   // ── Rate limit ────────────────────────────────────────────────────────
-  const db = createAdminClient();
-  const { data: keyRow } = await db
-    .from("tokenhall_api_keys")
-    .select("rate_limit_rpm")
-    .eq("id", context.key_id)
-    .single();
-
-  const rpm = keyRow?.rate_limit_rpm ?? 60;
-  const rl = await checkKeyRateLimit(context.key_id, rpm);
+  const rl = await checkKeyRateLimit(context.key_id, context.rate_limit_rpm ?? 60);
   if (!rl.allowed) {
     return anthropicError("Rate limit exceeded", "rate_limit_error", 429);
   }
@@ -359,7 +351,9 @@ export async function POST(request: NextRequest) {
   const rlHeaders = rateLimitHeaders(rl);
   const baseHeaders: Record<string, string> = {
     "X-Request-Id": requestId,
-    "Cache-Control": "no-cache",
+    "Cache-Control": "no-store, no-transform",
+    "Pragma": "no-cache",
+    "Vary": "Authorization, X-Agent-Id",
     ...rlHeaders,
   };
 
@@ -381,7 +375,7 @@ export async function POST(request: NextRequest) {
 
       return new Response(anthropicStream, {
         headers: {
-          "Content-Type": "text/event-stream",
+          "Content-Type": "text/event-stream; charset=utf-8",
           "Connection": "keep-alive",
           ...baseHeaders,
         },

@@ -2,24 +2,35 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createPasswordHash } from "@/lib/auth/verify";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { jsonNoStore } from "@/lib/http/api-response";
 import { randomBytes } from "crypto";
 import { ensureAccountWallet } from "@/lib/tokenhall/wallets";
+import { asTrimmedString, readJsonObject } from "@/lib/http/input";
 
 export async function POST(request: NextRequest) {
   const rl = await checkGlobalRateLimit(request);
   if (!rl.allowed) return rateLimitResponse();
 
-  let body: { email?: string; password?: string; display_name?: string };
-  try {
-    body = await request.json();
-  } catch {
+  const parsedBody = await readJsonObject<{
+    email?: unknown;
+    password?: unknown;
+    display_name?: unknown;
+  }>(request);
+  if (!parsedBody.ok) {
     return NextResponse.json(
-      { error: { code: 400, message: "Invalid JSON body" } },
+      { error: { code: 400, message: parsedBody.error } },
       { status: 400 }
     );
   }
 
-  if (!body.email || !body.password) {
+  const email = asTrimmedString(parsedBody.data.email)?.toLowerCase() ?? null;
+  const password =
+    typeof parsedBody.data.password === "string"
+      ? parsedBody.data.password
+      : null;
+  const displayName = parsedBody.data.display_name;
+
+  if (!email || !password) {
     return NextResponse.json(
       { error: { code: 400, message: "email and password are required" } },
       { status: 400 }
@@ -27,16 +38,32 @@ export async function POST(request: NextRequest) {
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(body.email)) {
+  if (!emailRegex.test(email)) {
     return NextResponse.json(
       { error: { code: 400, message: "Invalid email format" } },
       { status: 400 }
     );
   }
 
-  if (body.password.length < 8) {
+  if (password.length < 8) {
     return NextResponse.json(
       { error: { code: 400, message: "Password must be at least 8 characters" } },
+      { status: 400 }
+    );
+  }
+
+  if (password.length > 4096) {
+    return NextResponse.json(
+      { error: { code: 400, message: "Password is too long" } },
+      { status: 400 }
+    );
+  }
+
+  const normalizedDisplayName =
+    displayName === undefined ? null : asTrimmedString(displayName);
+  if (displayName !== undefined && normalizedDisplayName === null) {
+    return NextResponse.json(
+      { error: { code: 400, message: "display_name must be a non-empty string" } },
       { status: 400 }
     );
   }
@@ -47,7 +74,7 @@ export async function POST(request: NextRequest) {
   const { data: existing } = await db
     .from("accounts")
     .select("id")
-    .eq("email", body.email.toLowerCase())
+    .eq("email", email)
     .single();
 
   if (existing) {
@@ -57,15 +84,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const passwordHash = createPasswordHash(body.password);
+  const passwordHash = createPasswordHash(password);
   const verificationToken = randomBytes(32).toString("hex");
 
   const { data: account, error } = await db
     .from("accounts")
     .insert({
-      email: body.email.toLowerCase(),
+      email,
       password_hash: passwordHash,
-      display_name: body.display_name || null,
+      display_name: normalizedDisplayName,
       email_verification_token: verificationToken,
     })
     .select("id, email")
@@ -94,7 +121,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  return NextResponse.json(
+  return jsonNoStore(
     {
       account_id: account.id,
       email: account.email,

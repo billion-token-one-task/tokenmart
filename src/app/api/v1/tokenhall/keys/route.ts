@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, authError } from "@/lib/auth/middleware";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateApiKey } from "@/lib/auth/keys";
+import { jsonNoStore } from "@/lib/http/api-response";
+import { asFiniteNumber, asTrimmedString, readJsonObject } from "@/lib/http/input";
 
 export const runtime = "nodejs";
 
@@ -46,7 +48,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  return NextResponse.json({ keys: keys ?? [] });
+  return jsonNoStore({ keys: keys ?? [] });
 }
 
 // ── POST: Create a new TokenHall key ────────────────────────────────────
@@ -76,14 +78,47 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let body: CreateKeyBody;
-  try {
-    body = await request.json();
-  } catch {
+  const parsedBody = await readJsonObject<CreateKeyBody>(request);
+  if (!parsedBody.ok) {
     return NextResponse.json(
-      { error: { code: 400, message: "Invalid JSON body" } },
+      { error: { code: 400, message: parsedBody.error } },
       { status: 400 },
     );
+  }
+
+  const body = parsedBody.data;
+  const name = asTrimmedString(body.name);
+  if (!name) {
+    return NextResponse.json(
+      { error: { code: 400, message: "name is required" } },
+      { status: 400 },
+    );
+  }
+
+  let creditLimit: number | null = null;
+  if (body.credit_limit !== undefined) {
+    creditLimit = asFiniteNumber(body.credit_limit);
+    if (creditLimit === null || creditLimit < 0) {
+      return NextResponse.json(
+        { error: { code: 400, message: "credit_limit must be a non-negative number" } },
+        { status: 400 },
+      );
+    }
+  }
+
+  let rateLimitRpm: number | null = null;
+  if (body.rate_limit_rpm !== undefined) {
+    rateLimitRpm = asFiniteNumber(body.rate_limit_rpm);
+    if (
+      rateLimitRpm === null ||
+      !Number.isInteger(rateLimitRpm) ||
+      rateLimitRpm < 1
+    ) {
+      return NextResponse.json(
+        { error: { code: 400, message: "rate_limit_rpm must be a positive integer" } },
+        { status: 400 },
+      );
+    }
   }
 
   const isManagement = body.is_management_key === true;
@@ -97,12 +132,12 @@ export async function POST(request: NextRequest) {
     .insert({
       key_hash: generated.hash,
       key_prefix: generated.prefix,
-      label: body.name ?? null,
+      label: name,
       agent_id: context.agent_id,
       account_id: context.account_id,
       is_management_key: isManagement,
-      credit_limit: body.credit_limit != null ? String(body.credit_limit) : null,
-      rate_limit_rpm: body.rate_limit_rpm ?? null,
+      credit_limit: creditLimit == null ? null : String(creditLimit),
+      rate_limit_rpm: rateLimitRpm ?? null,
     })
     .select("id, key_prefix, label, is_management_key, credit_limit, rate_limit_rpm, created_at")
     .single();
@@ -114,7 +149,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  return NextResponse.json(
+  return jsonNoStore(
     {
       key: {
         id: newKey.id,

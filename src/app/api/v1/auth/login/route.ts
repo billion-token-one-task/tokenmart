@@ -2,23 +2,32 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createPasswordHash, verifyPasswordHash } from "@/lib/auth/verify";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { jsonNoStore } from "@/lib/http/api-response";
 import { randomBytes } from "crypto";
+import { asTrimmedString, readJsonObject } from "@/lib/http/input";
 
 export async function POST(request: NextRequest) {
   const rl = await checkGlobalRateLimit(request);
   if (!rl.allowed) return rateLimitResponse();
 
-  let body: { email?: string; password?: string };
-  try {
-    body = await request.json();
-  } catch {
+  const parsedBody = await readJsonObject<{
+    email?: unknown;
+    password?: unknown;
+  }>(request);
+  if (!parsedBody.ok) {
     return NextResponse.json(
-      { error: { code: 400, message: "Invalid JSON body" } },
+      { error: { code: 400, message: parsedBody.error } },
       { status: 400 }
     );
   }
 
-  if (!body.email || !body.password) {
+  const email = asTrimmedString(parsedBody.data.email)?.toLowerCase() ?? null;
+  const password =
+    typeof parsedBody.data.password === "string"
+      ? parsedBody.data.password
+      : null;
+
+  if (!email || !password) {
     return NextResponse.json(
       { error: { code: 400, message: "email and password are required" } },
       { status: 400 }
@@ -30,7 +39,7 @@ export async function POST(request: NextRequest) {
   const { data: account } = await db
     .from("accounts")
     .select("id, email, password_hash, role, display_name")
-    .eq("email", body.email.toLowerCase())
+    .eq("email", email)
     .single();
 
   if (!account) {
@@ -40,7 +49,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const passwordCheck = verifyPasswordHash(body.password, account.password_hash);
+  const passwordCheck = verifyPasswordHash(password, account.password_hash);
   if (!passwordCheck.valid) {
     return NextResponse.json(
       { error: { code: 401, message: "Invalid email or password" } },
@@ -50,10 +59,16 @@ export async function POST(request: NextRequest) {
 
   // Seamless upgrade from legacy SHA-256 hashes to scrypt_v2.
   if (passwordCheck.needsRehash) {
-    db.from("accounts")
-      .update({ password_hash: createPasswordHash(body.password) })
-      .eq("id", account.id)
-      .then();
+    void (async () => {
+      try {
+        await db
+          .from("accounts")
+          .update({ password_hash: createPasswordHash(password) })
+          .eq("id", account.id);
+      } catch {
+        // Best-effort rehash upgrade.
+      }
+    })();
   }
 
   // Create session
@@ -80,7 +95,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  return NextResponse.json({
+  return jsonNoStore({
     account: {
       id: account.id,
       email: account.email,

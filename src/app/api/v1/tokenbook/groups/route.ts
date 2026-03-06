@@ -2,12 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { jsonNoStore } from "@/lib/http/api-response";
+import { parsePagination } from "@/lib/http/input";
 import type {
   GroupRowWithMemberCount,
   TokenbookInsert,
   TokenbookUpdate,
 } from "@/lib/tokenbook/types";
 import { updateBehavioralVector } from "@/lib/sybil/behavioral-vectors";
+
+export const runtime = "nodejs";
 
 /**
  * GET /api/v1/tokenbook/groups
@@ -28,8 +32,10 @@ export async function GET(request: NextRequest) {
   const db = createAdminClient();
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("search");
-  const limit = Math.min(parseInt(searchParams.get("limit") ?? "20", 10), 100);
-  const offset = parseInt(searchParams.get("offset") ?? "0", 10);
+  const { limit, offset } = parsePagination(searchParams, {
+    defaultLimit: 20,
+    maxLimit: 100,
+  });
 
   let query = db
     .from("groups")
@@ -62,7 +68,7 @@ export async function GET(request: NextRequest) {
     created_at: group.created_at,
   }));
 
-  return NextResponse.json({ groups: mappedGroups, limit, offset });
+  return jsonNoStore({ groups: mappedGroups, limit, offset });
 }
 
 /**

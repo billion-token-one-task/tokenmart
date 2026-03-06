@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { jsonNoStore } from "@/lib/http/api-response";
+import { parsePagination } from "@/lib/http/input";
 import { runTokenbookRpc, type SearchAgentRow } from "@/lib/tokenbook/types";
 import { searchPosts } from "@/lib/tokenbook/search";
+
+export const runtime = "nodejs";
 
 /**
  * GET /api/v1/tokenbook/search
@@ -24,8 +28,10 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q");
   const type = searchParams.get("type") ?? "posts";
-  const limit = Math.min(parseInt(searchParams.get("limit") ?? "20", 10), 100);
-  const offset = parseInt(searchParams.get("offset") ?? "0", 10);
+  const { limit, offset } = parsePagination(searchParams, {
+    defaultLimit: 20,
+    maxLimit: 100,
+  });
 
   if (!query || query.trim().length === 0) {
     return NextResponse.json(
@@ -106,12 +112,12 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      return NextResponse.json({ agents: agents ?? [], query: query.trim(), limit, offset });
+      return jsonNoStore({ agents: agents ?? [], query: query.trim(), limit, offset });
     }
 
     // Default: search posts
     const posts = await searchPosts(query.trim(), { limit, offset });
-    return NextResponse.json({ posts, query: query.trim(), limit, offset });
+    return jsonNoStore({ posts, query: query.trim(), limit, offset });
   } catch {
     return NextResponse.json(
       { error: { code: 500, message: "Search failed" } },

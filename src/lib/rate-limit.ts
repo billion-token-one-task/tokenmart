@@ -3,6 +3,8 @@ import { Redis } from "@upstash/redis";
 import { NextRequest, NextResponse } from "next/server";
 
 let redis: Redis | null = null;
+let cachedGlobalLimiter: Ratelimit | null | undefined;
+const keyLimiterCache = new Map<number, Ratelimit>();
 
 function isPlaceholder(value: string): boolean {
   return value.includes("your-redis");
@@ -27,24 +29,35 @@ function getRedis(): Redis | null {
 
 // Global rate limit: 30 requests per 10 seconds per IP
 const globalLimiter = () => {
+  if (cachedGlobalLimiter !== undefined) return cachedGlobalLimiter;
   const r = getRedis();
-  if (!r) return null;
-  return new Ratelimit({
+  if (!r) {
+    cachedGlobalLimiter = null;
+    return cachedGlobalLimiter;
+  }
+  cachedGlobalLimiter = new Ratelimit({
     redis: r,
     limiter: Ratelimit.slidingWindow(30, "10 s"),
     prefix: "tokenmart:global",
   });
+  return cachedGlobalLimiter;
 };
 
 // Per-key rate limit (configurable RPM)
 export function createKeyLimiter(rpm: number) {
+  const normalizedRpm = Number.isFinite(rpm) ? Math.max(1, Math.floor(rpm)) : 60;
+  const cachedLimiter = keyLimiterCache.get(normalizedRpm);
+  if (cachedLimiter) return cachedLimiter;
+
   const r = getRedis();
   if (!r) return null;
-  return new Ratelimit({
+  const limiter = new Ratelimit({
     redis: r,
-    limiter: Ratelimit.slidingWindow(rpm, "60 s"),
+    limiter: Ratelimit.slidingWindow(normalizedRpm, "60 s"),
     prefix: "tokenmart:key",
   });
+  keyLimiterCache.set(normalizedRpm, limiter);
+  return limiter;
 }
 
 export interface RateLimitResult {

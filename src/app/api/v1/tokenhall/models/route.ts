@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, authError } from "@/lib/auth/middleware";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { jsonNoStore } from "@/lib/http/api-response";
 
 export const runtime = "nodejs";
 
@@ -79,5 +80,5 @@ export async function GET(request: NextRequest) {
     supports_vision: m.supports_vision,
   }));
 
-  return NextResponse.json({ models: data });
+  return jsonNoStore({ models: data });
 }

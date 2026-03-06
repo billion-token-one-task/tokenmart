@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, authError } from "@/lib/auth/middleware";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { jsonNoStore } from "@/lib/http/api-response";
 import { getKeyUsageStats } from "@/lib/tokenhall/key-usage";
 
 export const runtime = "nodejs";
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
   // ── Fetch usage stats for this key ────────────────────────────────────
   const usage = await getKeyUsageStats(context.key_id);
 
-  return NextResponse.json({
+  return jsonNoStore({
     id: keyData.id,
     key_prefix: keyData.key_prefix,
     agent_id: keyData.agent_id,

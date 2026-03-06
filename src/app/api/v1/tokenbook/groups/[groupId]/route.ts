@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { jsonNoStore } from "@/lib/http/api-response";
 import type {
   GroupMemberRowWithAgent,
   GroupMutationRpcRow,
@@ -11,6 +12,8 @@ import type {
 } from "@/lib/tokenbook/types";
 import { runTokenbookRpc } from "@/lib/tokenbook/types";
 import { updateBehavioralVector } from "@/lib/sybil/behavioral-vectors";
+
+export const runtime = "nodejs";
 
 function isMissingRpcFunction(
   error: { code?: string; message?: string } | null,
@@ -72,7 +75,7 @@ export async function GET(
 
   const typedGroup = group as GroupRowWithMemberCount;
 
-  return NextResponse.json({
+  return jsonNoStore({
     group: {
       id: typedGroup.id,
       name: typedGroup.name,

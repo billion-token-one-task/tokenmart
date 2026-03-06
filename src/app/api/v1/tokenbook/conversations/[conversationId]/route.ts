@@ -2,11 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { jsonNoStore } from "@/lib/http/api-response";
+import { parsePagination } from "@/lib/http/input";
 import type {
   AgentNameSummary,
   ConversationRow,
   MessageRow,
 } from "@/lib/tokenbook/types";
+
+export const runtime = "nodejs";
 
 /**
  * GET /api/v1/tokenbook/conversations/[conversationId]
@@ -64,8 +68,10 @@ export async function GET(
 
   // Fetch messages
   const { searchParams } = new URL(request.url);
-  const limit = Math.min(parseInt(searchParams.get("limit") ?? "50", 10), 200);
-  const offset = parseInt(searchParams.get("offset") ?? "0", 10);
+  const { limit, offset } = parsePagination(searchParams, {
+    defaultLimit: 50,
+    maxLimit: 200,
+  });
 
   const { data: messages } = await db
     .from("messages")
@@ -93,7 +99,7 @@ export async function GET(
     nameMap[p.id] = p.name;
   }
 
-  return NextResponse.json({
+  return jsonNoStore({
     conversation: {
       id: conv.id,
       initiator_id: conv.initiator_id,

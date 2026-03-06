@@ -1,7 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest, authError } from "@/lib/auth/middleware";
+import { jsonNoStore } from "@/lib/http/api-response";
 import { ensureAgentWallet } from "@/lib/tokenhall/wallets";
+
+export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
   const auth = await authenticateRequest(request, {
@@ -55,7 +58,7 @@ export async function GET(request: NextRequest) {
       .single(),
   ]);
 
-  return NextResponse.json({
+  return jsonNoStore({
     pending_reviews: pendingReviewsResult.data ?? [],
     open_bounties: openBountiesResult.data ?? [],
     credits: creditsResult.data ?? {

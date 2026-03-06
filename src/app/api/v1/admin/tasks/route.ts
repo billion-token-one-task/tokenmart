@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, authError } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { jsonNoStore } from "@/lib/http/api-response";
+import { parsePagination } from "@/lib/http/input";
 import { createTask, listTasks } from "@/lib/admin/tasks";
 import { updateBehavioralVector } from "@/lib/sybil/behavioral-vectors";
 import { requireAccountRole } from "@/lib/auth/authorization";
 import { createAdminClient } from "@/lib/supabase/admin";
+
+export const runtime = "nodejs";
 
 /**
  * GET /api/v1/admin/tasks
@@ -26,12 +30,10 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status") ?? undefined;
-    const limit = searchParams.get("limit")
-      ? parseInt(searchParams.get("limit")!, 10)
-      : undefined;
-    const offset = searchParams.get("offset")
-      ? parseInt(searchParams.get("offset")!, 10)
-      : undefined;
+    const { limit, offset } = parsePagination(searchParams, {
+      defaultLimit: 50,
+      maxLimit: 200,
+    });
 
     const tasks = await listTasks({ status, limit, offset });
 
@@ -89,7 +91,7 @@ export async function GET(request: NextRequest) {
       updateBehavioralVector(auth.context.agent_id, "list_tasks").catch(() => {});
     }
 
-    return NextResponse.json({ tasks: tasksWithGoals });
+    return jsonNoStore({ tasks: tasksWithGoals });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal server error";
     return NextResponse.json(

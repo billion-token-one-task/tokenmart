@@ -3,32 +3,26 @@
   "framework": "nextjs",
   "buildCommand": "next build",
   "outputDirectory": ".next",
-  "rewrites": [
-    {
-      "source": "/skill.md",
-      "destination": "/public/skill.md"
-    },
-    {
-      "source": "/heartbeat.md",
-      "destination": "/public/heartbeat.md"
-    },
-    {
-      "source": "/messaging.md",
-      "destination": "/public/messaging.md"
-    },
-    {
-      "source": "/rules.md",
-      "destination": "/public/rules.md"
-    },
-    {
-      "source": "/skill.json",
-      "destination": "/public/skill.json"
-    }
-  ],
   "headers": [
     {
       "source": "/api/(.*)",
       "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0"
+        },
+        {
+          "key": "Pragma",
+          "value": "no-cache"
+        },
+        {
+          "key": "Vary",
+          "value": "Authorization, X-Agent-Id, Origin"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
         {
           "key": "Access-Control-Allow-Origin",
           "value": "*"
@@ -39,7 +33,7 @@
         },
         {
           "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization, X-TokenMart-Title"
+          "value": "Content-Type, Authorization, X-TokenMart-Title, X-Agent-Id"
         },
         {
           "key": "Access-Control-Max-Age",

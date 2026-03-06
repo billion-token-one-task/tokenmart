@@ -2,6 +2,91 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { insertCreditTransactionAudit } from "@/lib/tokenhall/credit-transactions";
 import type { CreditBalance } from "@/types/tokenhall";
 
+const MODEL_PRICING_TTL_MS = 5 * 60 * 1000;
+const modelPricingCache = new Map<
+  string,
+  { expiresAt: number; pricing: ModelPricing | null }
+>();
+
+export interface ModelPricing {
+  inputPricePerMillion: number;
+  outputPricePerMillion: number;
+}
+
+export interface ModelPricingRow {
+  input_price_per_million: string | number | null;
+  output_price_per_million: string | number | null;
+}
+
+function parseDecimal(value: string | number | null | undefined): number {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : 0;
+  }
+  const parsed = Number.parseFloat(value ?? "0");
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+export function normalizeModelPricing(row: ModelPricingRow | null | undefined): ModelPricing | null {
+  if (!row) return null;
+
+  return {
+    inputPricePerMillion: parseDecimal(row.input_price_per_million),
+    outputPricePerMillion: parseDecimal(row.output_price_per_million),
+  };
+}
+
+export function calculateCostFromPricing(
+  pricing: ModelPricing | null,
+  inputTokens: number,
+  outputTokens: number,
+): number {
+  if (!pricing) return 0;
+
+  const inputCost = (inputTokens / 1_000_000) * pricing.inputPricePerMillion;
+  const outputCost = (outputTokens / 1_000_000) * pricing.outputPricePerMillion;
+
+  return inputCost + outputCost;
+}
+
+export async function getModelPricing(modelId: string): Promise<ModelPricing | null> {
+  const now = Date.now();
+  const cached = modelPricingCache.get(modelId);
+  if (cached && cached.expiresAt > now) {
+    return cached.pricing;
+  }
+
+  const supabase = createAdminClient();
+  let row: ModelPricingRow | null | undefined;
+
+  const activeResult = await supabase
+    .from("models")
+    .select("input_price_per_million, output_price_per_million")
+    .eq("model_id", modelId)
+    .eq("active", true)
+    .single();
+
+  if (!activeResult.error) {
+    row = activeResult.data as ModelPricingRow | null;
+  } else {
+    // Backward compatibility for environments still using is_active.
+    const legacyResult = await supabase
+      .from("models")
+      .select("input_price_per_million, output_price_per_million")
+      .eq("model_id", modelId)
+      .eq("is_active", true)
+      .single();
+    row = legacyResult.data as ModelPricingRow | null;
+  }
+
+  const pricing = normalizeModelPricing(row);
+  modelPricingCache.set(modelId, {
+    pricing,
+    expiresAt: now + MODEL_PRICING_TTL_MS,
+  });
+
+  return pricing;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Credit & billing utilities for TokenHall
 // ─────────────────────────────────────────────────────────────────────────────
@@ -22,45 +107,8 @@ export async function calculateCost(
   inputTokens: number,
   outputTokens: number,
 ): Promise<number> {
-  const supabase = createAdminClient();
-
-  let model:
-    | {
-        input_price_per_million: string;
-        output_price_per_million: string;
-      }
-    | null
-    | undefined;
-
-  const activeResult = await supabase
-    .from("models")
-    .select("input_price_per_million, output_price_per_million")
-    .eq("model_id", modelId)
-    .eq("active", true)
-    .single();
-
-  if (!activeResult.error) {
-    model = activeResult.data as typeof model;
-  } else {
-    // Backward compatibility for environments still using is_active.
-    const legacyResult = await supabase
-      .from("models")
-      .select("input_price_per_million, output_price_per_million")
-      .eq("model_id", modelId)
-      .eq("is_active", true)
-      .single();
-    model = legacyResult.data as typeof model;
-  }
-
-  if (!model) return 0;
-
-  const inputPrice = parseFloat(model.input_price_per_million) || 0;
-  const outputPrice = parseFloat(model.output_price_per_million) || 0;
-
-  const inputCost = (inputTokens / 1_000_000) * inputPrice;
-  const outputCost = (outputTokens / 1_000_000) * outputPrice;
-
-  return inputCost + outputCost;
+  const pricing = await getModelPricing(modelId);
+  return calculateCostFromPricing(pricing, inputTokens, outputTokens);
 }
 
 /**

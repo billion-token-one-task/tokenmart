@@ -9,7 +9,12 @@ import { getProviderForModel } from "./providers/registry";
 import { ProviderError } from "./providers/types";
 import type { ProviderAdapter } from "./providers/types";
 import { decryptProviderKey } from "./encryption";
-import { calculateCost, checkBalance, deductCredits } from "./billing";
+import {
+  calculateCostFromPricing,
+  checkBalance,
+  deductCredits,
+  getModelPricing,
+} from "./billing";
 import { createSSEStream } from "./streaming";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -63,8 +68,9 @@ export async function routeRequest(
   const estimatedInputTokens = estimateInputTokens(request);
   const estimatedOutputTokens =
     request.max_tokens ?? request.max_completion_tokens ?? 1024;
-  const estimatedCost = await calculateCost(
-    request.model,
+  const pricing = await getModelPricing(request.model);
+  const estimatedCost = calculateCostFromPricing(
+    pricing,
     estimatedInputTokens,
     estimatedOutputTokens,
   );
@@ -92,6 +98,7 @@ export async function routeRequest(
       agentId,
       keyId,
       startTime,
+      pricing,
     );
   }
 
@@ -103,6 +110,7 @@ export async function routeRequest(
     agentId,
     keyId,
     startTime,
+    pricing,
   );
 }
 
@@ -118,6 +126,7 @@ async function handleNonStreaming(
   agentId: string,
   keyId: string,
   startTime: number,
+  pricing: Awaited<ReturnType<typeof getModelPricing>>,
 ): Promise<ChatCompletionResponse> {
   let response: ChatCompletionResponse;
 
@@ -149,8 +158,8 @@ async function handleNonStreaming(
 
   const latencyMs = Date.now() - startTime;
   const usage = response.usage;
-  const actualCost = await calculateCost(
-    request.model,
+  const actualCost = calculateCostFromPricing(
+    pricing,
     usage.prompt_tokens,
     usage.completion_tokens,
   );
@@ -212,6 +221,7 @@ async function handleStreaming(
   agentId: string,
   keyId: string,
   startTime: number,
+  pricing: Awaited<ReturnType<typeof getModelPricing>>,
 ): Promise<ReadableStream<Uint8Array>> {
   let providerStream: AsyncIterable<ChatStreamChunk>;
 
@@ -241,10 +251,23 @@ async function handleStreaming(
   // We accumulate usage info from the final chunk(s).
   let lastUsage: TokenUsage | undefined;
   let lastId = "";
+  let streamCompleted = false;
+  let streamErrorMessage: string | undefined;
 
-  const sseStream = createSSEStream(providerStream, (chunk) => {
-    if (chunk.usage) lastUsage = chunk.usage;
-    if (chunk.id) lastId = chunk.id;
+  const sseStream = createSSEStream(providerStream, {
+    onChunk(chunk) {
+      if (chunk.usage) lastUsage = chunk.usage;
+      if (chunk.id) lastId = chunk.id;
+    },
+    onError(error) {
+      streamErrorMessage = error.message;
+    },
+    onComplete(result) {
+      streamCompleted = result.completed;
+      if (result.error) {
+        streamErrorMessage = result.error.message;
+      }
+    },
   });
 
   // Wrap the SSE stream so we can perform billing after it completes.
@@ -280,8 +303,8 @@ async function handleStreaming(
         const latencyMs = Date.now() - startTime;
         const inputTokens = lastUsage?.prompt_tokens ?? 0;
         const outputTokens = lastUsage?.completion_tokens ?? 0;
-        const actualCost = await calculateCost(
-          request.model,
+        const actualCost = calculateCostFromPricing(
+          pricing,
           inputTokens,
           outputTokens,
         );
@@ -306,10 +329,12 @@ async function handleStreaming(
           outputTokens,
           totalCost: actualCost,
           latencyMs,
-          status: settled ? "success" : "error",
-          errorMessage: settled
-            ? undefined
-            : "Stream completed but credit settlement failed due to insufficient balance",
+          status: streamCompleted && settled ? "success" : "error",
+          errorMessage: streamCompleted
+            ? settled
+              ? undefined
+              : "Stream completed but credit settlement failed due to insufficient balance"
+            : streamErrorMessage ?? "Provider stream failed",
         }).catch((err) => {
           console.error("Failed to record generation after stream:", err);
         });

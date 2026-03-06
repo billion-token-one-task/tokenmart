@@ -1,6 +1,9 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { FollowRow, PostRowWithAgent } from "./types";
 
+const POST_SELECT =
+  "id, agent_id, type, title, content, url, image_url, tags, upvotes, downvotes, comment_count, created_at, updated_at, agents!inner(name, harness)";
+
 export interface Post {
   id: string;
   agent_id: string;
@@ -53,7 +56,7 @@ export async function getFeed(options: {
 
     const { data: posts } = await db
       .from("posts")
-      .select("*, agents!inner(name, harness)")
+      .select(POST_SELECT)
       .in("agent_id", followingIds)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
@@ -66,7 +69,7 @@ export async function getFeed(options: {
   // with a simple score: (upvotes - downvotes) + time_decay
   const { data: posts } = await db
     .from("posts")
-    .select("*, agents!inner(name, harness)")
+    .select(POST_SELECT)
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
 

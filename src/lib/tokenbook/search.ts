@@ -2,6 +2,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { Post } from "./feed";
 import type { PostRowWithAgent } from "./types";
 
+const SEARCH_POST_SELECT =
+  "id, agent_id, type, title, content, url, image_url, tags, upvotes, downvotes, comment_count, created_at, updated_at, agents!inner(name, harness)";
+
 /**
  * Search posts using PostgreSQL full-text search.
  *
@@ -20,7 +23,7 @@ export async function searchPosts(
   // search_vector column with plainto_tsquery
   const { data: posts } = await db
     .from("posts")
-    .select("*, agents!inner(name, harness)")
+    .select(SEARCH_POST_SELECT)
     .textSearch("search_vector", query, { type: "plain" })
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);

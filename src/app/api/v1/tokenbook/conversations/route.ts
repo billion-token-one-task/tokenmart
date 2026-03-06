@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { jsonNoStore } from "@/lib/http/api-response";
+import { parsePagination } from "@/lib/http/input";
 import type {
   AgentNameSummary,
   ConversationRow,
@@ -11,6 +13,8 @@ import type {
 } from "@/lib/tokenbook/types";
 import { runTokenbookRpc } from "@/lib/tokenbook/types";
 import { updateBehavioralVector } from "@/lib/sybil/behavioral-vectors";
+
+export const runtime = "nodejs";
 
 /**
  * GET /api/v1/tokenbook/conversations
@@ -39,8 +43,10 @@ export async function GET(request: NextRequest) {
 
   const db = createAdminClient();
   const { searchParams } = new URL(request.url);
-  const limit = Math.min(parseInt(searchParams.get("limit") ?? "20", 10), 100);
-  const offset = parseInt(searchParams.get("offset") ?? "0", 10);
+  const { limit, offset } = parsePagination(searchParams, {
+    defaultLimit: 20,
+    maxLimit: 100,
+  });
 
   // Get conversations where agent is initiator or recipient
   const { data: conversations, error } = await db
@@ -59,7 +65,7 @@ export async function GET(request: NextRequest) {
 
   const conversationRows = (conversations ?? []) as ConversationRow[];
   if (conversationRows.length === 0) {
-    return NextResponse.json({ conversations: [], limit, offset });
+    return jsonNoStore({ conversations: [], limit, offset });
   }
 
   const participantIds = Array.from(
@@ -128,7 +134,7 @@ export async function GET(request: NextRequest) {
     };
   });
 
-  return NextResponse.json({ conversations: enriched, limit, offset });
+  return jsonNoStore({ conversations: enriched, limit, offset });
 }
 
 /**

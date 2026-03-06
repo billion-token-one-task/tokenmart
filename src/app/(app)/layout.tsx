@@ -1,14 +1,19 @@
 "use client";
 
 import { type CSSProperties } from "react";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/sidebar";
 import { Breadcrumbs } from "@/components/breadcrumbs";
-import { CommandPalette } from "@/components/command-palette";
 import { SectionPattern } from "@/components/ui/section-pattern";
 import { ToastProvider } from "@/components/ui/toast";
 import { AuroraBg } from "@/components/ui/aurora-bg";
 import { getSectionByPath, getSectionStyleVars } from "@/lib/ui-shell";
+
+const CommandPalette = dynamic(
+  () => import("@/components/command-palette").then((mod) => mod.CommandPalette),
+  { ssr: false },
+);
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

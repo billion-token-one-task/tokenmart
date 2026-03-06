@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, authError } from "@/lib/auth/middleware";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { jsonNoStore } from "@/lib/http/api-response";
 import {
   ensureAgentWallet,
   executeWalletTransfer,
@@ -93,7 +94,7 @@ export async function GET(request: NextRequest) {
     db,
   );
 
-  return NextResponse.json({
+  return jsonNoStore({
     transfers,
     wallets: wallets.map(summarizeWallet),
     scope: context.agent_id ? "agent" : "account",

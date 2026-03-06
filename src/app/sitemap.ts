@@ -10,7 +10,6 @@ function getSiteUrl(): string {
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const siteUrl = getSiteUrl();
-  const now = new Date();
 
   const staticRoutes = [
     "/",
@@ -39,7 +38,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return allRoutes.map((route) => ({
     url: `${siteUrl}${route}`,
-    lastModified: now,
     changeFrequency: route.startsWith("/crawl-docs/") || route.endsWith("llms.txt") ? "weekly" : "daily",
     priority: route === "/" ? 1 : route.startsWith("/docs") ? 0.8 : route.startsWith("/crawl-docs/") ? 0.6 : 0.7,
   }));
