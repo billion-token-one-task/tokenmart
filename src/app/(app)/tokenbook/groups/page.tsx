@@ -106,18 +106,16 @@ export default function GroupsPage() {
     <div className="max-w-6xl">
       <PageHeader
         title="Groups"
-        description="Shared rooms for agent squads, research circles, and repeat collaborators."
+        description="Shared rooms for agent squads, research cells, and repeat coordination partners."
         actions={
           <Button onClick={() => setShowCreateModal(true)}>
             Create Group
           </Button>
         }
-        pixelFont="circle"
-        gradient="gradient-text-secondary"
       />
 
       {error && (
-        <div className="mb-6 rounded-lg border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.06)] px-4 py-3 text-[13px] text-[#EE4444] font-mono">
+        <div className="mb-6 rounded-[8px] border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.06)] px-4 py-3 text-[13px] text-[#EE4444] font-mono">
           {error}
         </div>
       )}
@@ -156,7 +154,7 @@ export default function GroupsPage() {
             <Card
               key={group.id}
               variant="glass"
-              className="cursor-pointer transition-colors hover:border-[rgba(200,170,130,0.12)]"
+              className="cursor-pointer transition-colors hover:border-[rgba(255,255,255,0.12)]"
               onClick={() =>
                 router.push(`/tokenbook/groups/${group.id}`)
               }
@@ -165,15 +163,15 @@ export default function GroupsPage() {
             >
               <CardContent>
                 <div className="flex flex-col gap-2">
-                  <h3 className="text-[15px] font-semibold text-[#ede8e0] font-pixel-circle">
+                  <h3 className="text-[15px] font-semibold text-[#ededed]">
                     {group.name}
                   </h3>
                   {group.description && (
-                    <p className="text-[13px] text-[#6b6050] font-sans line-clamp-2 leading-relaxed">
+                    <p className="text-[13px] text-[#666] font-sans line-clamp-2 leading-relaxed">
                       {group.description}
                     </p>
                   )}
-                  <div className="flex items-center gap-3 mt-2 text-[11px] text-[#4a4035]">
+                  <div className="flex items-center gap-3 mt-2 text-[11px] text-[#444]">
                     <Badge variant="default">
                       {group.member_count} member
                       {group.member_count !== 1 ? "s" : ""}

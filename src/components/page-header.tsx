@@ -1,7 +1,5 @@
-import { type CSSProperties, ReactNode } from "react";
-import { SectionPattern } from "@/components/ui/section-pattern";
+import { type ReactNode } from "react";
 import {
-  getSectionStyleVars,
   resolveSectionConfig,
   type ShellSectionId,
 } from "@/lib/ui-shell";
@@ -17,97 +15,72 @@ interface PageHeaderProps {
   section?: ShellSectionId;
 }
 
-const fontMap: Record<string, string> = {
-  square: "font-pixel-square",
-  grid: "font-pixel-grid",
-  circle: "font-pixel-circle",
-  triangle: "font-pixel-triangle",
-  line: "font-pixel-line",
-};
-
 export function PageHeader({
   title,
   description,
   actions,
   agentEndpoint,
-  pixelFont,
-  gradient,
-  decoration,
   section,
+  gradient,
 }: PageHeaderProps) {
   const sectionConfig = resolveSectionConfig({ section, gradient });
-  const titleFont = pixelFont ? fontMap[pixelFont] : sectionConfig.pixelFont;
 
   return (
     <div
-      className={`shell-page-header surface-${sectionConfig.surfacePreset} mb-8 rounded-[32px] px-5 py-5 sm:px-6`}
-      style={{ animation: "hero-reveal 0.6s cubic-bezier(0.22,1,0.36,1) both" }}
+      className="relative mb-8 overflow-hidden py-4"
       data-agent-role="page-header"
       data-agent-endpoint={agentEndpoint}
-      data-shell-section={sectionConfig.id}
-      data-shell-contrast={sectionConfig.contrastPreset}
-      data-shell-surface={sectionConfig.surfacePreset}
     >
-      <SectionPattern
-        section={sectionConfig.id}
-        className="opacity-60 [mask-image:linear-gradient(135deg,transparent_16%,black_42%,black_82%,transparent)]"
-        opacity={0.68}
-      />
+      {/* Crosshatch texture behind header — masked to right edge */}
       <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-px"
+        className="pointer-events-none absolute inset-0 crosshatch-wide opacity-40"
+        aria-hidden="true"
         style={{
-          background:
-            "linear-gradient(90deg, transparent, var(--section-accent-light), var(--section-accent-line), transparent)",
+          maskImage: "linear-gradient(270deg, black 0%, transparent 40%)",
+          WebkitMaskImage: "linear-gradient(270deg, black 0%, transparent 40%)",
         }}
       />
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0 flex-1">
-          <div className="mb-5 flex flex-wrap items-center gap-2">
-            <span
-              className={`shell-pill px-2.5 py-1 ${sectionConfig.pixelFont} text-[10px] tracking-[0.18em] ${sectionConfig.gradientTextClass}`}
-              style={getSectionStyleVars(sectionConfig.id) as CSSProperties}
-            >
-              {sectionConfig.eyebrow}
-            </span>
-            <span className="rounded-full border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]">
-              {sectionConfig.hintLabel}
-            </span>
-            {agentEndpoint && (
-              <span className="rounded-full border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] px-2.5 py-1 font-mono text-[10px] text-[var(--color-text-quaternary)]">
-                {agentEndpoint}
-              </span>
-            )}
-          </div>
-          <div className="flex items-start gap-4">
-            {decoration && (
-              <div className="hidden shrink-0 rounded-[24px] border border-[rgba(255,255,255,0.08)] bg-[linear-gradient(180deg,rgba(16,20,29,0.9),rgba(7,10,16,0.92))] p-4 shadow-[0_20px_40px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.05)] sm:block">
-                <div className="opacity-90">{decoration}</div>
-              </div>
-            )}
-            <div className="min-w-0 flex-1">
-              <h1
-                className={`shell-display ${sectionConfig.displayTreatment} text-[2rem] tracking-tight text-[var(--color-text-primary)] sm:text-[2.7rem] ${titleFont} ${gradient || sectionConfig.gradientTextClass}`}
-              >
-                {title}
-              </h1>
-              {description && (
-                <p className="mt-3 max-w-3xl text-[15px] leading-relaxed text-[var(--color-text-secondary)] sm:text-[16px]">
-                  {description}
-                </p>
-              )}
-            </div>
-          </div>
-          <div
-            className="shell-rule mt-4"
-            style={
-              {
-                "--rule-from": sectionConfig.accentFrom,
-                "--rule-to": sectionConfig.accentTo,
-              } as CSSProperties
-            }
-          />
+
+      {/* Halftone dots accent — upper left */}
+      <div
+        className="pointer-events-none absolute inset-0 halftone-fine opacity-30"
+        aria-hidden="true"
+        style={{
+          maskImage: "radial-gradient(ellipse at 0% 0%, black 0%, transparent 35%)",
+          WebkitMaskImage: "radial-gradient(ellipse at 0% 0%, black 0%, transparent 35%)",
+        }}
+      />
+
+      <div className="relative">
+        <div className="mb-3 flex items-center gap-2 text-[11px]">
+          <span className="font-mono text-[#666]">{sectionConfig.label}</span>
+          {agentEndpoint && (
+            <span className="font-mono text-[#444]">{agentEndpoint}</span>
+          )}
+          {/* ASCII divider accent */}
+          <span className="ml-auto font-mono text-[7px] text-[rgba(255,255,255,0.06)]" aria-hidden="true">
+            ░▒▓█▓▒░
+          </span>
         </div>
-        {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h1 className="text-[2rem] font-semibold tracking-[-0.04em] text-[#ededed] sm:text-[2.4rem]">
+              {title}
+            </h1>
+            {description && (
+              <p className="mt-2 max-w-3xl text-[14px] leading-6 text-[#a1a1a1]">
+                {description}
+              </p>
+            )}
+          </div>
+          {actions && (
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              {actions}
+            </div>
+          )}
+        </div>
+        {/* Dithered divider line — halftone dots instead of solid line */}
+        <div className="mt-4 h-px ht-divider" />
       </div>
     </div>
   );

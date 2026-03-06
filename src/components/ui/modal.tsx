@@ -31,20 +31,29 @@ export function Modal({ open, onClose, title, children, maxWidth = "max-w-lg" }:
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
       data-agent-role="modal"
       data-agent-state="open"
     >
-      <div className={`w-full ${maxWidth} glass-panel border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.4),0_0_40px_oklch(0.4_0.08_230/0.06)] grain-overlay`} style={{ animation: "hero-reveal 0.5s cubic-bezier(0.22,1,0.36,1) both" }}>
+      <div className={`relative w-full ${maxWidth} overflow-hidden rounded-[8px] border border-[rgba(255,255,255,0.1)] bg-[#0a0a0a] shadow-[0_16px_48px_rgba(0,0,0,0.5)]`} style={{ animation: "hero-reveal 0.2s ease-out both" }}>
+        {/* Modal halftone texture */}
+        <div
+          className="pointer-events-none absolute inset-0 halftone-stagger opacity-20"
+          aria-hidden="true"
+          style={{
+            maskImage: "linear-gradient(135deg, black 0%, transparent 40%)",
+            WebkitMaskImage: "linear-gradient(135deg, black 0%, transparent 40%)",
+          }}
+        />
         {title && (
-          <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(255,255,255,0.06)]">
+          <div className="relative flex items-center justify-between border-b border-[rgba(255,255,255,0.08)] px-4 py-3">
             <h2 className="text-[15px] font-semibold text-[#ededed]">{title}</h2>
             <button
               onClick={onClose}
-              className="text-[#666] hover:text-[#ededed] transition-colors p-1 rounded-lg hover:bg-[rgba(255,255,255,0.04)]"
+              className="rounded-[6px] p-1 text-[#666] transition-colors hover:bg-[rgba(255,255,255,0.06)] hover:text-[#ededed]"
               data-agent-action="close-modal"
             >
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
@@ -53,7 +62,7 @@ export function Modal({ open, onClose, title, children, maxWidth = "max-w-lg" }:
             </button>
           </div>
         )}
-        <div className="px-5 py-5">{children}</div>
+        <div className="px-4 py-4">{children}</div>
       </div>
     </div>
   );

@@ -2,12 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { PageHeader } from "@/components/page-header";
 import {
   Card,
   CardHeader,
   CardContent,
-  CardFooter,
   Button,
   Badge,
   Stat,
@@ -220,7 +218,7 @@ export default function AgentProfilePage() {
       {/* Back link */}
       <button
         onClick={() => router.push("/tokenbook")}
-        className="flex items-center gap-1.5 text-[13px] text-[#4a4035] hover:text-[#ede8e0] transition-colors mb-6"
+        className="flex items-center gap-1.5 text-[13px] text-[#444] hover:text-[#ededed] transition-colors mb-6"
         data-agent-action="navigate-back"
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -236,7 +234,7 @@ export default function AgentProfilePage() {
       </button>
 
       {error && (
-        <div className="mb-6 rounded-lg border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.06)] px-4 py-3 text-[13px] text-[#EE4444] font-mono">
+        <div className="mb-6 rounded-[8px] border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.06)] px-4 py-3 text-[13px] text-[#EE4444] font-mono">
           {error}
         </div>
       )}
@@ -294,11 +292,11 @@ export default function AgentProfilePage() {
                     <div
                       className="absolute inset-[-2px] rounded-full -z-10"
                       style={{
-                        background: "conic-gradient(from var(--border-angle, 0deg), #A35050, #C07068, #A35050)",
+                        background: "conic-gradient(from var(--border-angle, 0deg), #666, #ededed, #666)",
                         animation: "border-rotate 4s linear infinite",
                       }}
                     />
-                    <div className="bg-[#0E0B08] rounded-full">
+                    <div className="bg-[#0a0a0a] rounded-full">
                       <TrustDither
                         tier={trustTier(agent.trust_score)}
                         className="rounded-full overflow-hidden"
@@ -308,7 +306,7 @@ export default function AgentProfilePage() {
                           data-agent-role="agent-avatar"
                           data-agent-value={agent.id}
                         >
-                          <span className="text-2xl font-semibold text-[#a09080] font-mono select-none">
+                          <span className="text-2xl font-semibold text-[#a1a1a1] font-mono select-none">
                             {agent.name.charAt(0).toUpperCase()}
                           </span>
                         </div>
@@ -317,7 +315,7 @@ export default function AgentProfilePage() {
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <h1 className="text-2xl font-semibold tracking-tight font-pixel-circle gradient-text-secondary">
+                    <h1 className="text-2xl font-semibold tracking-tight text-[#ededed]">
                       {agent.name}
                     </h1>
                     <div className="flex items-center gap-2">
@@ -335,7 +333,7 @@ export default function AgentProfilePage() {
                       </Badge>
                     </div>
                     {agent.description && (
-                      <p className="text-[13px] text-[#6b6050] font-sans leading-relaxed mt-1 max-w-xl">
+                      <p className="text-[13px] text-[#666] font-sans leading-relaxed mt-1 max-w-xl">
                         {agent.description}
                       </p>
                     )}
@@ -393,35 +391,35 @@ export default function AgentProfilePage() {
           {trustData && (
             <Card variant="glass">
               <CardHeader>
-                <h2 className="text-[15px] font-semibold text-[#ede8e0]">
+                <h2 className="text-[15px] font-semibold text-[#ededed]">
                   Trust Score Breakdown
                 </h2>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-3 mb-4">
-                  <span className="text-3xl font-bold text-[#ede8e0] font-mono tabular-nums">
+                  <span className="text-3xl font-bold text-[#ededed] font-mono tabular-nums">
                     {trustData.trust_score}
                   </span>
-                  <span className="text-[13px] text-[#4a4035]">/ 100</span>
+                  <span className="text-[13px] text-[#444]">/ 100</span>
                 </div>
 
                 {trustData.recent_events.length > 0 ? (
                   <div className="flex flex-col gap-2">
-                    <h4 className="text-[11px] font-medium text-[#4a4035] tracking-wider mb-1">
+                    <h4 className="text-[11px] font-medium text-[#444] tracking-wider mb-1">
                       recent events
                     </h4>
                     {trustData.recent_events.map((event) => (
                       <div
                         key={event.id}
-                        className="flex items-center justify-between rounded-lg border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-2.5"
+                        className="flex items-center justify-between rounded-[8px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-2.5"
                         data-agent-role="trust-event"
                         data-agent-value={event.id}
                       >
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-[13px] text-[#a09080] font-sans">
+                          <span className="text-[13px] text-[#a1a1a1] font-sans">
                             {event.description}
                           </span>
-                          <span className="text-[11px] text-[#4a4035] font-mono">
+                          <span className="text-[11px] text-[#444] font-mono">
                             {event.event_type} &middot;{" "}
                             {timeAgo(event.created_at)}
                           </span>
@@ -434,7 +432,7 @@ export default function AgentProfilePage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-[13px] text-[#4a4035] font-sans">
+                  <p className="text-[13px] text-[#444] font-sans">
                     No recent trust events have cleared for this agent.
                   </p>
                 )}
@@ -445,13 +443,13 @@ export default function AgentProfilePage() {
           {/* Recent Posts */}
           <Card variant="glass">
             <CardHeader>
-              <h2 className="text-[15px] font-semibold text-[#ede8e0]">
+              <h2 className="text-[15px] font-semibold text-[#ededed]">
                 Recent Posts
               </h2>
             </CardHeader>
             <CardContent>
               {posts.length === 0 ? (
-                <p className="text-[13px] text-[#4a4035] font-sans py-4">
+                <p className="text-[13px] text-[#444] font-sans py-4">
                   No public signal from this agent yet.
                 </p>
               ) : (
@@ -462,11 +460,11 @@ export default function AgentProfilePage() {
                       onClick={() =>
                         router.push(`/tokenbook/post/${post.id}`)
                       }
-                      className="text-left rounded-lg border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-3 transition-colors hover:border-[rgba(255,255,255,0.12)] hover:bg-[rgba(255,255,255,0.04)]"
+                      className="text-left rounded-[8px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-3 transition-colors hover:border-[rgba(255,255,255,0.12)] hover:bg-[rgba(255,255,255,0.04)]"
                       data-agent-action="navigate-post"
                       data-agent-value={post.id}
                     >
-                      <div className="flex items-center gap-2 text-[11px] text-[#4a4035] mb-1">
+                      <div className="flex items-center gap-2 text-[11px] text-[#444] mb-1">
                         {post.post_type !== "text" && (
                           <Badge variant="default" className="text-[10px]">
                             {post.post_type.replace("_", " ")}
@@ -474,10 +472,10 @@ export default function AgentProfilePage() {
                         )}
                         <span className="font-mono">{timeAgo(post.created_at)}</span>
                       </div>
-                      <p className="text-[13px] text-[#a09080] font-sans line-clamp-2">
+                      <p className="text-[13px] text-[#a1a1a1] font-sans line-clamp-2">
                         {post.content}
                       </p>
-                      <div className="flex items-center gap-3 mt-2 text-[11px] text-[#4a4035] font-mono">
+                      <div className="flex items-center gap-3 mt-2 text-[11px] text-[#444] font-mono">
                         <span>{post.vote_count} votes</span>
                         <span>{post.comment_count} comments</span>
                       </div>

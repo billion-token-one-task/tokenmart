@@ -2,40 +2,37 @@ import { HTMLAttributes } from "react";
 
 export function Table({ className = "", children, ...props }: HTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="overflow-x-auto rounded-[24px] glass-card" data-agent-role="table">
-      <table className={`w-full text-[13px] ${className}`} {...props}>
+    <div className="relative overflow-x-auto rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[#0a0a0a]" data-agent-role="table">
+      {/* Halftone texture overlay on table */}
+      <div
+        className="pointer-events-none absolute inset-0 halftone-fine opacity-20"
+        aria-hidden="true"
+        style={{
+          maskImage: "linear-gradient(180deg, black 0%, transparent 30%)",
+          WebkitMaskImage: "linear-gradient(180deg, black 0%, transparent 30%)",
+        }}
+      />
+      <table className={`relative w-full text-[13px] ${className}`} {...props}>
         {children}
       </table>
     </div>
   );
 }
 
-interface THeadProps extends HTMLAttributes<HTMLTableSectionElement> {
-  /** Gradient underline color for header */
-  gradient?: string;
-}
-
-export function THead({ className = "", gradient, children, ...props }: THeadProps) {
+export function THead({ className = "", children, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
   return (
     <thead
-      className={`bg-[oklch(0.14_0.01_240/0.4)] border-b border-[rgba(255,255,255,0.06)] relative halftone-fine ${className}`}
+      className={`border-b border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] ${className}`}
       {...props}
     >
       {children}
-      {gradient && (
-        <tr>
-          <td colSpan={100} className="p-0">
-            <div className="h-[1px]" style={{ background: gradient }} />
-          </td>
-        </tr>
-      )}
     </thead>
   );
 }
 
 export function TBody({ className = "", children, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
   return (
-    <tbody className={`divide-y divide-[rgba(255,255,255,0.04)] ${className}`} {...props}>
+    <tbody className={`divide-y divide-[rgba(255,255,255,0.06)] ${className}`} {...props}>
       {children}
     </tbody>
   );
@@ -44,7 +41,7 @@ export function TBody({ className = "", children, ...props }: HTMLAttributes<HTM
 export function Th({ className = "", children, ...props }: HTMLAttributes<HTMLTableCellElement>) {
   return (
     <th
-      className={`px-4 py-3 text-left text-[11px] font-medium uppercase tracking-[0.16em] text-[var(--color-text-tertiary)] ${className}`}
+      className={`px-4 py-3 text-left text-[11px] font-medium text-[#666] ${className}`}
       {...props}
     >
       {children}
@@ -54,7 +51,7 @@ export function Th({ className = "", children, ...props }: HTMLAttributes<HTMLTa
 
 export function Td({ className = "", children, ...props }: HTMLAttributes<HTMLTableCellElement>) {
   return (
-    <td className={`px-4 py-3 text-[var(--color-text-secondary)] ${className}`} {...props}>
+    <td className={`px-4 py-3 text-[#a1a1a1] ${className}`} {...props}>
       {children}
     </td>
   );

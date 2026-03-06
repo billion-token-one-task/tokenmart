@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { SectionPattern } from "@/components/ui/section-pattern";
 import { useRouter } from "next/navigation";
 import { flattenShellCommands, getSectionById, shellSectionOrder } from "@/lib/ui-shell";
 
@@ -80,26 +79,20 @@ export function CommandPalette() {
       <div className="absolute inset-0 bg-black/72 backdrop-blur-md" />
 
       <div
-        className="shell-command-surface relative w-full max-w-[620px] overflow-hidden rounded-[24px]"
+        className="relative w-full max-w-[620px] overflow-hidden bg-[#0a0a0a] border border-[rgba(255,255,255,0.1)] rounded-[12px] shadow-[0_24px_64px_rgba(0,0,0,0.5)]"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="absolute inset-0 pointer-events-none shell-grid-overlay opacity-40" />
-        <SectionPattern
-          section="platform"
-          className="opacity-80 [mask-image:linear-gradient(135deg,transparent_8%,black_36%,black_80%,transparent)]"
-          opacity={0.52}
-        />
-        <div className="relative border-b border-[rgba(200,170,130,0.08)] px-5 py-4">
+        <div className="border-b border-[rgba(255,255,255,0.08)] px-4 py-3">
           <div className="mb-2 flex items-center justify-between gap-3">
-            <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-quaternary)]">
+            <span className="font-mono text-[10px] text-[#444]">
               Command Palette
             </span>
-            <kbd className="shell-pill px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-text-tertiary)]">
+            <kbd className="bg-[rgba(255,255,255,0.04)] rounded-[4px] px-1.5 py-0.5 font-mono text-[10px] text-[#444]">
               ESC
             </kbd>
           </div>
-          <div className="shell-panel-soft flex items-center gap-3 rounded-2xl px-3 py-3">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[var(--color-text-quaternary)]">
+          <div className="flex items-center gap-3 rounded-md bg-transparent px-3 py-2.5">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#444]">
               <circle cx="11" cy="11" r="8" />
               <path d="M21 21l-4.35-4.35" />
             </svg>
@@ -112,24 +105,24 @@ export function CommandPalette() {
                 setSelectedIndex(0);
               }}
               placeholder="Search routes, modules, and surfaces"
-              className="w-full bg-transparent text-[14px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-quaternary)] outline-none"
+              className="w-full bg-transparent text-[14px] text-[#ededed] placeholder:text-[#444] outline-none"
               data-agent-role="search-input"
             />
-            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-quaternary)]">
+            <span className="font-mono text-[10px] text-[#444]">
               {filtered.length.toString().padStart(2, "0")}
             </span>
           </div>
         </div>
 
-        <div className="relative max-h-[420px] overflow-y-auto px-3 py-3">
+        <div className="max-h-[420px] overflow-y-auto px-3 py-3">
           {groupedCommands.map(([sectionId, sectionCommands]) => {
             const section = getSectionById(sectionId);
 
             return (
               <section key={sectionId} className="mb-3 last:mb-0">
-                <div className={`shell-section-label px-2 ${section.pixelFont} ${section.gradientTextClass}`}>
+                <div className="flex items-center justify-between px-2 font-mono text-[10px] text-[#666]">
                   <span>{section.label}</span>
-                  <span className="font-mono text-[9px] text-[var(--color-text-quaternary)]">
+                  <span className="font-mono text-[9px] text-[#444]">
                     {section.hintLabel}
                   </span>
                 </div>
@@ -141,7 +134,11 @@ export function CommandPalette() {
                     return (
                       <button
                         key={command.id}
-                        className="shell-command-row w-full rounded-2xl px-3 py-3 text-left transition-colors"
+                        className={`w-full rounded-md px-3 py-3 text-left transition-colors ${
+                          isSelected
+                            ? "bg-[rgba(255,255,255,0.06)]"
+                            : "bg-transparent hover:bg-[rgba(255,255,255,0.04)]"
+                        }`}
                         data-selected={isSelected ? "true" : "false"}
                         onClick={() => {
                           router.push(command.href);
@@ -154,24 +151,24 @@ export function CommandPalette() {
                         <div className="flex items-center justify-between gap-3">
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className={`text-[13px] ${isSelected ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]"}`}>
+                              <span className={`text-[13px] ${isSelected ? "text-[#ededed]" : "text-[#a1a1a1]"}`}>
                                 {command.label}
                               </span>
-                              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-quaternary)]">
+                              <span className="font-mono text-[10px] text-[#444]">
                                 {section.eyebrow}
                               </span>
                             </div>
-                            <div className="mt-1 font-mono text-[11px] text-[var(--color-text-quaternary)]">
+                            <div className="mt-1 font-mono text-[11px] text-[#444]">
                               {command.href}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
                             {command.shortcut && (
-                              <kbd className="shell-pill px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-text-tertiary)]">
+                              <kbd className="bg-[rgba(255,255,255,0.04)] rounded-[4px] px-1.5 py-0.5 font-mono text-[10px] text-[#444]">
                                 {command.shortcut}
                               </kbd>
                             )}
-                            <span className={`h-2 w-2 rounded-full ${section.gradientTextClass}`} style={{ backgroundImage: undefined, background: `linear-gradient(135deg, ${section.accentFrom}, ${section.accentTo})` }} />
+                            <span className="h-2 w-2 rounded-full bg-[#666]" />
                           </div>
                         </div>
                       </button>
@@ -183,18 +180,18 @@ export function CommandPalette() {
           })}
 
           {filtered.length === 0 && (
-            <div className="shell-panel-soft rounded-2xl px-4 py-10 text-center">
-              <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-quaternary)]">
+            <div className="rounded-md bg-[rgba(255,255,255,0.04)] px-4 py-10 text-center">
+              <div className="font-mono text-[10px] text-[#444]">
                 No matches
               </div>
-              <div className="mt-2 text-[13px] text-[var(--color-text-secondary)]">
+              <div className="mt-2 text-[13px] text-[#a1a1a1]">
                 No routes or commands matched &ldquo;{query}&rdquo;.
               </div>
             </div>
           )}
         </div>
 
-        <div className="relative flex items-center justify-between gap-4 border-t border-[rgba(200,170,130,0.08)] px-5 py-3 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-quaternary)]">
+        <div className="flex items-center justify-between gap-4 border-t border-[rgba(255,255,255,0.08)] px-4 py-3 font-mono text-[10px] text-[#444]">
           <span>Arrow Keys Navigate</span>
           <span>Enter Opens</span>
         </div>

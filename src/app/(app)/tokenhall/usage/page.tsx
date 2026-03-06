@@ -176,13 +176,11 @@ export default function TokenHallUsagePage() {
       <div>
         <PageHeader
           title="Usage"
-          description="Audit call volume, spend, and burn across your TokenHall traffic."
-          pixelFont="grid"
-          gradient="gradient-text-success"
+          description="Audit call volume, routed spend, and credit burn across TokenHall exchange traffic."
         />
         <Card>
           <CardContent>
-            <p className="text-[#6b6050] text-[13px] text-center py-8">
+            <p className="text-[#666] text-[13px] text-center py-8">
               Please log in to view usage analytics.
             </p>
           </CardContent>
@@ -196,9 +194,7 @@ export default function TokenHallUsagePage() {
       <div>
         <PageHeader
           title="Usage"
-          description="Audit call volume, spend, and burn across your TokenHall traffic."
-          pixelFont="grid"
-          gradient="gradient-text-success"
+          description="Audit call volume, routed spend, and credit burn across TokenHall exchange traffic."
         />
         <StatGrid className="mb-8">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -235,11 +231,9 @@ export default function TokenHallUsagePage() {
       <div>
         <PageHeader
           title="Usage"
-          description="Audit call volume, spend, and burn across your TokenHall traffic."
-          pixelFont="grid"
-          gradient="gradient-text-success"
+          description="Audit call volume, routed spend, and credit burn across TokenHall exchange traffic."
         />
-        <div className="rounded-lg border border-[rgba(192,72,56,0.2)] bg-[rgba(192,72,56,0.06)] px-5 py-4 text-[13px] text-[#C04838] font-mono">
+        <div className="rounded-lg border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.06)] px-5 py-4 text-[13px] text-[#EE4444] font-mono">
           {error}
         </div>
       </div>
@@ -251,13 +245,11 @@ export default function TokenHallUsagePage() {
       <div>
         <PageHeader
           title="Usage"
-          description="Audit call volume, spend, and burn across your TokenHall traffic."
-          pixelFont="grid"
-          gradient="gradient-text-success"
+          description="Audit call volume, routed spend, and credit burn across TokenHall exchange traffic."
         />
         <Card>
           <CardContent>
-            <p className="text-[13px] text-[#a09080] py-2">
+            <p className="text-[13px] text-[#a1a1a1] py-2">
               This account does not have an agent yet, so there is no usage data to
               display. Register an agent to start tracking API calls and spend.
             </p>
@@ -271,9 +263,7 @@ export default function TokenHallUsagePage() {
     <div>
       <PageHeader
         title="Usage"
-        description="Audit call volume, spend, and burn across your TokenHall traffic."
-        pixelFont="grid"
-        gradient="gradient-text-success"
+        description="Audit call volume, routed spend, and credit burn across TokenHall exchange traffic."
       />
 
       {/* Stats */}
@@ -310,10 +300,10 @@ export default function TokenHallUsagePage() {
       {/* Spending Chart */}
       <Card variant="glass" className="mb-8">
         <CardHeader>
-          <h2 className="text-[15px] font-medium text-[#ede8e0]">
+          <h2 className="text-[15px] font-medium text-[#ededed]">
             Daily spending
           </h2>
-          <p className="text-[13px] text-[#4a4035] mt-1">
+          <p className="text-[13px] text-[#444] mt-1">
             Credits spent over the last 7 days
           </p>
         </CardHeader>
@@ -327,7 +317,7 @@ export default function TokenHallUsagePage() {
                   key={day.date}
                   className="flex-1 flex flex-col items-center gap-2"
                 >
-                  <span className="text-[12px] text-[#4a4035] font-mono tabular-nums">
+                  <span className="text-[12px] text-[#444] font-mono tabular-nums">
                     {day.cost > 0 ? formatCost(day.cost) : ""}
                   </span>
                   <div className="w-full flex justify-center" style={{ height: "120px" }}>
@@ -337,13 +327,13 @@ export default function TokenHallUsagePage() {
                         height: `${Math.max(heightPercent, day.cost > 0 ? 4 : 0)}%`,
                         backgroundColor:
                           day.cost > 0
-                            ? "#A34830"
-                            : "rgba(200,170,130,0.04)",
+                            ? "#0070f3"
+                            : "rgba(255,255,255,0.04)",
                         alignSelf: "flex-end",
                       }}
                     />
                   </div>
-                  <span className="text-[12px] text-[#6b6050] font-mono">
+                  <span className="text-[12px] text-[#666] font-mono">
                     {formatDayLabel(day.date)}
                   </span>
                 </div>
@@ -356,10 +346,10 @@ export default function TokenHallUsagePage() {
       {/* Recent Transactions Table */}
       <Card variant="glass">
         <CardHeader>
-          <h2 className="text-[15px] font-medium text-[#ede8e0]">
+          <h2 className="text-[15px] font-medium text-[#ededed]">
             Recent transactions
           </h2>
-          <p className="text-[13px] text-[#4a4035] mt-1">
+          <p className="text-[13px] text-[#444] mt-1">
             Your most recent credit transactions
           </p>
         </CardHeader>
@@ -367,7 +357,7 @@ export default function TokenHallUsagePage() {
           <CardContent>
             <EmptyState
               title="No transactions yet"
-              description="Send your first routed request to generate a ledger of spend, usage, and settlement."
+              description="Send the first routed request to generate a ledger of spend, usage, and settlement."
             />
           </CardContent>
         ) : (
@@ -385,7 +375,7 @@ export default function TokenHallUsagePage() {
                 {transactions.slice(0, 50).map((txn) => (
                   <tr key={txn.id}>
                     <Td>
-                      <span className="font-medium text-[#ede8e0] text-[13px] capitalize">
+                      <span className="font-medium text-[#ededed] text-[13px] capitalize">
                         {txn.type}
                       </span>
                     </Td>
@@ -395,7 +385,7 @@ export default function TokenHallUsagePage() {
                       </span>
                     </Td>
                     <Td>
-                      <span className="text-[#a09080] text-[13px]">
+                      <span className="text-[#a1a1a1] text-[13px]">
                         {txn.description || "--"}
                       </span>
                     </Td>

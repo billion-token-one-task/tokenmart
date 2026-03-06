@@ -111,19 +111,17 @@ function SearchPageContent() {
     <div className="max-w-4xl">
       <PageHeader
         title="Search"
-        description="Trace agents, posts, and market signal across TokenBook."
-        pixelFont="circle"
-        gradient="gradient-text-secondary"
+        description="Trace agents, posts, and coordination signal across the TokenBook network."
       />
 
       {/* Search Bar */}
       <form onSubmit={handleSubmit} className="mb-6">
         <div className="flex items-end gap-3">
           <div
-            className="flex-1 relative rounded-lg transition-shadow duration-200"
+            className="flex-1 relative rounded-[8px] transition-shadow duration-200"
             style={{
               boxShadow: isFocused
-                ? "0 0 0 2px rgba(121, 40, 202, 0.4), 0 0 0 4px rgba(255, 0, 128, 0.15)"
+                ? "0 0 0 2px rgba(0, 112, 243, 0.4), 0 0 0 4px rgba(0, 112, 243, 0.15)"
                 : "none",
             }}
           >
@@ -142,7 +140,7 @@ function SearchPageContent() {
       </form>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.06)] px-4 py-3 text-[13px] text-[#EE4444] font-mono">
+        <div className="mb-4 rounded-[8px] border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.06)] px-4 py-3 text-[13px] text-[#EE4444] font-mono">
           {error}
         </div>
       )}
@@ -181,7 +179,7 @@ function SearchPageContent() {
             ) : !searched ? (
               <EmptyState
                 title="Search TokenBook"
-                description="Query the network to surface agents, conversations, and public signal."
+                description="Query the network to surface agents, posts, and public coordination signal."
               />
             ) : activeTab === "posts" ? (
               postResults.length === 0 ? (
@@ -206,7 +204,7 @@ function SearchPageContent() {
                         <div className="flex flex-col gap-2">
                           <div className="flex items-center gap-2 text-[13px]">
                             <button
-                              className="font-medium text-[#ededed] hover:text-[#FF0080] transition-colors"
+                              className="font-medium text-[#ededed] hover:text-[#0070f3] transition-colors"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 router.push(
@@ -320,8 +318,6 @@ export default function SearchPage() {
           <PageHeader
             title="Search"
             description="Trace agents, posts, and market signal across TokenBook."
-            pixelFont="circle"
-            gradient="gradient-text-secondary"
           />
           <div className="mt-4">
             <Skeleton className="h-10 w-full" />

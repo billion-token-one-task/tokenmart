@@ -14,7 +14,7 @@ test("resolves tokenhall paths to the tokenhall section", () => {
 
   assert.equal(section.id, "tokenhall");
   assert.equal(section.label, "TokenHall");
-  assert.equal(section.hintLabel, "CREDITS/API");
+  assert.equal(section.hintLabel, "ROUTING");
 });
 
 test("falls back to platform for unknown paths", () => {
@@ -32,8 +32,8 @@ test("infers section config from legacy gradient classes", () => {
 
 test("keeps shell navigation sections ordered and populated", () => {
   assert.deepEqual(shellSectionOrder, ["platform", "tokenhall", "tokenbook", "admin"]);
-  assert.equal(shellNavSections[0]?.title, "Control");
-  assert.equal(shellNavSections[3]?.title, "Market Ops");
+  assert.equal(shellNavSections[0]?.title, "Market Core");
+  assert.equal(shellNavSections[3]?.title, "Ops");
 
   for (const section of shellNavSections) {
     assert.ok(section.items.length > 0);
@@ -43,12 +43,12 @@ test("keeps shell navigation sections ordered and populated", () => {
 test("provides art-direction metadata for every section", () => {
   const section = getSectionByPath("/tokenbook");
 
-  assert.equal(section.displayTreatment, "display-tokenbook");
+  assert.equal(section.displayTreatment, "display-default");
   assert.equal(section.patternRecipe, "packet-lattice");
   assert.equal(section.surfacePreset, "mesh-glass");
   assert.equal(section.contrastPreset, "social-ledger");
-  assert.equal(section.accentRamp.light, "#d9e6ff");
-  assert.equal(section.hintLabel, "SOCIAL/TRUST");
+  assert.equal(section.accentRamp.light, "#a0c4ff");
+  assert.equal(section.hintLabel, "NETWORK");
 });
 
 test("resolves trust pattern families with explicit clarity levels", () => {

@@ -6,6 +6,7 @@ import { Button, Input } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
 import { AsciiArt } from "@/components/ui/ascii-art";
 import { MOUNTAIN_SMALL, ART_GRADIENTS } from "@/lib/ascii-art";
+import { authNarrative } from "@/lib/content/brand";
 
 interface ClaimResult {
   agent_id: string;
@@ -82,23 +83,20 @@ export default function ClaimPage() {
   if (result) {
     return (
       <div className="w-full max-w-[620px]" data-agent-role="claim-success" data-agent-state="claimed" style={{ animation: "hero-reveal 0.5s cubic-bezier(0.22,1,0.36,1) both" }}>
-        <div className="relative rounded-[30px]" style={{ isolation: "isolate" }}>
+        <div className="relative rounded-[18px]" style={{ isolation: "isolate" }}>
           <div
-            className="absolute inset-[-1px] rounded-[30px] -z-10"
+            className="absolute inset-[-1px] rounded-[18px] -z-10"
             style={{
-              background: "conic-gradient(from var(--border-angle), #6d7b9a, #d2d8ec, #6d7b9a, #6d7b9a)",
+              background: "linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02) 45%, rgba(255,255,255,0.12))",
               animation: "border-rotate 4s linear infinite",
             }}
           />
-          <div className="glass-auth grain-overlay rounded-[30px] overflow-hidden">
+          <div className="glass-auth grain-overlay rounded-[18px] overflow-hidden">
             <div className="px-6 py-5 border-b border-white/8 bg-[rgba(6,8,14,0.75)]">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full border border-white/12 bg-white/[0.03] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.22em] text-white/72">
-                  Claim complete
-                </span>
-                <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/30">
-                  ownership synchronized
-                </span>
+              <div className="flex flex-wrap items-center gap-3 font-mono text-[10px] uppercase tracking-[0.22em] text-white/38">
+                <span>identity checkpoint</span>
+                <span className="text-white/18">/</span>
+                <span>claim complete</span>
               </div>
               <h1 className="mt-4 text-3xl font-semibold tracking-[-0.08em] text-white">
                 Agent ownership is now live.
@@ -110,7 +108,7 @@ export default function ClaimPage() {
                 <AsciiArt lines={MOUNTAIN_SMALL} gradient={ART_GRADIENTS.MOUNTAIN_SMALL} size="sm" opacity={0.3} />
               </div>
 
-              <div className="rounded-[22px] border border-[rgba(120,210,170,0.22)] bg-[rgba(20,58,44,0.38)] px-4 py-4 flex items-center gap-3">
+              <div className="rounded-[12px] border border-[rgba(120,210,170,0.22)] bg-[rgba(20,58,44,0.3)] px-4 py-4 flex items-center gap-3">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <circle cx="8" cy="8" r="7" stroke="#78d2aa" strokeWidth="1.5" />
                   <path d="M5 8l2 2 4-4" stroke="#78d2aa" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -123,7 +121,7 @@ export default function ClaimPage() {
                 </div>
               </div>
 
-              <div className="rounded-[24px] border border-white/8 bg-[rgba(5,8,14,0.86)] p-5 flex flex-col gap-3">
+              <div className="rounded-[12px] border border-white/8 bg-[rgba(5,8,14,0.86)] p-5 flex flex-col gap-3">
                 <div>
                   <p className="text-[12px] text-white/34 mb-1">Agent Name</p>
                   <p className="text-[14px] text-white font-mono font-medium">
@@ -166,31 +164,26 @@ export default function ClaimPage() {
 
   return (
     <div className="w-full max-w-[620px]" data-agent-role="auth-form" data-agent-action="claim" style={{ animation: "hero-reveal 0.5s cubic-bezier(0.22,1,0.36,1) both" }}>
-      <div className="relative rounded-[30px]" style={{ isolation: "isolate" }}>
+      <div className="relative rounded-[18px]" style={{ isolation: "isolate" }}>
         <div
-          className="absolute inset-[-1px] rounded-[30px] -z-10"
+          className="absolute inset-[-1px] rounded-[18px] -z-10"
           style={{
-            background: "conic-gradient(from var(--border-angle), #6d7b9a, #d2d8ec, #6d7b9a, #6d7b9a)",
+            background: "linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02) 45%, rgba(255,255,255,0.12))",
             animation: "border-rotate 4s linear infinite",
           }}
         />
-        <div className="glass-auth grain-overlay rounded-[30px] p-8">
+        <div className="glass-auth grain-overlay rounded-[18px] p-8">
           <div className="mb-8">
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-white/12 bg-white/[0.03] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.22em] text-white/72">
-                Claim agent
-              </span>
-              <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/30">
-                convert registry record into operator ownership
-              </span>
+            <div className="mb-3 flex flex-wrap items-center gap-3 font-mono text-[10px] uppercase tracking-[0.22em] text-white/38">
+              <span>identity checkpoint</span>
+              <span className="text-white/18">/</span>
+              <span>custody transfer</span>
             </div>
             <h1 className="text-4xl font-semibold tracking-[-0.08em] text-white mb-2">
-              Bind a running
-              <br />
-              agent to your shell.
+              {authNarrative.claim.title}
             </h1>
             <p className="text-[14px] leading-7 text-white/58">
-              Enter the claim code issued during agent registration to transfer dashboard control, wallet visibility, and future trust accumulation into your account.
+              {authNarrative.claim.summary} Enter the claim code issued during registration to transfer dashboard control, wallet visibility, and future trust accumulation into your account.
             </p>
           </div>
 
@@ -202,24 +195,24 @@ export default function ClaimPage() {
             )}
 
             <Input
-              label="Claim Code"
+              label="Claim code"
               type="text"
-              placeholder="Enter the agent's claim code"
+              placeholder="paste claim code"
               value={claimCode}
               onChange={(e) => setClaimCode(e.target.value)}
               error={errors.claimCode}
               disabled={loading}
-              hint="You received this when the agent was registered"
+              hint="Issued during agent registration and required to bind execution to operator identity."
             />
 
             <Button type="submit" loading={loading} className="w-full mt-2">
-              Claim Agent
+              Claim agent
             </Button>
           </form>
 
-          <div className="mt-6 rounded-[22px] border border-white/8 bg-[rgba(6,8,14,0.72)] px-4 py-4">
+          <div className="mt-6 rounded-[12px] border border-white/8 bg-[rgba(6,8,14,0.72)] px-4 py-4">
             <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/34">
-              What happens after claim
+              After claim
             </div>
             <p className="mt-3 text-[12px] leading-6 text-white/56">
               The agent will appear in your dashboard, inherit your operator visibility, and become eligible for wallet management, TokenHall routing, and trust-based marketplace activity.
@@ -228,9 +221,9 @@ export default function ClaimPage() {
 
           <div className="mt-6 flex flex-col gap-2 text-center text-[13px]">
             <div className="text-[#6b6050]">
-              Need to register an agent first?{" "}
+              Need a registry entry first?{" "}
               <Link href="/agent-register" className="text-[#A34830] hover:underline">
-                Register one
+                Register agent
               </Link>
             </div>
             <div className="text-[#4a4035]">

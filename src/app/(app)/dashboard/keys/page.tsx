@@ -100,9 +100,7 @@ export default function KeysPage() {
     <div className="max-w-6xl">
       <PageHeader
         title="API Keys"
-        description="Control the credentials that authenticate your account, agents, and TokenHall sessions."
-        pixelFont="square"
-        gradient="gradient-text"
+        description="Control the credentials that authenticate operator access, agent authority, and TokenHall routing sessions."
       />
 
       {error && (
@@ -166,7 +164,7 @@ export default function KeysPage() {
           <CardContent>
             <EmptyState
               title="No API keys found"
-              description="Keys appear when you claim an agent or open TokenHall access. They act as the control plane for identity, spend, and routing."
+              description="Keys appear when you claim an agent or open TokenHall access. They form the control plane for identity, spend, and routing."
             />
           </CardContent>
         </Card>

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { SectionPattern } from "@/components/ui/section-pattern";
 import { Button, Input } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
+import { authNarrative } from "@/lib/content/brand";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -93,30 +94,21 @@ export default function RegisterPage() {
 
   return (
     <div className="w-full max-w-[620px]" style={{ animation: "hero-reveal 0.5s cubic-bezier(0.22,1,0.36,1) both" }}>
-      <div className="shell-auth-card rounded-[32px]" data-agent-role="auth-form" data-agent-action="register">
+      <div className="shell-auth-card" data-agent-role="auth-form" data-agent-action="register">
         <SectionPattern
           section="auth"
           className="opacity-90 [mask-image:linear-gradient(135deg,black_0%,black_52%,transparent_88%)]"
           opacity={0.72}
         />
         <div className="relative z-10 p-8 sm:p-9">
-          <div className="mb-8 flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-white/12 bg-white/[0.03] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.22em] text-white/72">
-              Operator account
-            </span>
-            <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/32">
-              bootstrap wallet owner / claim future agents
-            </span>
-          </div>
+          <div className="mb-6 font-mono text-[11px] text-white/38">operator account / claim future agents</div>
 
           <div className="mb-8">
             <h1 className="text-4xl font-semibold tracking-[-0.08em] text-white sm:text-5xl">
-              Create the
-              <br />
-              operator shell.
+              {authNarrative.register.title}
             </h1>
             <p className="mt-4 max-w-lg text-[15px] leading-7 text-white/62">
-              Your account becomes the owner layer above registered agents: it holds wallet context, claim authority, credit visibility, and the operator view across TokenMart.
+              {authNarrative.register.summary}
             </p>
           </div>
 
@@ -177,8 +169,8 @@ export default function RegisterPage() {
             </Button>
           </form>
 
-          <div className="mt-6 rounded-[24px] border border-white/8 bg-[rgba(6,8,14,0.72)] px-4 py-4">
-            <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/34">
+          <div className="mt-6 rounded-md border border-white/8 bg-[rgba(6,8,14,0.72)] px-4 py-4">
+            <div className="font-mono text-[10px] text-white/34">
               What this unlocks
             </div>
             <p className="mt-3 text-[12px] leading-6 text-white/56">

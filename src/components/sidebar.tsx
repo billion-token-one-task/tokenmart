@@ -2,11 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type CSSProperties, useMemo, useState } from "react";
-import { AsciiArt } from "@/components/ui/ascii-art";
-import { SectionPattern } from "@/components/ui/section-pattern";
-import { ART_GRADIENTS, LOGO_MOUNTAIN } from "@/lib/ascii-art";
-import { getSectionById, getSectionStyleVars, shellNavSections } from "@/lib/ui-shell";
+import { useMemo, useState } from "react";
+import { getSectionById, shellNavSections } from "@/lib/ui-shell";
 
 function iconFor(name: string) {
   const props = {
@@ -132,103 +129,65 @@ function isActivePath(pathname: string, href: string) {
 export function Sidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const currentSection = useMemo(() => {
-    return shellNavSections.find((section) => pathname.startsWith(`/${section.id}`))?.id ?? "platform";
-  }, [pathname]);
-  const currentConfig = getSectionById(currentSection);
 
   const nav = (
     <>
-      <div className="relative overflow-hidden border-b border-[rgba(255,255,255,0.08)] px-4 py-4">
-        <SectionPattern
-          section={currentSection}
-          className="opacity-80 [mask-image:linear-gradient(135deg,black_12%,black_40%,transparent_86%)]"
-          opacity={0.56}
-        />
-        <Link href="/" className="group flex flex-col gap-2">
-          <div className="flex items-start justify-between gap-4">
-            <AsciiArt
-              lines={LOGO_MOUNTAIN}
-              gradient={ART_GRADIENTS.LOGO_MOUNTAIN}
-              pixelFont="font-pixel-square"
-              size="sm"
-              className="opacity-95"
-            />
-            <div className="shell-pill px-2 py-1 text-[9px] font-mono uppercase tracking-[0.24em] text-[var(--color-text-tertiary)]">
-              {currentConfig.hintLabel}
-            </div>
-          </div>
-          <div className="flex items-end justify-between gap-3">
-            <div>
-              <div className="editorial-label">Agent Credit Exchange</div>
-              <span className={`shell-display ${currentConfig.displayTreatment} text-[20px] tracking-tight ${currentConfig.gradientTextClass}`}>
-                TokenMart
-              </span>
-            </div>
-            <div className="text-right font-mono text-[10px] leading-tight text-[var(--color-text-quaternary)]">
-              <div>INFERENCE / LEDGER</div>
-              <div>ASCII / DITHER / TRUST</div>
-            </div>
-          </div>
+      {/* Header */}
+      <div className="border-b border-[rgba(255,255,255,0.08)] px-4 py-4">
+        <Link href="/" className="flex items-center gap-2.5">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" className="text-[#ededed]">
+            <path d="M12 2L2 22h20L12 2z" />
+          </svg>
+          <span className="text-[15px] font-semibold tracking-[-0.02em] text-[#ededed]">
+            TokenMart
+          </span>
         </Link>
-        <div
-          className="shell-rule mt-3"
-          style={
-            {
-              "--rule-from": currentConfig.accentFrom,
-              "--rule-to": currentConfig.accentTo,
-            } as React.CSSProperties
-          }
-        />
       </div>
 
+      {/* Command search */}
       <div className="px-3 py-3">
         <button
-          className="shell-panel-soft flex w-full items-center justify-between rounded-2xl px-3 py-3 text-left transition-colors hover:border-[rgba(255,255,255,0.16)] hover:text-[var(--color-text-primary)]"
+          className="flex w-full items-center justify-between rounded-[6px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-left transition-colors hover:bg-[rgba(255,255,255,0.06)]"
           onClick={() => {
             document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
           }}
         >
-          <span className="flex items-center gap-2 text-[12px] text-[var(--color-text-secondary)]">
+          <span className="flex items-center gap-2 text-[12px] text-[#666]">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <circle cx="11" cy="11" r="8" />
               <path d="M21 21l-4.35-4.35" />
             </svg>
-            <span className="font-mono uppercase tracking-[0.18em] text-[10px] text-[var(--color-text-tertiary)]">
-              Command Search
-            </span>
+            <span className="text-[13px] text-[#666]">Search...</span>
           </span>
-          <kbd className="shell-pill px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-text-tertiary)]">
+          <kbd className="rounded border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] px-1.5 py-0.5 font-mono text-[10px] text-[#444]">
             {"\u2318"}K
           </kbd>
         </button>
       </div>
 
+      {/* Nav sections */}
       <nav className="flex-1 overflow-y-auto px-3 pb-3" data-agent-role="nav-sections">
         <div className="space-y-5">
           {shellNavSections.map((section) => {
-            const sectionConfig = getSectionById(section.id);
-
             return (
               <section key={section.id} data-agent-section={section.id}>
-                <div className={`shell-section-label px-2 ${sectionConfig.pixelFont} ${sectionConfig.gradientTextClass}`}>
+                <div className="flex items-center gap-2 px-2 pb-1.5 text-[10px] font-mono uppercase tracking-wider text-[#444]">
                   <span>{section.title}</span>
-                  <span className="font-mono text-[9px] text-[var(--color-text-quaternary)]">
-                    {sectionConfig.hintLabel}
-                  </span>
+                  <span className="flex-1 h-px bg-gradient-to-r from-[rgba(255,255,255,0.06)] to-transparent" />
+                  <span className="text-[6px] text-[rgba(255,255,255,0.08)]" aria-hidden="true">┄</span>
                 </div>
-                <div className="mt-1 space-y-1.5">
-                  {section.items.map((item, index) => {
+                <div className="mt-1 space-y-0.5">
+                  {section.items.map((item) => {
                     const active = isActivePath(pathname, item.href);
 
                     return (
                       <Link
                         key={item.href}
                         href={item.href}
-                        className={`shell-nav-item flex items-center gap-3 rounded-xl px-3 py-2 text-[13px] transition-all duration-200 ${
+                        className={`relative flex items-center gap-3 rounded-[6px] px-3 py-2 text-[13px] transition-colors ${
                           active
-                            ? "shell-nav-item-active text-[var(--color-text-primary)]"
-                            : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                            ? "bg-[rgba(255,255,255,0.06)] text-[#ededed]"
+                            : "text-[#a1a1a1] hover:bg-[rgba(255,255,255,0.04)] hover:text-[#ededed]"
                         }`}
                         data-agent-action={`navigate-${item.label.toLowerCase().replace(/\s/g, "-")}`}
                         data-agent-href={item.href}
@@ -236,22 +195,14 @@ export function Sidebar() {
                         data-agent-active={active ? "true" : "false"}
                         aria-current={active ? "page" : undefined}
                         onClick={() => setMobileOpen(false)}
-                        style={
-                          {
-                            "--nav-from": sectionConfig.accentFrom,
-                            "--nav-to": sectionConfig.accentTo,
-                            "--nav-glow": sectionConfig.accentGlow,
-                            ...getSectionStyleVars(section.id),
-                          } as CSSProperties
-                        }
                       >
-                        <span className={`shrink-0 ${active ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-quaternary)]"}`}>
+                        {active && (
+                          <span className="absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-full bg-[#ededed]" />
+                        )}
+                        <span className={`shrink-0 ${active ? "text-[#ededed]" : "text-[#666]"}`}>
                           {iconFor(item.icon)}
                         </span>
                         <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                        <span className={`font-mono text-[10px] ${active ? "text-[var(--color-text-secondary)]" : "text-[var(--color-text-quaternary)]"}`}>
-                          {String(index + 1).padStart(2, "0")}
-                        </span>
                       </Link>
                     );
                   })}
@@ -262,19 +213,22 @@ export function Sidebar() {
         </div>
       </nav>
 
-      <div className="border-t border-[rgba(255,255,255,0.08)] px-4 py-3">
-        <div className="flex items-start justify-between gap-3">
-          <AsciiArt
-            lines={LOGO_MOUNTAIN}
-            gradient={ART_GRADIENTS.MOUNTAIN_SMALL}
-            pixelFont="font-pixel-square"
-            size="sm"
-            opacity={0.35}
-          />
-          <div className="text-right font-mono text-[10px] leading-relaxed text-[var(--color-text-quaternary)]">
-            <div>STATE / LIVE</div>
-            <div>CREDITS / ROUTING / TRUST</div>
-          </div>
+      {/* Footer */}
+      <div className="relative border-t border-[rgba(255,255,255,0.08)] px-4 py-3">
+        {/* Subtle dither texture in footer */}
+        <div
+          className="pointer-events-none absolute inset-0 dither-checker opacity-20"
+          aria-hidden="true"
+          style={{
+            maskImage: "linear-gradient(180deg, black 0%, transparent 100%)",
+            WebkitMaskImage: "linear-gradient(180deg, black 0%, transparent 100%)",
+          }}
+        />
+        <div className="relative flex items-center justify-between">
+          <span className="font-mono text-[10px] text-[#444]">TokenMart v1.0</span>
+          <span className="font-mono text-[6px] text-[rgba(255,255,255,0.06)]" aria-hidden="true">
+            ▁▂▃▄▅
+          </span>
         </div>
       </div>
     </>
@@ -282,8 +236,9 @@ export function Sidebar() {
 
   return (
     <>
+      {/* Mobile toggle */}
       <button
-        className="shell-panel md:hidden fixed left-3 top-3 z-50 rounded-xl p-2 text-[var(--color-text-primary)]"
+        className="fixed left-3 top-3 z-50 rounded-md bg-[#0a0a0a] border border-[rgba(255,255,255,0.08)] p-2 text-[#ededed] md:hidden"
         onClick={() => setMobileOpen((open) => !open)}
         aria-label="Toggle navigation"
       >
@@ -296,27 +251,23 @@ export function Sidebar() {
         </svg>
       </button>
 
+      {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="md:hidden fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
+          className="md:hidden fixed inset-0 z-40 bg-black/80 backdrop-blur-sm"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
+      {/* Sidebar frame */}
       <aside
-        className={`shell-sidebar-frame relative flex h-screen w-[280px] shrink-0 flex-col ${
+        className={`relative flex h-screen w-[256px] shrink-0 flex-col bg-[#0a0a0a] border-r border-[rgba(255,255,255,0.08)] ${
           mobileOpen ? "fixed left-0 top-0 z-40" : "hidden md:flex"
         }`}
         data-agent-role="navigation"
         aria-label="Main navigation"
       >
         {nav}
-        <div
-          className="pointer-events-none absolute bottom-0 right-0 top-0 w-px"
-          style={{
-            background: `linear-gradient(180deg, ${currentConfig.accentFrom}33, ${currentConfig.accentTo}22 44%, transparent 100%)`,
-          }}
-        />
       </aside>
     </>
   );

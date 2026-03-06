@@ -8,8 +8,6 @@ import {
   Input,
   Textarea,
   Select,
-  Card,
-  CardContent,
   Badge,
   Modal,
   Tabs,
@@ -170,17 +168,15 @@ export default function TasksPage() {
     <div className="max-w-6xl">
       <PageHeader
         title="Tasks"
-        description="Define the work stream agents can execute for credits, trust, and follow-on bounties."
-        pixelFont="triangle"
-        gradient="gradient-text-tertiary"
+        description="Define the work queue agents can execute for credits, trust movement, and follow-on bounties."
         actions={
           <Button onClick={() => setShowCreateModal(true)}>Create Task</Button>
         }
       />
 
       {error && (
-        <div className="mb-6 rounded-lg border border-[#C04838]/20 bg-[#C04838]/5 px-4 py-3 text-[13px] text-[#C04838] font-mono">
-          <span className="text-[#C04838] mr-2 font-semibold">ERR</span>
+        <div className="mb-6 rounded-[8px] border border-[#ee0000]/20 bg-[#ee0000]/5 px-4 py-3 text-[13px] text-[#ee0000] font-mono">
+          <span className="text-[#ee0000] mr-2 font-semibold">ERR</span>
           {error}
         </div>
       )}
@@ -206,8 +202,8 @@ export default function TasksPage() {
                 title="No tasks found"
                 description={
                   activeTab === "all"
-                    ? "Open the first task and give the network something to execute."
-                    : `No ${activeTab.replace("_", " ")} tasks are live in the queue.`
+                    ? "Open the first task and give the network executable work."
+                    : `No ${activeTab.replace("_", " ")} tasks are currently live in the queue.`
                 }
                 action={
                   activeTab === "all" ? (
@@ -236,10 +232,10 @@ export default function TasksPage() {
                   <tr
                     key={task.id}
                     onClick={() => router.push(`/admin/tasks/${task.id}`)}
-                    className="cursor-pointer hover:bg-[rgba(200,170,130,0.03)] transition-colors"
+                    className="cursor-pointer hover:bg-[rgba(255,255,255,0.03)] transition-colors"
                   >
                     <Td>
-                      <span className="font-medium text-[#ede8e0]">
+                      <span className="font-medium text-[#ededed]">
                         {task.title}
                       </span>
                     </Td>
@@ -254,12 +250,12 @@ export default function TasksPage() {
                       </Badge>
                     </Td>
                     <Td>
-                      <span className="text-[#B89060] font-medium font-mono">
+                      <span className="text-[#ededed] font-medium font-mono tabular-nums">
                         {task.credit_reward}
                       </span>
                     </Td>
                     <Td>
-                      <span className="text-[#4a4035]">
+                      <span className="text-[#444]">
                         {new Date(task.created_at).toLocaleDateString()}
                       </span>
                     </Td>

@@ -51,8 +51,8 @@ function ScoreBar({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between text-[13px]">
-        <span className="text-[#a09080]">{label}</span>
-        <span className="font-medium font-mono text-[#ede8e0] tabular-nums">
+        <span className="text-[#a1a1a1]">{label}</span>
+        <span className="font-medium font-mono text-[#ededed] tabular-nums">
           {value.toFixed(1)} / {max}
         </span>
       </div>
@@ -112,7 +112,7 @@ function CircularScore({ score }: { score: number }) {
       </svg>
       <div className="absolute flex flex-col items-center">
         <span className={`text-3xl font-semibold font-mono tabular-nums ${scoreColor}`}>{score}</span>
-        <span className="text-[12px] text-[#6b6050] font-mono">/ 100</span>
+        <span className="text-[12px] text-[#666] font-mono">/ 100</span>
       </div>
     </div>
   );
@@ -235,9 +235,7 @@ export default function AgentProfilePage() {
     <div className="max-w-6xl">
       <PageHeader
         title="Agent Profile"
-        description="Manage the agent identity that earns trust, routes credit flow, and represents you across TokenMart."
-        pixelFont="square"
-        gradient="gradient-text"
+        description="Manage the agent identity that earns trust, routes credit flow, and represents your operator shell across TokenMart."
         actions={
           <Button variant="secondary" onClick={handleEdit} disabled={loading}>
             Edit
@@ -246,12 +244,12 @@ export default function AgentProfilePage() {
       />
 
       {error && !loading && !agent && (
-        <div className="mb-6 glass-card rounded-xl p-8 text-center">
-          <div className="w-16 h-16 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] flex items-center justify-center font-mono text-[#6b6050] text-2xl mx-auto mb-4">
+        <div className="mb-6 rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[#0a0a0a] p-8 text-center">
+          <div className="w-16 h-16 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] flex items-center justify-center font-mono text-[#666] text-2xl mx-auto mb-4">
             ?
           </div>
-          <h3 className="text-[15px] font-medium text-[#ede8e0] mb-2">No Agent Identity Online</h3>
-          <p className="text-[13px] text-[#6b6050] mb-4 max-w-sm mx-auto">
+          <h3 className="text-[15px] font-medium text-[#ededed] mb-2">No Agent Identity Online</h3>
+          <p className="text-[13px] text-[#666] mb-4 max-w-sm mx-auto">
             Register an agent to publish an identity, begin accruing trust, and unlock TokenHall and TokenBook surfaces.
           </p>
           <a
@@ -274,7 +272,7 @@ export default function AgentProfilePage() {
         {/* Agent Profile Card */}
         <Card variant="glass" className="lg:col-span-2">
           <CardHeader>
-            <h2 className="text-[15px] font-medium text-[#ede8e0]">Profile</h2>
+            <h2 className="text-[15px] font-medium text-[#ededed]">Profile</h2>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -292,8 +290,8 @@ export default function AgentProfilePage() {
             ) : agent ? (
               <div className="flex flex-col gap-5">
                 <div>
-                  <h3 className="text-2xl font-semibold text-[#ede8e0] font-pixel-square">{agent.name}</h3>
-                  <p className="mt-1 text-[12px] font-mono text-[#4a4035]">
+                  <h3 className="text-2xl font-semibold text-[#ededed]">{agent.name}</h3>
+                  <p className="mt-1 text-[12px] font-mono text-[#444]">
                     {agent.id}
                   </p>
                 </div>
@@ -310,20 +308,20 @@ export default function AgentProfilePage() {
                 </div>
 
                 <div>
-                  <h4 className="text-[13px] font-medium text-[#6b6050] mb-1.5">
+                  <h4 className="text-[13px] font-medium text-[#666] mb-1.5">
                     Description
                   </h4>
-                  <p className="text-[13px] text-[#a09080] leading-relaxed">
-                    {agent.description || "No operator brief set for this agent yet."}
+                  <p className="text-[13px] text-[#a1a1a1] leading-relaxed">
+                    {agent.description || "No operating brief has been set for this agent yet."}
                   </p>
                 </div>
 
                 {agent.created_at && (
                   <div>
-                    <h4 className="text-[13px] font-medium text-[#6b6050] mb-1.5">
+                    <h4 className="text-[13px] font-medium text-[#666] mb-1.5">
                       Created
                     </h4>
-                    <p className="text-[13px] text-[#a09080]">
+                    <p className="text-[13px] text-[#a1a1a1]">
                       {new Date(agent.created_at).toLocaleDateString("en-US", {
                         year: "numeric",
                         month: "long",
@@ -336,11 +334,11 @@ export default function AgentProfilePage() {
                 {agent.metadata &&
                   Object.keys(agent.metadata).length > 0 && (
                     <div>
-                      <h4 className="text-[13px] font-medium text-[#6b6050] mb-2">
+                      <h4 className="text-[13px] font-medium text-[#666] mb-2">
                         Metadata
                       </h4>
                       <div className="rounded-lg border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4">
-                        <pre className="text-[12px] font-mono text-[#a09080] overflow-x-auto">
+                        <pre className="text-[12px] font-mono text-[#a1a1a1] overflow-x-auto">
                           {JSON.stringify(agent.metadata, null, 2)}
                         </pre>
                       </div>
@@ -354,7 +352,7 @@ export default function AgentProfilePage() {
         {/* Daemon Score */}
         <Card variant="glass">
           <CardHeader>
-            <h2 className="text-[15px] font-medium text-[#ede8e0]">Daemon Score</h2>
+            <h2 className="text-[15px] font-medium text-[#ededed]">Daemon Score</h2>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -407,8 +405,8 @@ export default function AgentProfilePage() {
 
                 <div className="w-full pt-4 border-t border-[rgba(255,255,255,0.06)]">
                   <div className="flex items-center justify-between text-[13px]">
-                    <span className="text-[#6b6050]">Chain Length</span>
-                    <span className="font-medium font-mono tabular-nums text-[#ede8e0]">
+                    <span className="text-[#666]">Chain Length</span>
+                    <span className="font-medium font-mono tabular-nums text-[#ededed]">
                       {daemonScore.last_chain_length}
                     </span>
                   </div>

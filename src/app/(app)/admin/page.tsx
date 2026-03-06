@@ -11,9 +11,6 @@ import {
   Badge,
   Skeleton,
 } from "@/components/ui";
-import { AsciiArt } from "@/components/ui/ascii-art";
-import { TOWER, ART_GRADIENTS } from "@/lib/ascii-art";
-import { TopoField } from "@/components/ui/topo-field";
 import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
 import { fetchJsonResult } from "@/lib/http/client-json";
 
@@ -167,34 +164,22 @@ export default function AdminPage() {
 
   return (
     <div className="max-w-6xl relative">
-      {/* Animated topo contour background — slow drift for admin */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none hidden md:block" aria-hidden="true">
-        <TopoField driftX={0.02} driftY={0.01} opacityScale={0.35} className="absolute inset-0 opacity-25" />
-      </div>
-
-      <div className="absolute top-0 right-0 opacity-[0.03] pointer-events-none">
-        <AsciiArt lines={TOWER} gradient={ART_GRADIENTS.TOWER} size="lg" pixelFont="font-pixel-triangle" />
-      </div>
-
-      <div className="editorial-label text-[#5a5040] mb-1">TB_ADMIN</div>
       <PageHeader
-        title="Admin Panel"
-        description="Run the marketplace: tasks, bounties, reviews, and credit issuance from one operator surface."
+        title="Ops"
+        description="Operate market integrity across tasks, bounties, reviews, and credit controls from one queue-driven surface."
         agentEndpoint="GET /api/v1/admin/tasks"
-        pixelFont="triangle"
-        gradient="gradient-text-tertiary"
       />
 
       {error && (
-        <div className="mb-6 rounded-lg border border-[#C04838]/20 bg-[#C04838]/5 px-4 py-3 text-[13px] text-[#C04838] font-mono">
-          <span className="text-[#C04838] mr-2 font-semibold">ERR</span>
+        <div className="mb-6 rounded-[8px] border border-[#ee0000]/20 bg-[#ee0000]/5 px-4 py-3 text-[13px] text-[#ee0000] font-mono">
+          <span className="text-[#ee0000] mr-2 font-semibold">ERR</span>
           {error}
         </div>
       )}
 
       {warning && (
-        <div className="mb-6 rounded-lg border border-[#C89030]/20 bg-[#C89030]/5 px-4 py-3 text-[13px] text-[#C89030] font-mono">
-          <span className="text-[#C89030] mr-2 font-semibold">WARN</span>
+        <div className="mb-6 rounded-[8px] border border-[#f5a623]/20 bg-[#f5a623]/5 px-4 py-3 text-[13px] text-[#f5a623] font-mono">
+          <span className="text-[#f5a623] mr-2 font-semibold">WARN</span>
           {warning}
         </div>
       )}
@@ -212,19 +197,17 @@ export default function AdminPage() {
               </>
             ) : (
               <>
-                <Stat label="Total Tasks" value={stats?.totalTasks ?? "--"} gradient gradientClass="gradient-text-tertiary" />
-                <Stat label="Open Bounties" value={stats?.openBounties ?? "--"} gradient gradientClass="gradient-text-tertiary" />
+                <Stat label="Total Tasks" value={stats?.totalTasks ?? "--"} />
+                <Stat label="Open Bounties" value={stats?.openBounties ?? "--"} />
                 <Stat
                   label="Pending Reviews"
                   value={stats?.pendingReviews ?? "--"}
-                  gradient
-                  gradientClass="gradient-text-tertiary"
                   change={stats && stats.pendingReviews > 0 ? "Needs attention" : ""}
                   changeType={
                     stats && stats.pendingReviews > 0 ? "warning" as "negative" : "neutral"
                   }
                 />
-                <Stat label="Active Claims" value={stats?.activeClaims ?? "--"} gradient gradientClass="gradient-text-tertiary" />
+                <Stat label="Active Claims" value={stats?.activeClaims ?? "--"} />
               </>
             )}
           </StatGrid>
@@ -234,19 +217,19 @@ export default function AdminPage() {
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Link href="/admin/tasks">
-          <div className="glass-card rounded-xl p-4 hover:border-[rgba(200,170,130,0.12)] transition-colors cursor-pointer group">
+          <div className="rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[#0a0a0a] p-4 hover:border-[rgba(255,255,255,0.16)] transition-colors cursor-pointer group">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[rgba(200,170,130,0.04)] text-[#a09080] group-hover:text-[#ede8e0] transition-colors">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[rgba(255,255,255,0.04)] text-[#a1a1a1] group-hover:text-[#ededed] transition-colors">
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                   <path d="M9 3v12M3 9h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                 </svg>
               </div>
               <div>
-                <h3 className="text-[13px] font-medium text-[#ede8e0] font-pixel-triangle">
+                <h3 className="text-[13px] font-medium text-[#ededed]">
                   Create Task
                 </h3>
-                <p className="text-[13px] text-[#4a4035]">
-                  Open a new queue of work for the network
+                <p className="text-[13px] text-[#444]">
+                  Open a new work queue for the market
                 </p>
               </div>
             </div>
@@ -254,19 +237,19 @@ export default function AdminPage() {
         </Link>
 
         <Link href="/admin/bounties">
-          <div className="glass-card rounded-xl p-4 hover:border-[rgba(200,170,130,0.12)] transition-colors cursor-pointer group">
+          <div className="rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[#0a0a0a] p-4 hover:border-[rgba(255,255,255,0.16)] transition-colors cursor-pointer group">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[rgba(200,170,130,0.04)] text-[#a09080] group-hover:text-[#ede8e0] transition-colors">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[rgba(255,255,255,0.04)] text-[#a1a1a1] group-hover:text-[#ededed] transition-colors">
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                   <path d="M9 2l2.12 4.3 4.74.69-3.43 3.34.81 4.72L9 12.77l-4.24 2.28.81-4.72L2.14 6.99l4.74-.69L9 2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
                 </svg>
               </div>
               <div>
-                <h3 className="text-[13px] font-medium text-[#ede8e0] font-pixel-triangle">
+                <h3 className="text-[13px] font-medium text-[#ededed]">
                   Create Bounty
                 </h3>
-                <p className="text-[13px] text-[#4a4035]">
-                  Post credit-backed work agents can claim
+                <p className="text-[13px] text-[#444]">
+                  Put settlement-backed work on the board
                 </p>
               </div>
             </div>
@@ -274,19 +257,19 @@ export default function AdminPage() {
         </Link>
 
         <Link href="/admin/credits">
-          <div className="glass-card rounded-xl p-4 hover:border-[rgba(200,170,130,0.12)] transition-colors cursor-pointer group">
+          <div className="rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[#0a0a0a] p-4 hover:border-[rgba(255,255,255,0.16)] transition-colors cursor-pointer group">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[rgba(200,170,130,0.04)] text-[#a09080] group-hover:text-[#ede8e0] transition-colors">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[rgba(255,255,255,0.04)] text-[#a1a1a1] group-hover:text-[#ededed] transition-colors">
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                   <path d="M9 2v14M5.5 5.5C5.5 4.12 7.07 3 9 3s3.5 1.12 3.5 2.5S10.93 8 9 8 5.5 9.12 5.5 10.5 7.07 13 9 13s3.5-1.12 3.5-2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                 </svg>
               </div>
               <div>
-                <h3 className="text-[13px] font-medium text-[#ede8e0] font-pixel-triangle">
+                <h3 className="text-[13px] font-medium text-[#ededed]">
                   Grant Credits
                 </h3>
-                <p className="text-[13px] text-[#4a4035]">
-                  Issue or claw back marketplace purchasing power
+                <p className="text-[13px] text-[#444]">
+                  Issue or remove purchasing power from circulation
                 </p>
               </div>
             </div>
@@ -297,14 +280,14 @@ export default function AdminPage() {
       {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Tasks */}
-        <div className="glass-card rounded-xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-[rgba(200,170,130,0.08)] flex items-center justify-between">
-            <h2 className="text-[13px] font-medium text-[#ede8e0] font-pixel-triangle">
+        <div className="rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[#0a0a0a] overflow-hidden">
+          <div className="px-4 py-3 border-b border-[rgba(255,255,255,0.08)] flex items-center justify-between">
+            <h2 className="text-[13px] font-medium text-[#ededed]">
               Recent Tasks
             </h2>
             <Link
               href="/admin/tasks"
-              className="text-[13px] text-[#6b6050] hover:text-[#ede8e0] transition-colors"
+              className="text-[13px] text-[#666] hover:text-[#ededed] transition-colors"
             >
               View all &rarr;
             </Link>
@@ -317,7 +300,7 @@ export default function AdminPage() {
                 <Skeleton className="h-12 w-full" />
               </div>
             ) : recentTasks.length === 0 ? (
-              <p className="text-[13px] text-[#4a4035] py-4 text-center font-mono">
+              <p className="text-[13px] text-[#444] py-4 text-center font-mono">
                 No tasks yet
               </p>
             ) : (
@@ -326,22 +309,22 @@ export default function AdminPage() {
                   <a
                     key={task.id}
                     href={`/admin/tasks/${task.id}`}
-                    className="flex items-center justify-between rounded-lg border border-[rgba(200,170,130,0.06)] bg-[rgba(200,170,130,0.02)] px-4 py-3 transition-colors hover:bg-[rgba(200,170,130,0.04)] hover:border-[rgba(200,170,130,0.1)]"
+                    className="flex items-center justify-between rounded-[8px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-3 transition-colors hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.1)]"
                   >
                     <div className="flex flex-col gap-1 min-w-0">
-                      <span className="text-[13px] text-[#ede8e0] truncate">
+                      <span className="text-[13px] text-[#ededed] truncate">
                         {task.title}
                       </span>
                       <div className="flex items-center gap-2">
                         <Badge variant={statusVariant(task.status)}>
                           {task.status}
                         </Badge>
-                        <span className="text-[13px] text-[#4a4035]">
+                        <span className="text-[13px] text-[#444]">
                           {task.credit_reward} credits
                         </span>
                       </div>
                     </div>
-                    <span className="text-[13px] text-[#4a4035] shrink-0 ml-4">
+                    <span className="text-[13px] text-[#444] shrink-0 ml-4">
                       {new Date(task.created_at).toLocaleDateString()}
                     </span>
                   </a>
@@ -352,14 +335,14 @@ export default function AdminPage() {
         </div>
 
         {/* Recent Bounties */}
-        <div className="glass-card rounded-xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-[rgba(200,170,130,0.08)] flex items-center justify-between">
-            <h2 className="text-[13px] font-medium text-[#ede8e0] font-pixel-triangle">
+        <div className="rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[#0a0a0a] overflow-hidden">
+          <div className="px-4 py-3 border-b border-[rgba(255,255,255,0.08)] flex items-center justify-between">
+            <h2 className="text-[13px] font-medium text-[#ededed]">
               Recent Bounties
             </h2>
             <Link
               href="/admin/bounties"
-              className="text-[13px] text-[#6b6050] hover:text-[#ede8e0] transition-colors"
+              className="text-[13px] text-[#666] hover:text-[#ededed] transition-colors"
             >
               View all &rarr;
             </Link>
@@ -372,7 +355,7 @@ export default function AdminPage() {
                 <Skeleton className="h-12 w-full" />
               </div>
             ) : recentBounties.length === 0 ? (
-              <p className="text-[13px] text-[#4a4035] py-4 text-center font-mono">
+              <p className="text-[13px] text-[#444] py-4 text-center font-mono">
                 No bounties yet
               </p>
             ) : (
@@ -381,10 +364,10 @@ export default function AdminPage() {
                   <a
                     key={bounty.id}
                     href={`/admin/bounties/${bounty.id}`}
-                    className="flex items-center justify-between rounded-lg border border-[rgba(200,170,130,0.06)] bg-[rgba(200,170,130,0.02)] px-4 py-3 transition-colors hover:bg-[rgba(200,170,130,0.04)] hover:border-[rgba(200,170,130,0.1)]"
+                    className="flex items-center justify-between rounded-[8px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-3 transition-colors hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.1)]"
                   >
                     <div className="flex flex-col gap-1 min-w-0">
-                      <span className="text-[13px] text-[#ede8e0] truncate">
+                      <span className="text-[13px] text-[#ededed] truncate">
                         {bounty.title}
                       </span>
                       <div className="flex items-center gap-2">
@@ -394,7 +377,7 @@ export default function AdminPage() {
                         <Badge variant="outline">{bounty.type}</Badge>
                       </div>
                     </div>
-                    <span className="text-[13px] font-medium text-[#B89060] shrink-0 ml-4">
+                    <span className="text-[13px] font-medium text-[#f5a623] shrink-0 ml-4">
                       {bounty.credit_reward} cr
                     </span>
                   </a>

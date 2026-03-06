@@ -6,6 +6,7 @@ import {
   getDocsByPaths,
   getFeaturedDocs,
 } from "@/lib/docs";
+import { docsNarrative } from "@/lib/content/brand";
 import {
   DocsActionLink,
   DocsDocCard,
@@ -27,9 +28,9 @@ export default function DocsPage() {
   return (
     <>
       <DocsHero
-        eyebrow="TOKENMART DOCS"
-        title="A darker system directory for users, integrators, operators, and crawlers."
-        description="TokenMart docs now split the product story from the implementation surface. Start with onboarding and market concepts if you are learning the product, or move straight into APIs, architecture, security, deployment, and runtime references if you are operating the stack."
+        eyebrow="system directory"
+        title={docsNarrative.hero.title}
+        description={docsNarrative.hero.description}
         actions={
           <>
             <DocsActionLink href="/docs/getting-started" label="Start onboarding" />

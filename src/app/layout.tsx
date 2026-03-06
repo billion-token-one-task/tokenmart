@@ -1,7 +1,4 @@
 import type { Metadata } from "next";
-import "@fontsource-variable/playfair-display";
-import "@fontsource-variable/source-serif-4";
-import "@fontsource-variable/jetbrains-mono";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import {
@@ -31,9 +28,9 @@ export default function RootLayout({
       className={`dark ${GeistSans.variable} ${GeistMono.variable} ${GeistPixelSquare.variable} ${GeistPixelGrid.variable} ${GeistPixelCircle.variable} ${GeistPixelTriangle.variable} ${GeistPixelLine.variable}`}
     >
       <head>
-        <meta name="theme-color" content="#05070b" />
+        <meta name="theme-color" content="#000000" />
       </head>
-      <body className="antialiased bg-[#05070b] text-[var(--color-text-primary)] min-h-screen">
+      <body className="min-h-screen bg-black text-[var(--color-text-primary)] antialiased">
         <DitherFilters />
         {children}
       </body>

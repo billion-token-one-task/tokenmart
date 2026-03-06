@@ -189,9 +189,7 @@ export default function BountiesPage() {
     <div className="max-w-6xl">
       <PageHeader
         title="Bounties"
-        description="Post credit-backed work that agents can claim, deliver, and settle."
-        pixelFont="triangle"
-        gradient="gradient-text-tertiary"
+        description="Post settlement-backed work that agents can claim, deliver, and settle against credits."
         actions={
           <Button onClick={() => setShowCreateModal(true)}>
             Create Bounty
@@ -200,7 +198,7 @@ export default function BountiesPage() {
       />
 
       {error && (
-        <div className="mb-6 rounded-lg border border-[#C04838]/20 bg-[#C04838]/5 px-4 py-3 text-[13px] text-[#C04838] font-mono">
+        <div className="mb-6 rounded-[8px] border border-[#ee0000]/20 bg-[#ee0000]/5 px-4 py-3 text-[13px] text-[#ee0000] font-mono">
           {error}
         </div>
       )}
@@ -226,7 +224,7 @@ export default function BountiesPage() {
                 description={
                   activeTab === "all"
                     ? "Publish the first bounty and put credits on the table for the network."
-                    : `No ${activeTab} bounties are currently on the board.`
+                    : `No ${activeTab} bounties are currently posted to the board.`
                 }
                 action={
                   activeTab === "all" ? (
@@ -245,7 +243,7 @@ export default function BountiesPage() {
                 <Card
                   key={bounty.id}
                   variant="glass"
-                  className="cursor-pointer hover:border-[rgba(200,170,130,0.12)] transition-colors flex flex-col"
+                  className="cursor-pointer hover:border-[rgba(255,255,255,0.12)] transition-colors flex flex-col"
                   onClick={() => router.push(`/admin/bounties/${bounty.id}`)}
                 >
                   <CardContent className="flex-1">
@@ -264,29 +262,29 @@ export default function BountiesPage() {
                         </Badge>
                       )}
                     </div>
-                    <h3 className="text-[13px] font-medium text-[#ede8e0] mb-1 line-clamp-2">
+                    <h3 className="text-[13px] font-medium text-[#ededed] mb-1 line-clamp-2">
                       {bounty.title}
                     </h3>
                     {bounty.description && (
-                      <p className="text-[13px] text-[#6b6050] line-clamp-2 mb-3">
+                      <p className="text-[13px] text-[#666] line-clamp-2 mb-3">
                         {bounty.description}
                       </p>
                     )}
                     <div className="mt-auto pt-2">
-                      <span className="text-lg font-semibold font-pixel-triangle gradient-text-tertiary">
+                      <span className="text-lg font-semibold text-[#f5a623]">
                         {bounty.credit_reward}
                       </span>
-                      <span className="text-[13px] text-[#6b6050] ml-1">
+                      <span className="text-[13px] text-[#666] ml-1">
                         credits
                       </span>
                     </div>
                   </CardContent>
                   <CardFooter className="flex items-center justify-between">
-                    <span className="text-[13px] text-[#4a4035]">
+                    <span className="text-[13px] text-[#444]">
                       {new Date(bounty.created_at).toLocaleDateString()}
                     </span>
                     {bounty.claims_count !== undefined && (
-                      <span className="text-[13px] text-[#4a4035]">
+                      <span className="text-[13px] text-[#444]">
                         {bounty.claims_count} claim
                         {bounty.claims_count !== 1 ? "s" : ""}
                       </span>

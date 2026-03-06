@@ -23,14 +23,14 @@ export function useToast() {
 const icons: Record<ToastType, ReactNode> = {
   success: (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <circle cx="8" cy="8" r="7" stroke="#B89060" strokeWidth="1.5" />
-      <path d="M5 8l2 2 4-4" stroke="#B89060" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="8" cy="8" r="7" stroke="#50e3c2" strokeWidth="1.5" />
+      <path d="M5 8l2 2 4-4" stroke="#50e3c2" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
   error: (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <circle cx="8" cy="8" r="7" stroke="#EE4444" strokeWidth="1.5" />
-      <path d="M6 6l4 4M10 6l-4 4" stroke="#EE4444" strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="8" cy="8" r="7" stroke="#ee0000" strokeWidth="1.5" />
+      <path d="M6 6l4 4M10 6l-4 4" stroke="#ee0000" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   ),
   info: (
@@ -53,9 +53,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const typeStyles: Record<ToastType, string> = {
-    success: "border-[rgba(0,220,130,0.2)] bg-[#111]",
-    error: "border-[rgba(238,68,68,0.2)] bg-[#111]",
-    info: "border-[rgba(255,255,255,0.08)] bg-[#111]",
+    success: "border-[rgba(80,227,194,0.3)] bg-[#0a0a0a]",
+    error: "border-[rgba(238,0,0,0.3)] bg-[#0a0a0a]",
+    info: "border-[rgba(255,255,255,0.1)] bg-[#0a0a0a]",
   };
 
   return (
@@ -65,7 +65,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toasts.map((t) => (
           <div
             key={t.id}
-            className={`relative overflow-hidden rounded-lg border px-4 py-3 text-[13px] text-[#ededed] shadow-[0_8px_30px_rgba(0,0,0,0.3)] animate-in max-w-sm flex items-center gap-3 ${typeStyles[t.type]}`}
+            className={`animate-in relative flex max-w-sm items-center gap-3 overflow-hidden rounded-[6px] border px-4 py-3 text-[13px] text-[#ededed] shadow-[0_8px_30px_rgba(0,0,0,0.3)] ${typeStyles[t.type]}`}
           >
             <span className="flex-shrink-0">{icons[t.type]}</span>
             <span>{t.message}</span>

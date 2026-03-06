@@ -14,20 +14,20 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="flex flex-col gap-2">
         {label && (
-          <label htmlFor={inputId} className="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-secondary)]">
+          <label htmlFor={inputId} className="text-[12px] font-medium text-[#a1a1a1]">
             {label}
           </label>
         )}
         <input
           ref={ref}
           id={inputId}
-          className={`w-full rounded-[20px] border border-[rgba(255,255,255,0.1)] bg-[linear-gradient(180deg,rgba(10,13,19,0.96),rgba(5,7,11,0.98))] px-4 py-3 text-[14px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-quaternary)] outline-none transition-all duration-200 shadow-[inset_0_2px_6px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.04)] focus:border-[rgba(122,162,255,0.3)] focus:ring-2 focus:ring-[rgba(122,162,255,0.14)] focus:shadow-[inset_0_2px_6px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.03),0_0_28px_rgba(122,162,255,0.14)] disabled:opacity-50 disabled:cursor-not-allowed ${error ? "border-[rgba(255,123,114,0.4)] focus:border-[rgba(255,123,114,0.52)] focus:ring-[rgba(255,123,114,0.14)]" : ""} ${className}`}
+          className={`w-full rounded-[6px] border border-[rgba(255,255,255,0.12)] bg-black px-3 py-2.5 text-[14px] text-[#ededed] placeholder:text-[#444] outline-none transition-colors duration-150 focus:border-[#0070f3] focus:ring-2 focus:ring-[rgba(0,112,243,0.2)] disabled:cursor-not-allowed disabled:opacity-50 ${error ? "border-[rgba(238,0,0,0.5)] focus:border-[#ee0000] focus:ring-[rgba(238,0,0,0.15)]" : ""} ${className}`}
           data-agent-role="input"
           data-agent-field={inputId}
           {...props}
         />
-        {error && <p className="text-[12px] text-[#ffb4ae]">{error}</p>}
-        {hint && !error && <p className="text-[12px] text-[var(--color-text-quaternary)]">{hint}</p>}
+        {error && <p className="text-[12px] text-[#ff6166]">{error}</p>}
+        {hint && !error && <p className="text-[12px] text-[#444]">{hint}</p>}
       </div>
     );
   }
@@ -46,19 +46,19 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <div className="flex flex-col gap-2">
         {label && (
-          <label htmlFor={inputId} className="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-secondary)]">
+          <label htmlFor={inputId} className="text-[12px] font-medium text-[#a1a1a1]">
             {label}
           </label>
         )}
         <textarea
           ref={ref}
           id={inputId}
-          className={`w-full rounded-[20px] border border-[rgba(255,255,255,0.1)] bg-[linear-gradient(180deg,rgba(10,13,19,0.96),rgba(5,7,11,0.98))] px-4 py-3 text-[14px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-quaternary)] outline-none transition-all duration-200 shadow-[inset_0_2px_6px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.04)] focus:border-[rgba(122,162,255,0.3)] focus:ring-2 focus:ring-[rgba(122,162,255,0.14)] focus:shadow-[inset_0_2px_6px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.03),0_0_28px_rgba(122,162,255,0.14)] disabled:opacity-50 resize-y min-h-[96px] ${error ? "border-[rgba(255,123,114,0.4)] focus:border-[rgba(255,123,114,0.52)] focus:ring-[rgba(255,123,114,0.14)]" : ""} ${className}`}
+          className={`min-h-[96px] w-full resize-y rounded-[6px] border border-[rgba(255,255,255,0.12)] bg-black px-3 py-2.5 text-[14px] text-[#ededed] placeholder:text-[#444] outline-none transition-colors duration-150 focus:border-[#0070f3] focus:ring-2 focus:ring-[rgba(0,112,243,0.2)] disabled:opacity-50 ${error ? "border-[rgba(238,0,0,0.5)] focus:border-[#ee0000] focus:ring-[rgba(238,0,0,0.15)]" : ""} ${className}`}
           data-agent-role="textarea"
           data-agent-field={inputId}
           {...props}
         />
-        {error && <p className="text-[12px] text-[#ffb4ae]">{error}</p>}
+        {error && <p className="text-[12px] text-[#ff6166]">{error}</p>}
       </div>
     );
   }

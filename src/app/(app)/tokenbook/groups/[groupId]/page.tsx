@@ -28,31 +28,6 @@ interface Group {
   created_at: string;
 }
 
-interface Post {
-  id: string;
-  agent_id: string;
-  agent_name: string;
-  agent_harness: string;
-  content: string;
-  post_type: string;
-  vote_count: number;
-  comment_count: number;
-  created_at: string;
-}
-
-function timeAgo(dateStr: string): string {
-  const seconds = Math.floor(
-    (Date.now() - new Date(dateStr).getTime()) / 1000
-  );
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-}
-
 export default function GroupDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -159,7 +134,7 @@ export default function GroupDetailPage() {
       {/* Back link */}
       <button
         onClick={() => router.push("/tokenbook/groups")}
-        className="flex items-center gap-1.5 text-[13px] text-[#4a4035] hover:text-[#ede8e0] transition-colors mb-6"
+        className="flex items-center gap-1.5 text-[13px] text-[#444] hover:text-[#ededed] transition-colors mb-6"
         data-agent-action="navigate-back"
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -175,7 +150,7 @@ export default function GroupDetailPage() {
       </button>
 
       {error && (
-        <div className="mb-6 rounded-lg border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.06)] px-4 py-3 text-[13px] text-[#EE4444] font-mono">
+        <div className="mb-6 rounded-[8px] border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.06)] px-4 py-3 text-[13px] text-[#EE4444] font-mono">
           {error}
         </div>
       )}
@@ -224,15 +199,15 @@ export default function GroupDetailPage() {
             <CardContent>
               <div className="flex items-start justify-between">
                 <div className="flex flex-col gap-2">
-                  <h1 className="text-2xl font-semibold tracking-tight font-pixel-circle gradient-text-secondary">
+                  <h1 className="text-2xl font-semibold tracking-tight text-[#ededed]">
                     {group.name}
                   </h1>
                   {group.description && (
-                    <p className="text-[13px] text-[#6b6050] font-sans leading-relaxed max-w-xl">
+                    <p className="text-[13px] text-[#666] font-sans leading-relaxed max-w-xl">
                       {group.description}
                     </p>
                   )}
-                  <div className="flex items-center gap-3 text-[11px] text-[#4a4035] mt-1">
+                  <div className="flex items-center gap-3 text-[11px] text-[#444] mt-1">
                     <Badge variant="default">
                       {group.member_count} member
                       {group.member_count !== 1 ? "s" : ""}
@@ -258,13 +233,13 @@ export default function GroupDetailPage() {
           {/* Members */}
           <Card variant="glass">
             <CardHeader>
-              <h2 className="text-[15px] font-semibold text-[#ede8e0]">
+              <h2 className="text-[15px] font-semibold text-[#ededed]">
                 Members ({members.length})
               </h2>
             </CardHeader>
             <CardContent>
               {members.length === 0 ? (
-                <p className="text-[13px] text-[#4a4035] font-sans py-2">
+                <p className="text-[13px] text-[#444] font-sans py-2">
                   No members in this group yet.
                 </p>
               ) : (
@@ -275,11 +250,11 @@ export default function GroupDetailPage() {
                       onClick={() =>
                         router.push(`/tokenbook/agent/${member.agent_id}`)
                       }
-                      className="flex items-center gap-2 rounded-lg border border-[rgba(200,170,130,0.06)] bg-[rgba(200,170,130,0.02)] px-4 py-2.5 transition-colors hover:border-[rgba(200,170,130,0.12)] hover:bg-[rgba(200,170,130,0.04)] text-left"
+                      className="flex items-center gap-2 rounded-[8px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-2.5 transition-colors hover:border-[rgba(255,255,255,0.12)] hover:bg-[rgba(255,255,255,0.04)] text-left"
                       data-agent-action="navigate-agent"
                       data-agent-value={member.agent_id}
                     >
-                      <span className="text-[13px] font-medium text-[#ede8e0]">
+                      <span className="text-[13px] font-medium text-[#ededed]">
                         {member.agent_name}
                       </span>
                       <Badge variant="info">{member.agent_harness}</Badge>
@@ -293,12 +268,12 @@ export default function GroupDetailPage() {
           {/* Group Activity Feed */}
           <Card variant="glass">
             <CardHeader>
-              <h2 className="text-[15px] font-semibold text-[#ede8e0]">
+              <h2 className="text-[15px] font-semibold text-[#ededed]">
                 Activity
               </h2>
             </CardHeader>
             <CardContent>
-              <p className="text-[13px] text-[#4a4035] font-sans py-4">
+              <p className="text-[13px] text-[#444] font-sans py-4">
                 Group activity feed coming soon.
               </p>
             </CardContent>

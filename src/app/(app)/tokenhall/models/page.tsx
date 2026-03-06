@@ -36,11 +36,11 @@ function providerVariant(
   provider: string
 ): "default" | "success" | "warning" | "danger" | "info" | "outline" {
   const map: Record<string, "default" | "success" | "warning" | "danger" | "info" | "outline"> = {
-    openai: "success",
-    anthropic: "info",
+    openai: "info",
+    anthropic: "outline",
     google: "warning",
     meta: "default",
-    deepseek: "outline",
+    deepseek: "success",
   };
   return map[provider.toLowerCase()] || "default";
 }
@@ -123,13 +123,11 @@ export default function TokenHallModelsPage() {
       <div>
         <PageHeader
           title="Models"
-          description="Price, filter, and route across the model inventory backing TokenHall."
-          pixelFont="grid"
-          gradient="gradient-text-success"
+          description="Price, filter, and route across the live model inventory backing the TokenHall exchange."
         />
         <Card>
           <CardContent>
-            <p className="text-[#6b6050] text-[13px] text-center py-8">
+            <p className="text-[#666] text-[13px] text-center py-8">
               Please log in to browse models.
             </p>
           </CardContent>
@@ -143,9 +141,7 @@ export default function TokenHallModelsPage() {
       <div>
         <PageHeader
           title="Models"
-          description="Price, filter, and route across the model inventory backing TokenHall."
-          pixelFont="grid"
-          gradient="gradient-text-success"
+          description="Price, filter, and route across the live model inventory backing the TokenHall exchange."
         />
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <Skeleton className="h-10 flex-1" />
@@ -180,11 +176,9 @@ export default function TokenHallModelsPage() {
       <div>
         <PageHeader
           title="Models"
-          description="Price, filter, and route across the model inventory backing TokenHall."
-          pixelFont="grid"
-          gradient="gradient-text-success"
+          description="Price, filter, and route across the live model inventory backing the TokenHall exchange."
         />
-        <div className="rounded-lg border border-[rgba(192,72,56,0.2)] bg-[rgba(192,72,56,0.06)] px-5 py-4 text-[13px] text-[#C04838] font-mono">
+        <div className="rounded-lg border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.06)] px-5 py-4 text-[13px] text-[#EE4444] font-mono">
           {error}
         </div>
       </div>
@@ -195,9 +189,7 @@ export default function TokenHallModelsPage() {
     <div>
       <PageHeader
         title="Models"
-        description="Price, filter, and route across the model inventory backing TokenHall."
-        pixelFont="grid"
-        gradient="gradient-text-success"
+        description="Price, filter, and route across the live model inventory backing the TokenHall exchange."
       />
 
       {/* Search and Filter Bar */}
@@ -219,7 +211,7 @@ export default function TokenHallModelsPage() {
       </div>
 
       {/* Model count */}
-      <p className="text-[13px] text-[#4a4035] mb-4 font-mono tabular-nums">
+      <p className="text-[13px] text-[#444] mb-4 font-mono tabular-nums">
         {filteredModels.length} model{filteredModels.length !== 1 ? "s" : ""}
         {search || provider !== "all" ? " matching filters" : " available"}
       </p>
@@ -230,8 +222,8 @@ export default function TokenHallModelsPage() {
           title="No models found"
           description={
             search || provider !== "all"
-              ? "Adjust your search or provider filters to surface another routing candidate."
-              : "No model inventory is available for routing right now."
+              ? "Adjust the search or provider filter to surface another routing candidate."
+              : "No model inventory is currently available for routing."
           }
           action={
             (search || provider !== "all") ? (
@@ -250,14 +242,14 @@ export default function TokenHallModelsPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {filteredModels.map((model) => (
-            <Card key={model.id} variant="glass" className="hover:border-[rgba(200,170,130,0.16)] transition-colors">
+            <Card key={model.id} variant="glass" className="hover:border-[rgba(255,255,255,0.14)] transition-colors">
               <CardContent>
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-[15px] font-medium text-[#ede8e0] truncate">
+                    <h3 className="text-[15px] font-medium text-[#ededed] truncate">
                       {model.name}
                     </h3>
-                    <p className="text-[12px] text-[#4a4035] mt-0.5 truncate font-mono">
+                    <p className="text-[12px] text-[#444] mt-0.5 truncate font-mono">
                       {model.id}
                     </p>
                   </div>
@@ -266,7 +258,7 @@ export default function TokenHallModelsPage() {
                   </Badge>
                 </div>
 
-                <div className="flex items-center gap-4 mb-4 text-[13px] text-[#6b6050]">
+                <div className="flex items-center gap-4 mb-4 text-[13px] text-[#666]">
                   <div className="flex items-center gap-1.5">
                     <svg
                       width="14"
@@ -275,7 +267,7 @@ export default function TokenHallModelsPage() {
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="2"
-                      className="text-[#4a4035]"
+                      className="text-[#444]"
                     >
                       <path d="M4 7V4h16v3M9 20h6M12 4v16" />
                     </svg>
@@ -286,14 +278,14 @@ export default function TokenHallModelsPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4 text-[13px]">
                     <div>
-                      <span className="text-[#4a4035]">Input: </span>
-                      <span className="gradient-text-success font-mono tabular-nums">
+                      <span className="text-[#444]">Input: </span>
+                      <span className="text-[#a1a1a1] font-mono tabular-nums">
                         {formatPricing(model.pricing.input)}/1M
                       </span>
                     </div>
                     <div>
-                      <span className="text-[#4a4035]">Output: </span>
-                      <span className="gradient-text-success font-mono tabular-nums">
+                      <span className="text-[#444]">Output: </span>
+                      <span className="text-[#a1a1a1] font-mono tabular-nums">
                         {formatPricing(model.pricing.output)}/1M
                       </span>
                     </div>

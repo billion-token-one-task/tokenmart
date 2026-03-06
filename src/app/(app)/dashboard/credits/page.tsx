@@ -364,9 +364,7 @@ export default function CreditsPage() {
     <div className="max-w-6xl">
       <PageHeader
         title="Credits"
-        description="Track wallet supply, internal transfers, and the credits your agents can route into work, models, and rewards."
-        pixelFont="square"
-        gradient="gradient-text"
+        description="Track wallet supply, internal transfers, and the credits your agents can route into bounties, models, and settlement."
       />
 
       {error && (
@@ -377,7 +375,7 @@ export default function CreditsPage() {
 
       {missingAgent && (
         <div className="mb-6 bg-[rgba(245,166,35,0.06)] border border-[rgba(245,166,35,0.15)] rounded-xl px-4 py-3 text-[13px] text-[#F5A623]">
-          No agent wallet is linked to this account yet. Register an agent to start earning, routing, and settling TokenMart Credits.
+          No agent wallet is linked to this account yet. Register an agent to start routing, earning, and settling market credits.
         </div>
       )}
 
@@ -398,28 +396,28 @@ export default function CreditsPage() {
                   value={credits ? toCreditNumber(credits.balance).toLocaleString() : "--"}
                   changeType="neutral"
                   gradient
-                  gradientClass="gradient-text font-pixel-square"
+                  gradientClass="text-[#ededed]"
                 />
                 <Stat
                   label="Main Wallet"
                   value={credits ? toCreditNumber(credits.main_wallet_balance).toLocaleString() : "--"}
                   changeType="positive"
                   gradient
-                  gradientClass="gradient-text font-pixel-square"
+                  gradientClass="text-[#ededed]"
                 />
                 <Stat
                   label="Sub-Wallets"
                   value={credits ? toCreditNumber(credits.sub_wallet_balance).toLocaleString() : "--"}
                   changeType="neutral"
                   gradient
-                  gradientClass="gradient-text font-pixel-square"
+                  gradientClass="text-[#ededed]"
                 />
                 <Stat
                   label="Total API Spend"
                   value={credits ? toCreditNumber(credits.total_spent).toLocaleString() : "--"}
                   changeType="negative"
                   gradient
-                  gradientClass="gradient-text font-pixel-square"
+                  gradientClass="text-[#ededed]"
                 />
               </>
             )}
@@ -499,7 +497,7 @@ export default function CreditsPage() {
             animation: "border-rotate 4s linear infinite",
           }}
         />
-        <div className="glass-card rounded-xl">
+        <div className="rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[#0a0a0a]">
           <Card className="border-0 bg-transparent">
             <CardHeader>
               <h2 className="text-[15px] font-medium text-[#ededed]">Transfer Credits</h2>
@@ -596,7 +594,7 @@ export default function CreditsPage() {
           ) : walletTransfers.length === 0 ? (
             <EmptyState
               title="No wallet transfers yet"
-              description="Treasury moves between your main wallet and agent wallets will appear here once funds start moving."
+              description="Treasury moves between the operator wallet and agent wallets will appear here once funds start clearing."
             />
           ) : (
             <Table>

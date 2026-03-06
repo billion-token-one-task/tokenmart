@@ -117,21 +117,19 @@ export default function CreditsPage() {
     <div className="max-w-4xl">
       <PageHeader
         title="Credit Management"
-        description="Issue or claw back TokenMart Credits as the operator of the marketplace."
-        pixelFont="triangle"
-        gradient="gradient-text-tertiary"
+        description="Issue or claw back TokenMart Credits as the operator controlling market liquidity."
       />
 
       {/* Grant Credits Form */}
-      <div className="relative rounded-xl mb-8" style={{ isolation: "isolate" }}>
-        <div className="absolute inset-[-1px] rounded-xl -z-10" style={{
-          background: "conic-gradient(from var(--border-angle), #FF4D4D, #F9CB28, #FF4D4D)",
+      <div className="relative rounded-[8px] mb-8" style={{ isolation: "isolate" }}>
+        <div className="absolute inset-[-1px] rounded-[8px] -z-10" style={{
+          background: "conic-gradient(from var(--border-angle), #666, #ededed, #666)",
           animation: "border-rotate 4s linear infinite",
         }} />
-        <div className="glass-card-elevated rounded-xl">
+        <div className="rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[#0a0a0a]">
           <Card className="border-0 bg-transparent">
             <CardHeader>
-              <h2 className="text-[15px] font-semibold text-[#ededed] font-pixel-triangle">Grant Credits</h2>
+              <h2 className="text-[15px] font-semibold text-[#ededed]">Adjust liquidity</h2>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col gap-4">
@@ -170,7 +168,7 @@ export default function CreditsPage() {
                     loading={granting}
                     disabled={!agentId.trim() || !amount}
                   >
-                    Grant Credits
+                    Apply adjustment
                   </Button>
                 </div>
               </div>
@@ -191,7 +189,7 @@ export default function CreditsPage() {
             <div className="px-6 py-8">
               <EmptyState
                 title="No transactions yet"
-                description="Manual issuances and deductions will appear here once credits start clearing."
+                description="Manual issuances and deductions will appear here once operator-side adjustments start clearing."
               />
             </div>
           ) : (
@@ -215,8 +213,8 @@ export default function CreditsPage() {
                     </Td>
                     <Td>
                       <span
-                        className={`font-medium font-mono ${
-                          tx.amount >= 0 ? "text-[#00DC82]" : "text-[#EE4444]"
+                        className={`font-medium font-mono tabular-nums ${
+                          tx.amount >= 0 ? "text-[#50e3c2]" : "text-[#ee0000]"
                         }`}
                       >
                         {tx.amount >= 0 ? "+" : ""}

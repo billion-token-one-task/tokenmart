@@ -135,13 +135,11 @@ export default function ReviewsPage() {
     <div className="max-w-4xl">
       <PageHeader
         title="Peer Reviews"
-        description="Blind-review submissions before credits clear and trust moves."
-        pixelFont="triangle"
-        gradient="gradient-text-tertiary"
+        description="Blind-review submissions before credits clear and trust moves through the market."
       />
 
       {/* Blind review warning */}
-      <div className="mb-6 rounded-lg border border-[#F5A623]/20 bg-[#F5A623]/5 px-4 py-3 text-[13px] text-[#F5A623] flex items-start gap-3">
+      <div className="mb-6 rounded-[8px] border border-[#f5a623]/20 bg-[#f5a623]/5 px-4 py-3 text-[13px] text-[#f5a623] flex items-start gap-3">
         <svg
           width="20"
           height="20"
@@ -163,8 +161,8 @@ export default function ReviewsPage() {
           />
         </svg>
         <div>
-          <p className="font-medium text-[#F5A623]">Blind Review</p>
-          <p className="text-[13px] text-[#F5A623]/70 mt-0.5">
+          <p className="font-medium text-[#f5a623]">Blind Review</p>
+          <p className="text-[13px] text-[#f5a623]/70 mt-0.5">
             You cannot see other reviewers&apos; decisions. Review each
             submission independently based on the bounty requirements.
           </p>
@@ -172,7 +170,7 @@ export default function ReviewsPage() {
       </div>
 
       {error && (
-        <div className="mb-6 rounded-lg border border-[#EE4444]/20 bg-[#EE4444]/5 px-4 py-3 text-[13px] text-[#EE4444] font-mono">
+        <div className="mb-6 rounded-[8px] border border-[#ee0000]/20 bg-[#ee0000]/5 px-4 py-3 text-[13px] text-[#ee0000] font-mono">
           {error}
         </div>
       )}
@@ -215,7 +213,7 @@ export default function ReviewsPage() {
                           </span>
                         </div>
                         <div className="text-right">
-                          <div className="text-lg font-semibold text-[#00DC82] font-mono">
+                          <div className="text-lg font-semibold text-[#50e3c2] font-mono">
                             {review.reward_credits}
                           </div>
                           <div className="text-[13px] text-[#666]">
@@ -247,7 +245,7 @@ export default function ReviewsPage() {
                             <span className="text-[13px] font-medium text-[#666]">
                               Notes
                             </span>
-                            <p className="text-[13px] text-[#a1a1a1] mt-1 whitespace-pre-wrap bg-[rgba(255,255,255,0.02)] rounded-lg p-3 border border-[rgba(255,255,255,0.06)] font-mono">
+                            <p className="text-[13px] text-[#a1a1a1] mt-1 whitespace-pre-wrap bg-[rgba(255,255,255,0.02)] rounded-[8px] p-3 border border-[rgba(255,255,255,0.06)] font-mono">
                               {review.submission_notes}
                             </p>
                           </div>
@@ -264,9 +262,9 @@ export default function ReviewsPage() {
                             <div className="flex gap-3">
                               <button
                                 onClick={() => setDecision("approve")}
-                                className={`flex-1 rounded-lg border px-4 py-2.5 text-[13px] font-medium transition-colors ${
+                                className={`flex-1 rounded-[8px] border px-4 py-2.5 text-[13px] font-medium transition-colors ${
                                   decision === "approve"
-                                    ? "border-[#00DC82]/30 bg-[#00DC82]/10 text-[#00DC82]"
+                                    ? "border-[#50e3c2]/30 bg-[#50e3c2]/10 text-[#50e3c2]"
                                     : "border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] text-[#a1a1a1] hover:border-[rgba(255,255,255,0.12)]"
                                 }`}
                               >
@@ -274,9 +272,9 @@ export default function ReviewsPage() {
                               </button>
                               <button
                                 onClick={() => setDecision("reject")}
-                                className={`flex-1 rounded-lg border px-4 py-2.5 text-[13px] font-medium transition-colors ${
+                                className={`flex-1 rounded-[8px] border px-4 py-2.5 text-[13px] font-medium transition-colors ${
                                   decision === "reject"
-                                    ? "border-[#EE4444]/30 bg-[#EE4444]/10 text-[#EE4444]"
+                                    ? "border-[#ee0000]/30 bg-[#ee0000]/10 text-[#ee0000]"
                                     : "border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] text-[#a1a1a1] hover:border-[rgba(255,255,255,0.12)]"
                                 }`}
                               >
