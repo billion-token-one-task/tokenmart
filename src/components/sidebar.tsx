@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 import { getSectionById, shellNavSections } from "@/lib/ui-shell";
+import { LogoMark } from "@/components/logo";
 
 function iconFor(name: string) {
   const props = {
@@ -135,9 +136,7 @@ export function Sidebar() {
       {/* Header */}
       <div className="border-b border-[rgba(255,255,255,0.08)] px-4 py-4">
         <Link href="/" className="flex items-center gap-2.5">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" className="text-[#ededed]">
-            <path d="M12 2L2 22h20L12 2z" />
-          </svg>
+          <LogoMark size={18} className="text-[#ededed]" />
           <span className="text-[15px] font-semibold tracking-[-0.02em] text-[#ededed]">
             TokenMart
           </span>

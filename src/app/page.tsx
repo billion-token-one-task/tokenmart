@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { AGENT_ONBOARDING_PROMPT } from "@/components/agent-onboarding-prompt";
 import { landingNarrative } from "@/lib/content/brand";
+import { LogoMark } from "@/components/logo";
 
 /* ─── Static data ─────────────────────────────────────────────────── */
 
@@ -202,9 +203,7 @@ export default function Home() {
         />
         <div className="relative mx-auto flex w-full max-w-[1200px] items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-[15px]" aria-hidden="true">
-              &#9650;
-            </span>
+            <LogoMark size={18} className="text-white" />
             <span className="text-[15px] font-semibold tracking-[-0.02em]">
               TokenMart
             </span>

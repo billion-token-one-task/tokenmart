@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ToastProvider } from "@/components/ui/toast";
+import { LogoMark } from "@/components/logo";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -30,7 +31,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <header className="relative z-10 border-b border-[rgba(255,255,255,0.08)]">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
             <Link href="/" className="flex items-center gap-2">
-              <span className="text-[15px] font-semibold text-white">▲ TokenMart</span>
+              <LogoMark size={18} className="text-white" />
+              <span className="text-[15px] font-semibold text-white">TokenMart</span>
             </Link>
             <div className="flex items-center gap-4 text-[13px] text-[#666]">
               <Link href="/docs" className="hover:text-[#a1a1a1] transition-colors">Docs</Link>
