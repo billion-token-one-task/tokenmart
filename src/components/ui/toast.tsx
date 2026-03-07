@@ -23,20 +23,20 @@ export function useToast() {
 const icons: Record<ToastType, ReactNode> = {
   success: (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <circle cx="8" cy="8" r="7" stroke="#50e3c2" strokeWidth="1.5" />
-      <path d="M5 8l2 2 4-4" stroke="#50e3c2" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="1" y="1" width="14" height="14" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M5 8l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" strokeLinejoin="miter" />
     </svg>
   ),
   error: (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <circle cx="8" cy="8" r="7" stroke="#ee0000" strokeWidth="1.5" />
-      <path d="M6 6l4 4M10 6l-4 4" stroke="#ee0000" strokeWidth="1.5" strokeLinecap="round" />
+      <rect x="1" y="1" width="14" height="14" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M6 6l4 4M10 6l-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" />
     </svg>
   ),
   info: (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <circle cx="8" cy="8" r="7" stroke="#a1a1a1" strokeWidth="1.5" />
-      <path d="M8 7v4M8 5v.5" stroke="#a1a1a1" strokeWidth="1.5" strokeLinecap="round" />
+      <rect x="1" y="1" width="14" height="14" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M8 7v4M8 5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" />
     </svg>
   ),
 };
@@ -53,9 +53,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const typeStyles: Record<ToastType, string> = {
-    success: "border-[rgba(80,227,194,0.3)] bg-[#0a0a0a]",
-    error: "border-[rgba(238,0,0,0.3)] bg-[#0a0a0a]",
-    info: "border-[rgba(255,255,255,0.1)] bg-[#0a0a0a]",
+    success: "border-[var(--color-success)] text-[var(--color-success)]",
+    error: "border-[var(--color-error)] text-[var(--color-error)]",
+    info: "border-[#0a0a0a] text-[#0a0a0a]",
   };
 
   return (
@@ -65,12 +65,22 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toasts.map((t) => (
           <div
             key={t.id}
-            className={`animate-in relative flex max-w-sm items-center gap-3 overflow-hidden rounded-[6px] border px-4 py-3 text-[13px] text-[#ededed] shadow-[0_8px_30px_rgba(0,0,0,0.3)] ${typeStyles[t.type]}`}
+            className={`relative flex max-w-sm items-center gap-3 overflow-hidden rounded-none border-2 bg-white px-4 py-3 font-mono text-[11px] uppercase tracking-[0.1em] shadow-[4px_4px_0px_#0a0a0a] ${typeStyles[t.type]}`}
+            style={{ animation: "hero-reveal 0.2s ease-out both" }}
           >
-            <span className="flex-shrink-0">{icons[t.type]}</span>
-            <span>{t.message}</span>
+            {/* Scanline overlay */}
             <div
-              className="absolute bottom-0 left-0 h-[2px] bg-[rgba(255,255,255,0.12)]"
+              className="pointer-events-none absolute inset-0 opacity-[0.04]"
+              aria-hidden="true"
+              style={{
+                backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px)",
+              }}
+            />
+            <span className="relative flex-shrink-0">{icons[t.type]}</span>
+            <span className="relative text-[#0a0a0a]">{t.message}</span>
+            {/* Pink progress bar */}
+            <div
+              className="absolute bottom-0 left-0 h-[3px] bg-[#e5005a]"
               style={{ animation: "shrink-bar 4s linear forwards" }}
             />
           </div>

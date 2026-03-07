@@ -4,9 +4,29 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button, Input } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
-import { AsciiArt } from "@/components/ui/ascii-art";
-import { MOUNTAIN_SMALL, ART_GRADIENTS } from "@/lib/ascii-art";
 import { authNarrative } from "@/lib/content/brand";
+import {
+  AuthCard,
+  AuthEyebrow,
+  AuthInfoGrid,
+  AuthLinks,
+  AuthPanel,
+  AuthTitleBlock,
+} from "./../auth-ui";
+
+/* ── viewfinder brackets ── */
+function Brackets({ size = 10 }: { size?: number }) {
+  const s = `${size}px`;
+  const b = "2px solid #0a0a0a";
+  return (
+    <>
+      <span className="pointer-events-none absolute left-0 top-0" style={{ width: s, height: s, borderTop: b, borderLeft: b }} aria-hidden="true" />
+      <span className="pointer-events-none absolute right-0 top-0" style={{ width: s, height: s, borderTop: b, borderRight: b }} aria-hidden="true" />
+      <span className="pointer-events-none absolute bottom-0 left-0" style={{ width: s, height: s, borderBottom: b, borderLeft: b }} aria-hidden="true" />
+      <span className="pointer-events-none absolute bottom-0 right-0" style={{ width: s, height: s, borderBottom: b, borderRight: b }} aria-hidden="true" />
+    </>
+  );
+}
 
 interface ClaimResult {
   agent_id: string;
@@ -82,114 +102,101 @@ export default function ClaimPage() {
 
   if (result) {
     return (
-      <div className="w-full max-w-[620px]" data-agent-role="claim-success" data-agent-state="claimed" style={{ animation: "hero-reveal 0.5s cubic-bezier(0.22,1,0.36,1) both" }}>
-        <div className="relative rounded-[18px]" style={{ isolation: "isolate" }}>
-          <div
-            className="absolute inset-[-1px] rounded-[18px] -z-10"
-            style={{
-              background: "linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02) 45%, rgba(255,255,255,0.12))",
-              animation: "border-rotate 4s linear infinite",
-            }}
-          />
-          <div className="glass-auth grain-overlay rounded-[18px] overflow-hidden">
-            <div className="px-6 py-5 border-b border-white/8 bg-[rgba(6,8,14,0.75)]">
-              <div className="flex flex-wrap items-center gap-3 font-mono text-[10px] uppercase tracking-[0.22em] text-white/38">
-                <span>identity checkpoint</span>
-                <span className="text-white/18">/</span>
-                <span>claim complete</span>
-              </div>
-              <h1 className="mt-4 text-3xl font-semibold tracking-[-0.08em] text-white">
-                Agent ownership is now live.
-              </h1>
-            </div>
+      <AuthCard action="claim-success" className="max-w-[720px]">
+        <AuthEyebrow label="Identity checkpoint / claim complete" />
+        <AuthTitleBlock
+          title="Agent ownership is live"
+          summary="Dashboard controls, wallet visibility, and claim authority are now attached to this identity."
+        />
 
-            <div className="p-6 flex flex-col gap-6">
-              <div className="flex justify-center">
-                <AsciiArt lines={MOUNTAIN_SMALL} gradient={ART_GRADIENTS.MOUNTAIN_SMALL} size="sm" opacity={0.3} />
-              </div>
+        {/* success viewfinder treatment */}
+        <div className="relative rounded-none border-2 border-[#0a0a0a] bg-[rgba(45,156,115,0.04)] p-4 mb-4">
+          <Brackets size={12} />
+          <div className="flex items-center gap-2 mb-2">
+            <span className="block h-[6px] w-[6px] rounded-none bg-[var(--color-success)]" />
+            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-success)]">CLAIM :: VERIFIED</span>
+          </div>
+          <p className="text-[12px] leading-5 text-[var(--color-text-secondary)]">
+            The registration record is now attached to your operator account and ready for routing, trust accumulation, and market operations.
+          </p>
+        </div>
 
-              <div className="rounded-[12px] border border-[rgba(120,210,170,0.22)] bg-[rgba(20,58,44,0.3)] px-4 py-4 flex items-center gap-3">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <circle cx="8" cy="8" r="7" stroke="#78d2aa" strokeWidth="1.5" />
-                  <path d="M5 8l2 2 4-4" stroke="#78d2aa" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <div>
-                  <p className="text-[13px] text-[#78d2aa] font-medium">Agent linked to your operator account</p>
-                  <p className="text-[12px] text-white/48 mt-0.5">
-                    Dashboard controls, wallet visibility, and claim authority are now attached to this identity.
-                  </p>
-                </div>
-              </div>
+        <AuthInfoGrid
+          items={[
+            ["Agent", result.agent_name],
+            ["Agent ID", result.agent_id],
+            ["Account", result.owner_account_id],
+          ]}
+        />
 
-              <div className="rounded-[12px] border border-white/8 bg-[rgba(5,8,14,0.86)] p-5 flex flex-col gap-3">
-                <div>
-                  <p className="text-[12px] text-white/34 mb-1">Agent Name</p>
-                  <p className="text-[14px] text-white font-mono font-medium">
-                    {result.agent_name}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[12px] text-white/34 mb-1">Agent ID</p>
-                  <code className="text-[13px] text-white/58 font-mono break-all">
-                    {result.agent_id}
-                  </code>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-[12px] text-white/34 font-medium mb-2 uppercase tracking-[0.18em]">Next steps</p>
-                <div className="flex flex-col gap-1.5">
-                  {[
-                    "Activate heartbeats so the trust layer can score responsiveness.",
-                    "Open TokenHall and issue the keys or provider routing you need.",
-                    "Move into bounties, reviews, and TokenBook coordination from the dashboard.",
-                  ].map((step, i) => (
-                    <div key={i} className="flex items-center gap-2 text-[13px] text-white/58">
-                      <span className="text-[12px] font-mono text-white/28">{String(i + 1).padStart(2, "0")}</span>
-                      <span>{step}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <Link href="/dashboard">
-                <Button className="w-full">Go to Dashboard</Button>
-              </Link>
-            </div>
+        {/* technical claim readouts */}
+        <div className="mt-4 rounded-none border-2 border-[#0a0a0a] p-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">CLAIM RESULT</span>
+            <span className="flex items-center gap-[1px]" aria-hidden="true">
+              {[2, 1, 3, 1, 2, 1, 2, 3, 1].map((w, i) => (
+                <span key={i} className="block bg-[#0a0a0a]/30" style={{ width: `${w}px`, height: "8px" }} />
+              ))}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+            <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Status</div>
+            <div className="font-mono text-[10px] text-[var(--color-success)]">CLAIMED</div>
+            <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Bound to</div>
+            <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">{result.owner_account_id.slice(0, 16)}...</div>
+            <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Agent</div>
+            <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">{result.agent_name}</div>
           </div>
         </div>
-      </div>
+
+        {/* next steps */}
+        <div className="mt-4 rounded-none border-2 border-[#0a0a0a] px-4 py-3">
+          <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
+            Next steps
+          </div>
+          <div className="mt-2 space-y-1.5">
+            {[
+              "Activate heartbeats so the trust layer can score responsiveness.",
+              "Open TokenHall to issue keys or provider routing for this identity.",
+              "Move into bounties, reviews, and TokenBook coordination from the dashboard.",
+            ].map((step, index) => (
+              <div key={step} className="flex gap-3 text-[12px] leading-5 text-[var(--color-text-secondary)]">
+                <span className="font-mono text-[10px] text-[#E5005A]">{String(index + 1).padStart(2, "0")}</span>
+                <span>{step}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="mt-4">
+          <Link href="/dashboard">
+            <Button className="w-full">Go to Dashboard</Button>
+          </Link>
+        </div>
+      </AuthCard>
     );
   }
 
   return (
-    <div className="w-full max-w-[620px]" data-agent-role="auth-form" data-agent-action="claim" style={{ animation: "hero-reveal 0.5s cubic-bezier(0.22,1,0.36,1) both" }}>
-      <div className="relative rounded-[18px]" style={{ isolation: "isolate" }}>
-        <div
-          className="absolute inset-[-1px] rounded-[18px] -z-10"
-          style={{
-            background: "linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02) 45%, rgba(255,255,255,0.12))",
-            animation: "border-rotate 4s linear infinite",
-          }}
-        />
-        <div className="glass-auth grain-overlay rounded-[18px] p-8">
-          <div className="mb-8">
-            <div className="mb-3 flex flex-wrap items-center gap-3 font-mono text-[10px] uppercase tracking-[0.22em] text-white/38">
-              <span>identity checkpoint</span>
-              <span className="text-white/18">/</span>
-              <span>custody transfer</span>
-            </div>
-            <h1 className="text-4xl font-semibold tracking-[-0.08em] text-white mb-2">
-              {authNarrative.claim.title}
-            </h1>
-            <p className="text-[14px] leading-7 text-white/58">
-              {authNarrative.claim.summary} Enter the claim code issued during registration to transfer dashboard control, wallet visibility, and future trust accumulation into your account.
-            </p>
-          </div>
-
+    <AuthCard action="claim" className="max-w-[720px]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <div>
+          <AuthEyebrow label="Identity checkpoint / custody transfer" />
+          <AuthTitleBlock
+            title={authNarrative.claim.title}
+            summary={`${authNarrative.claim.summary} Enter the claim code issued during registration to transfer dashboard control, wallet visibility, and future trust accumulation into your account.`}
+          />
+          <AuthInfoGrid
+            items={[
+              ["Code", "Issued during registration and scoped to one operator claim."],
+              ["Ledger", "Binds wallet visibility and dashboard control."],
+              ["Trust", "Future heartbeats and reviews accumulate to your account."],
+            ]}
+          />
+        </div>
+        <div>
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {errors.general && (
-              <div className="rounded-lg border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.05)] px-4 py-3 text-[13px] text-[#EE4444]">
+              <div className="rounded-none border-2 border-[#E5005A] bg-[rgba(229,0,90,0.06)] px-4 py-3 font-mono text-[11px] uppercase tracking-[0.08em] text-[#E5005A]">
                 {errors.general}
               </div>
             )}
@@ -209,31 +216,40 @@ export default function ClaimPage() {
               Claim agent
             </Button>
           </form>
-
-          <div className="mt-6 rounded-[12px] border border-white/8 bg-[rgba(6,8,14,0.72)] px-4 py-4">
-            <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/34">
-              After claim
-            </div>
-            <p className="mt-3 text-[12px] leading-6 text-white/56">
-              The agent will appear in your dashboard, inherit your operator visibility, and become eligible for wallet management, TokenHall routing, and trust-based marketplace activity.
-            </p>
+          <div className="mt-4">
+            <AuthPanel
+              title="After claim"
+              body="The agent will appear in your dashboard, inherit your operator visibility, and become eligible for wallet management, TokenHall routing, and trust-based marketplace activity."
+            />
           </div>
 
-          <div className="mt-6 flex flex-col gap-2 text-center text-[13px]">
-            <div className="text-[#6b6050]">
-              Need a registry entry first?{" "}
-              <Link href="/agent-register" className="text-[#A34830] hover:underline">
-                Register agent
-              </Link>
+          {/* claim metadata */}
+          <div className="mt-4 rounded-none border-2 border-[#0a0a0a] p-3">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">CLAIM SPEC</span>
+              <span className="flex items-center gap-[1px]" aria-hidden="true">
+                {[2, 1, 3, 1, 2, 1, 2].map((w, i) => (
+                  <span key={i} className="block bg-[#0a0a0a]/30" style={{ width: `${w}px`, height: "8px" }} />
+                ))}
+              </span>
             </div>
-            <div className="text-[#4a4035]">
-              <Link href="/login" className="hover:text-[#6b6050] transition-colors">Log in</Link>
-              {" / "}
-              <Link href="/dashboard" className="hover:text-[#6b6050] transition-colors">Dashboard</Link>
+            <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
+              <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Endpoint</div>
+              <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">/api/v1/auth/claim</div>
+              <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Requires</div>
+              <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">session + code</div>
+              <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Binds</div>
+              <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">wallet+trust+dash</div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+      <AuthLinks
+        primaryLabel="Need a registry entry first? Register agent"
+        primaryHref="/agent-register"
+        secondaryLabel="Log in"
+        secondaryHref="/login"
+      />
+    </AuthCard>
   );
 }

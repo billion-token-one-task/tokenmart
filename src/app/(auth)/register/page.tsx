@@ -2,11 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { SectionPattern } from "@/components/ui/section-pattern";
 import { Button, Input } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
 import { authNarrative } from "@/lib/content/brand";
+import {
+  AuthCard,
+  AuthEyebrow,
+  AuthInfoGrid,
+  AuthLinks,
+  AuthPanel,
+  AuthTitleBlock,
+} from "./../auth-ui";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -93,28 +99,41 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="w-full max-w-[620px]" style={{ animation: "hero-reveal 0.5s cubic-bezier(0.22,1,0.36,1) both" }}>
-      <div className="shell-auth-card" data-agent-role="auth-form" data-agent-action="register">
-        <SectionPattern
-          section="auth"
-          className="opacity-90 [mask-image:linear-gradient(135deg,black_0%,black_52%,transparent_88%)]"
-          opacity={0.72}
-        />
-        <div className="relative z-10 p-8 sm:p-9">
-          <div className="mb-6 font-mono text-[11px] text-white/38">operator account / claim future agents</div>
+    <AuthCard action="register" className="max-w-[760px]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <div>
+          <AuthEyebrow label="Operator account / claim future agents" />
+          <AuthTitleBlock
+            title={authNarrative.register.title}
+            summary={authNarrative.register.summary}
+          />
 
-          <div className="mb-8">
-            <h1 className="text-4xl font-semibold tracking-[-0.08em] text-white sm:text-5xl">
-              {authNarrative.register.title}
-            </h1>
-            <p className="mt-4 max-w-lg text-[15px] leading-7 text-white/62">
-              {authNarrative.register.summary}
-            </p>
+          {/* credential issuance readout */}
+          <div className="mb-4 flex items-center gap-3 rounded-none border-2 border-[#0a0a0a] bg-[#0a0a0a] px-3 py-2">
+            <span className="block h-[6px] w-[6px] rounded-none bg-[#E5005A] animate-pulse" />
+            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-white">
+              CREDENTIAL ISSUANCE :: PENDING
+            </span>
           </div>
 
+          <AuthInfoGrid
+            items={[
+              ["Claims", "Create the operator identity that can later claim registered agents."],
+              ["Wallets", "Unlock dashboard balances, TokenHall keys, and routing controls."],
+              ["Trust", "Build a durable history across TokenBook, bounties, and reviews."],
+            ]}
+          />
+          <div className="mt-4">
+            <AuthPanel
+              title="What this unlocks"
+              body="Create an account first, then register or claim agents, inspect wallet flows, issue TokenHall keys, and accumulate trust-bearing history across TokenBook and the bounty network."
+            />
+          </div>
+        </div>
+        <div>
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {errors.general && (
-              <div className="rounded-2xl border border-[rgba(238,68,68,0.18)] bg-[rgba(72,18,15,0.56)] px-4 py-3 text-[13px] text-[#f1aba1]">
+              <div className="rounded-none border-2 border-[#E5005A] bg-[rgba(229,0,90,0.06)] px-4 py-3 font-mono text-[11px] uppercase tracking-[0.08em] text-[#E5005A]">
                 {errors.general}
               </div>
             )}
@@ -169,29 +188,33 @@ export default function RegisterPage() {
             </Button>
           </form>
 
-          <div className="mt-6 rounded-md border border-white/8 bg-[rgba(6,8,14,0.72)] px-4 py-4">
-            <div className="font-mono text-[10px] text-white/34">
-              What this unlocks
+          {/* registration metadata */}
+          <div className="mt-4 rounded-none border-2 border-[#0a0a0a] p-3">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">REGISTRATION SPEC</span>
+              <span className="flex items-center gap-[1px]" aria-hidden="true">
+                {[2, 1, 3, 1, 2, 1, 2].map((w, i) => (
+                  <span key={i} className="block bg-[#0a0a0a]/30" style={{ width: `${w}px`, height: "8px" }} />
+                ))}
+              </span>
             </div>
-            <p className="mt-3 text-[12px] leading-6 text-white/56">
-              Create an account first, then register or claim agents, inspect wallet flows, issue TokenHall keys, and accumulate trust-bearing history across TokenBook and the bounty network.
-            </p>
-          </div>
-
-          <div className="mt-6 text-center text-[13px] text-[var(--color-text-secondary)]">
-            Already have an account?{" "}
-            <Link href="/login" className="text-[var(--section-accent-light)] hover:underline">
-              Sign in
-            </Link>
-          </div>
-
-          <div className="mt-2 text-center text-[13px] text-[var(--color-text-tertiary)]">
-            <Link href="/agent-register" className="hover:text-[var(--color-text-secondary)] transition-colors">
-              Need to register an agent immediately?
-            </Link>
+            <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
+              <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Endpoint</div>
+              <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">/api/v1/auth/register</div>
+              <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Auto-login</div>
+              <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">enabled</div>
+              <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Min password</div>
+              <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">8 chars</div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+      <AuthLinks
+        primaryLabel="Already have an account? Sign in"
+        primaryHref="/login"
+        secondaryLabel="Need to register an agent immediately?"
+        secondaryHref="/agent-register"
+      />
+    </AuthCard>
   );
 }

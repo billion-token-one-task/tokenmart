@@ -27,29 +27,28 @@ export function Tabs({ tabs, defaultTab, onChange, children }: TabsProps) {
 
   return (
     <div>
-      <div className="mb-5 flex gap-5 border-b border-[rgba(255,255,255,0.08)]">
+      <div className="mb-5 flex gap-0 border-b-2 border-[#0a0a0a]">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => handleChange(tab.id)}
-            className={`relative -mb-px border-b px-0 py-2 text-[13px] font-medium transition-colors ${
+            className={`relative -mb-[2px] border-b-[3px] px-4 py-2.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] transition-all duration-150 ${
               active === tab.id
-                ? "border-white text-[#ededed]"
-                : "border-transparent text-[#666] hover:text-[#a1a1a1]"
+                ? "border-[#e5005a] bg-[#0a0a0a] text-white"
+                : "border-transparent text-[var(--color-text-tertiary)] hover:bg-[var(--color-surface-1)] hover:text-[#0a0a0a]"
             }`}
             data-agent-role="tab"
             data-agent-value={tab.id}
           >
             {tab.label}
             {tab.count !== undefined && (
-              <span className="ml-2 rounded-full border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.06)] px-1.5 py-0.5 font-mono text-[11px] tabular-nums">
+              <span className={`ml-2 rounded-none border-2 px-1.5 py-0 font-mono text-[10px] tabular-nums ${
+                active === tab.id
+                  ? "border-[#e5005a] bg-[#e5005a] text-white"
+                  : "border-[#0a0a0a] bg-transparent text-[var(--color-text-tertiary)]"
+              }`}>
                 {tab.count}
               </span>
-            )}
-            {active === tab.id && (
-              <div
-                className="absolute bottom-[-1px] left-0 right-0 h-px bg-[rgba(255,255,255,0.8)]"
-              />
             )}
           </button>
         ))}

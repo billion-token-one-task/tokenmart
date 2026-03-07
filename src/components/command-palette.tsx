@@ -76,23 +76,35 @@ export function CommandPalette() {
       onClick={() => setOpen(false)}
       data-agent-role="command-palette"
     >
-      <div className="absolute inset-0 bg-black/72 backdrop-blur-md" />
+      <div className="absolute inset-0 bg-[rgba(10,10,10,0.25)] backdrop-blur-sm" />
 
       <div
-        className="relative w-full max-w-[620px] overflow-hidden bg-[#0a0a0a] border border-[rgba(255,255,255,0.1)] rounded-[12px] shadow-[0_24px_64px_rgba(0,0,0,0.5)]"
+        className="viewfinder relative w-full max-w-[620px] overflow-hidden border-2 border-[#0a0a0a] bg-[var(--color-surface-0)] shadow-[4px_4px_0px_#0a0a0a]"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="border-b border-[rgba(255,255,255,0.08)] px-4 py-3">
+        {/* Pink accent stripe at top */}
+        <div className="h-[4px] w-full bg-[#e5005a]" aria-hidden="true" />
+
+        {/* Scanline overlay */}
+        <div className="pointer-events-none absolute inset-0 scanline-overlay opacity-[0.03]" aria-hidden="true" />
+
+        <div className="border-b-2 border-[#0a0a0a] px-4 py-3">
+          {/* Data readout */}
           <div className="mb-2 flex items-center justify-between gap-3">
-            <span className="font-mono text-[10px] text-[#444]">
-              Command Palette
-            </span>
-            <kbd className="bg-[rgba(255,255,255,0.04)] rounded-[4px] px-1.5 py-0.5 font-mono text-[10px] text-[#444]">
+            <div className="flex items-center gap-3">
+              <span className="barcode-label">
+                Route index
+              </span>
+              <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[#e5005a]">
+                :: ACTIVE
+              </span>
+            </div>
+            <kbd className="border-2 border-[#0a0a0a] bg-[var(--color-canvas)] px-1.5 py-0.5 font-mono text-[10px] text-[#0a0a0a]">
               ESC
             </kbd>
           </div>
-          <div className="flex items-center gap-3 rounded-md bg-transparent px-3 py-2.5">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#444]">
+          <div className="flex items-center gap-3 border-2 border-[#0a0a0a] bg-[var(--color-canvas-strong)] px-3 py-2.5">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[var(--color-text-tertiary)]">
               <circle cx="11" cy="11" r="8" />
               <path d="M21 21l-4.35-4.35" />
             </svg>
@@ -105,10 +117,10 @@ export function CommandPalette() {
                 setSelectedIndex(0);
               }}
               placeholder="Search routes, modules, and surfaces"
-              className="w-full bg-transparent text-[14px] text-[#ededed] placeholder:text-[#444] outline-none"
+              className="w-full bg-transparent font-mono text-[13px] text-[#0a0a0a] placeholder:text-[var(--color-text-tertiary)] outline-none"
               data-agent-role="search-input"
             />
-            <span className="font-mono text-[10px] text-[#444]">
+            <span className="font-mono text-[10px] text-[#e5005a]">
               {filtered.length.toString().padStart(2, "0")}
             </span>
           </div>
@@ -120,13 +132,16 @@ export function CommandPalette() {
 
             return (
               <section key={sectionId} className="mb-3 last:mb-0">
-                <div className="flex items-center justify-between px-2 font-mono text-[10px] text-[#666]">
-                  <span>{section.label}</span>
-                  <span className="font-mono text-[9px] text-[#444]">
+                <div className="flex items-center justify-between px-2 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-quaternary)]">
+                  <span className="flex items-center gap-1">
+                    <span className="text-[#e5005a]" aria-hidden="true">+</span>
+                    <span>{section.label}</span>
+                  </span>
+                  <span className="font-mono text-[9px] text-[var(--color-text-tertiary)]">
                     {section.hintLabel}
                   </span>
                 </div>
-                <div className="mt-2 space-y-1.5">
+                <div className="mt-2 space-y-1">
                   {sectionCommands.map((command) => {
                     const currentIndex = selectedIndexById.get(command.id) ?? 0;
                     const isSelected = currentIndex === selectedIndex;
@@ -134,10 +149,10 @@ export function CommandPalette() {
                     return (
                       <button
                         key={command.id}
-                        className={`w-full rounded-md px-3 py-3 text-left transition-colors ${
+                        className={`w-full border-2 px-3 py-3 text-left transition-all ${
                           isSelected
-                            ? "bg-[rgba(255,255,255,0.06)]"
-                            : "bg-transparent hover:bg-[rgba(255,255,255,0.04)]"
+                            ? "border-[#e5005a] bg-[#e5005a] text-white"
+                            : "border-transparent bg-transparent hover:border-[#0a0a0a] hover:bg-[rgba(255,255,255,0.62)]"
                         }`}
                         data-selected={isSelected ? "true" : "false"}
                         onClick={() => {
@@ -151,24 +166,28 @@ export function CommandPalette() {
                         <div className="flex items-center justify-between gap-3">
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className={`text-[13px] ${isSelected ? "text-[#ededed]" : "text-[#a1a1a1]"}`}>
+                              <span className={`text-[13px] ${isSelected ? "text-white font-medium" : "text-[var(--color-text-secondary)]"}`}>
                                 {command.label}
                               </span>
-                              <span className="font-mono text-[10px] text-[#444]">
+                              <span className={`font-mono text-[10px] ${isSelected ? "text-[rgba(255,255,255,0.7)]" : "text-[var(--color-text-tertiary)]"}`}>
                                 {section.eyebrow}
                               </span>
                             </div>
-                            <div className="mt-1 font-mono text-[11px] text-[#444]">
+                            <div className={`mt-1 font-mono text-[11px] ${isSelected ? "text-[rgba(255,255,255,0.6)]" : "text-[var(--color-text-tertiary)]"}`}>
                               {command.href}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
                             {command.shortcut && (
-                              <kbd className="bg-[rgba(255,255,255,0.04)] rounded-[4px] px-1.5 py-0.5 font-mono text-[10px] text-[#444]">
+                              <kbd className={`border-2 px-1.5 py-0.5 font-mono text-[10px] ${
+                                isSelected
+                                  ? "border-[rgba(255,255,255,0.3)] text-[rgba(255,255,255,0.8)]"
+                                  : "border-[#0a0a0a] bg-[var(--color-canvas)] text-[#0a0a0a]"
+                              }`}>
                                 {command.shortcut}
                               </kbd>
                             )}
-                            <span className="h-2 w-2 rounded-full bg-[#666]" />
+                            <span className={`h-2 w-2 ${isSelected ? "bg-white" : "bg-[#e5005a]"}`} />
                           </div>
                         </div>
                       </button>
@@ -180,20 +199,29 @@ export function CommandPalette() {
           })}
 
           {filtered.length === 0 && (
-            <div className="rounded-md bg-[rgba(255,255,255,0.04)] px-4 py-10 text-center">
-              <div className="font-mono text-[10px] text-[#444]">
-                No matches
+            <div className="border-2 border-[#0a0a0a] bg-[var(--color-canvas-strong)] px-4 py-10 text-center">
+              <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
+                NO MATCHES :: NULL
               </div>
-              <div className="mt-2 text-[13px] text-[#a1a1a1]">
+              <div className="mt-2 text-[13px] text-[var(--color-text-secondary)]">
                 No routes or commands matched &ldquo;{query}&rdquo;.
               </div>
             </div>
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-4 border-t border-[rgba(255,255,255,0.08)] px-4 py-3 font-mono text-[10px] text-[#444]">
-          <span>Arrow Keys Navigate</span>
-          <span>Enter Opens</span>
+        <div className="flex items-center justify-between gap-4 border-t-2 border-[#0a0a0a] px-4 py-3 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1">
+              <kbd className="border border-[#0a0a0a] px-1 py-0.5 text-[9px]">&uarr;&darr;</kbd>
+              <span>Navigate</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <kbd className="border border-[#0a0a0a] px-1 py-0.5 text-[9px]">&crarr;</kbd>
+              <span>Open</span>
+            </span>
+          </div>
+          <span className="text-[8px] text-[var(--color-text-quaternary)]">CMD::PALETTE</span>
         </div>
       </div>
     </div>

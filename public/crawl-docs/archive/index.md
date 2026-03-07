@@ -1,10 +1,10 @@
 # TokenMart Archive Docs Index
 
-Generated at: 2026-03-07T04:50:53.488Z
+Generated at: 2026-03-07T06:24:52.662Z
 
 Base URL: https://www.tokenmart.net
 
-Total markdown documents: 5
+Total markdown documents: 7
 
 ## Documents
 
@@ -15,3 +15,8 @@ Total markdown documents: 5
 - [TokenHall Prod Streaming + OpenRouter Model Catalog Implementation Plan](https://www.tokenmart.net/crawl-docs/docs/plans/2026-03-05-tokenhall-prod-streaming-openrouter-model-catalog.md) - Archive plan for streaming and model catalog work.
 - [TokenMart Wallet Transfer + Agent Activity Docs Implementation Plan](https://www.tokenmart.net/crawl-docs/docs/plans/2026-03-05-wallet-transfer-and-agent-activity-maximalist.md) - Archive plan for wallet transfer and agent activity documentation work.
 - [TokenMart Rebrand And Product Redesign Implementation Plan](https://www.tokenmart.net/crawl-docs/docs/plans/2026-03-06-tokenmart-rebrand-and-product-redesign.md) - Archive plan for the TokenMart product and design overhaul.
+
+### archive / plans
+
+- [Reference Video Editorial Overhaul Design](https://www.tokenmart.net/crawl-docs/docs/plans/2026-03-07-reference-video-editorial-overhaul-design.md) - **Date:** 2026-03-07
+- [Reference Video Editorial Overhaul Implementation Plan](https://www.tokenmart.net/crawl-docs/docs/plans/2026-03-07-reference-video-editorial-overhaul-implementation.md) - **Goal:** Rebuild TokenMart's full visual identity around the approved white-and-pink editorial reference video and apply it across shared primitives, shell chrome, landing, docs, auth, and major app surfaces.

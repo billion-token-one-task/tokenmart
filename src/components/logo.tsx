@@ -1,37 +1,35 @@
-/**
- * TokenMart Grid Peak logo — sharp mountain dissolving into halftone dots.
- * Infrastructure + ambition. Works at all sizes (favicon through hero).
- */
-
 interface LogoMarkProps {
   size?: number;
   className?: string;
+  glow?: boolean;
 }
 
-export function LogoMark({ size = 18, className = "" }: LogoMarkProps) {
-  return (
+export function LogoMark({ size = 18, className = "", glow = false }: LogoMarkProps) {
+  const svg = (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 24 24"
-      fill="currentColor"
+      viewBox="0 0 28 24"
+      fill="none"
       className={className}
       aria-hidden="true"
     >
-      {/* Solid peak */}
-      <path d="M12 2 L6 14.5 L18 14.5 Z" />
-      {/* Halftone dissolve — row 1 */}
-      <circle cx="7" cy="17" r="1.3" />
-      <circle cx="10.5" cy="17" r="1.3" />
-      <circle cx="13.5" cy="17" r="1.3" />
-      <circle cx="17" cy="17" r="1.3" />
-      {/* Row 2 */}
-      <circle cx="9" cy="20" r="1" />
-      <circle cx="12" cy="20" r="1" />
-      <circle cx="15" cy="20" r="1" />
-      {/* Row 3 */}
-      <circle cx="10.5" cy="22.5" r="0.7" />
-      <circle cx="13.5" cy="22.5" r="0.7" />
+      <path
+        d="M2 3h5.5v12.5H12V21H2V3Zm9.5 0H26v4h-9v3.25h7.75v4H17V21h-5.5V3Z"
+        fill="currentColor"
+      />
+      <rect x="20.5" y="16.5" width="5.5" height="1.5" fill="currentColor" opacity="0.5" />
+      <rect x="20.5" y="19" width="3.5" height="1.5" fill="currentColor" opacity="0.3" />
     </svg>
   );
+
+  if (glow) {
+    return (
+      <div className="animate-pulse-glow">
+        {svg}
+      </div>
+    );
+  }
+
+  return svg;
 }

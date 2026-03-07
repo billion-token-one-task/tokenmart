@@ -1,4 +1,4 @@
-import { HTMLAttributes } from "react";
+import { HTMLAttributes, useId } from "react";
 
 type PatternTexture =
   | "halftone"
@@ -10,10 +10,11 @@ type PatternTexture =
   | "crt"
   | "blueprint"
   | "newspaper"
+  | "diagonal-hatch"
   | "none";
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
-  variant?: "default" | "highlight" | "inset" | "gradient" | "glass" | "glass-elevated";
+  variant?: "default" | "highlight" | "inset" | "gradient" | "glass" | "glass-elevated" | "specimen";
   /** Add film grain overlay texture */
   grainOverlay?: boolean;
   /** Background pattern texture */
@@ -30,16 +31,30 @@ const patternClasses: Record<PatternTexture, string> = {
   crt: "crt-phosphor",
   blueprint: "texture-blueprint",
   newspaper: "texture-newspaper",
+  "diagonal-hatch": "",
   none: "",
 };
 
+function DiagonalHatchOverlay() {
+  return (
+    <div
+      className="pointer-events-none absolute inset-0 opacity-[0.04]"
+      aria-hidden="true"
+      style={{
+        backgroundImage: "repeating-linear-gradient(45deg, #0a0a0a 0px, #0a0a0a 1px, transparent 1px, transparent 6px)",
+      }}
+    />
+  );
+}
+
 function PatternOverlay({ pattern }: { pattern?: PatternTexture }) {
   if (!pattern || pattern === "none") return null;
+  if (pattern === "diagonal-hatch") return <DiagonalHatchOverlay />;
+
   const cls = patternClasses[pattern];
   if (!cls) return null;
 
   const isRisograph = pattern === "risograph" || pattern === "newspaper";
-  // Risograph/newspaper use ::after pseudo-elements, so we just add the class
   if (isRisograph) {
     return (
       <div
@@ -65,22 +80,42 @@ function PatternOverlay({ pattern }: { pattern?: PatternTexture }) {
   );
 }
 
+/* Viewfinder bracket corners - 4 L-shaped brackets at card corners */
+function ViewfinderBrackets() {
+  const bracketStyle = "absolute w-3 h-3 pointer-events-none";
+  return (
+    <>
+      {/* Top-left */}
+      <span className={`${bracketStyle} top-0 left-0 border-t-2 border-l-2 border-[#e5005a]`} aria-hidden="true" />
+      {/* Top-right */}
+      <span className={`${bracketStyle} top-0 right-0 border-t-2 border-r-2 border-[#e5005a]`} aria-hidden="true" />
+      {/* Bottom-left */}
+      <span className={`${bracketStyle} bottom-0 left-0 border-b-2 border-l-2 border-[#e5005a]`} aria-hidden="true" />
+      {/* Bottom-right */}
+      <span className={`${bracketStyle} bottom-0 right-0 border-b-2 border-r-2 border-[#e5005a]`} aria-hidden="true" />
+    </>
+  );
+}
+
 export function Card({ variant = "default", grainOverlay, pattern, className = "", children, ...props }: CardProps) {
+  const specimenStamp = useId().replace(/:/g, "").slice(-6).padStart(6, "0");
+
   if (variant === "gradient") {
     return (
       <div
-        className={`relative rounded-[8px] ${className}`}
+        className={`relative rounded-none ${className}`}
         style={{ isolation: "isolate" }}
         data-agent-role="card"
         {...props}
       >
         <div
-          className="absolute inset-[-1px] rounded-[8px] -z-10"
+          className="absolute inset-[-2px] -z-10 rounded-none"
           style={{
-            background: "linear-gradient(135deg, rgba(255,255,255,0.3), rgba(255,255,255,0.06))",
+            background: "linear-gradient(135deg, #e5005a, rgba(255,183,214,0.4))",
           }}
         />
-        <div className={`relative overflow-hidden rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[#0a0a0a] ${grainOverlay ? "grain-overlay" : ""}`}>
+        <div className={`relative overflow-hidden rounded-none border-2 border-[#0a0a0a] bg-[var(--color-surface-0)] ${grainOverlay ? "grain-overlay" : ""}`}>
+          <ViewfinderBrackets />
           <PatternOverlay pattern={pattern} />
           {children}
         </div>
@@ -88,20 +123,43 @@ export function Card({ variant = "default", grainOverlay, pattern, className = "
     );
   }
 
+  if (variant === "specimen") {
+    return (
+      <div
+        className={`relative overflow-hidden rounded-none border-2 border-[#0a0a0a] bg-white ${grainOverlay ? "grain-overlay" : ""} ${className}`}
+        data-agent-role="card"
+        {...props}
+      >
+        {/* Top specimen label bar */}
+        <div className="flex items-center justify-between border-b-2 border-[#0a0a0a] bg-[#0a0a0a] px-3 py-1">
+          <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-[#e5005a]">SPECIMEN</span>
+          <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-white/40">
+            {specimenStamp}
+          </span>
+        </div>
+        <ViewfinderBrackets />
+        <DiagonalHatchOverlay />
+        <PatternOverlay pattern={pattern} />
+        {children}
+      </div>
+    );
+  }
+
   const variants = {
     default:
-      "rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[#0a0a0a] transition-colors hover:border-[rgba(255,255,255,0.14)]",
+      "rounded-none border-2 border-[#0a0a0a] bg-[var(--color-surface-0)] shadow-none transition-colors hover:border-[#e5005a]",
     highlight:
-      "rounded-[8px] border border-[rgba(255,255,255,0.12)] bg-[#0a0a0a]",
+      "rounded-none border-2 border-[#e5005a] bg-[var(--color-brand-soft)]",
     inset:
-      "rounded-[8px] border border-[rgba(255,255,255,0.06)] bg-black",
+      "rounded-none border-2 border-[#0a0a0a] bg-[var(--color-canvas)]",
     glass:
-      "rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[#0a0a0a] transition-colors hover:border-[rgba(255,255,255,0.14)]",
+      "rounded-none border-2 border-[#0a0a0a] bg-[rgba(255,255,255,0.72)] shadow-none transition-colors hover:border-[#e5005a]",
     "glass-elevated":
-      "rounded-[8px] border border-[rgba(255,255,255,0.12)] bg-[#111] transition-colors hover:border-[rgba(255,255,255,0.16)]",
+      "rounded-none border-2 border-[#0a0a0a] bg-[var(--color-canvas-strong)] shadow-none transition-colors hover:border-[#e5005a]",
   };
 
   const v = variant as keyof typeof variants;
+  const needsBrackets = variant === "highlight" || variant === "glass-elevated";
 
   return (
     <div
@@ -109,6 +167,7 @@ export function Card({ variant = "default", grainOverlay, pattern, className = "
       data-agent-role="card"
       {...props}
     >
+      {needsBrackets && <ViewfinderBrackets />}
       <PatternOverlay pattern={pattern} />
       {children}
     </div>
@@ -117,7 +176,7 @@ export function Card({ variant = "default", grainOverlay, pattern, className = "
 
 export function CardHeader({ className = "", children, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={`border-b border-[rgba(255,255,255,0.08)] px-4 py-3 ${className}`} {...props}>
+    <div className={`border-b-2 border-[#0a0a0a] px-4 py-3 ${className}`} {...props}>
       {children}
     </div>
   );
@@ -133,7 +192,7 @@ export function CardContent({ className = "", children, ...props }: HTMLAttribut
 
 export function CardFooter({ className = "", children, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={`border-t border-[rgba(255,255,255,0.08)] px-4 py-3 ${className}`} {...props}>
+    <div className={`border-t-2 border-[#0a0a0a] px-4 py-3 ${className}`} {...props}>
       {children}
     </div>
   );

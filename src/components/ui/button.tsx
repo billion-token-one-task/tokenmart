@@ -7,21 +7,21 @@ type Size = "sm" | "md" | "lg";
 
 const variantStyles: Record<Variant, string> = {
   primary:
-    "border border-white bg-white text-black hover:bg-[#ccc] active:bg-[#999] disabled:bg-[#333] disabled:text-[#666]",
+    "border-2 border-[#e5005a] bg-[#e5005a] text-white hover:bg-[#0a0a0a] hover:border-[#0a0a0a] hover:text-[#e5005a] active:bg-[#1a1a1a] disabled:border-[var(--color-border-default)] disabled:bg-[var(--color-surface-3)] disabled:text-[var(--color-text-tertiary)] group/btn",
   vercel:
-    "border border-white bg-white text-black hover:bg-[#ccc] active:bg-[#999] disabled:bg-[#333] disabled:text-[#666]",
+    "border-2 border-[#0a0a0a] bg-[#0a0a0a] text-white hover:bg-[#e5005a] hover:border-[#e5005a] active:bg-[#c20049] disabled:border-[var(--color-border-default)] disabled:bg-[var(--color-surface-3)] disabled:text-[var(--color-text-tertiary)]",
   secondary:
-    "border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.04)] text-[#ededed] hover:bg-[rgba(255,255,255,0.08)] active:bg-[rgba(255,255,255,0.1)]",
+    "border-2 border-[#0a0a0a] bg-white text-[#0a0a0a] hover:bg-[#e5005a] hover:text-white hover:border-[#e5005a] active:bg-[#c20049]",
   ghost:
-    "border border-transparent bg-transparent text-[#a1a1a1] hover:bg-[rgba(255,255,255,0.04)] hover:text-[#ededed] active:bg-[rgba(255,255,255,0.08)]",
+    "border-2 border-transparent bg-transparent text-[var(--color-text-secondary)] hover:bg-[#0a0a0a] hover:text-white hover:border-[#0a0a0a] active:bg-[#1a1a1a]",
   danger:
-    "border border-[rgba(238,0,0,0.3)] bg-[rgba(238,0,0,0.08)] text-[#ff6166] hover:bg-[rgba(238,0,0,0.14)] active:bg-[rgba(238,0,0,0.2)] disabled:opacity-50",
+    "border-2 border-[rgba(213,61,90,0.4)] bg-[rgba(213,61,90,0.08)] text-[var(--color-error)] hover:bg-[rgba(213,61,90,0.18)] hover:border-[rgba(213,61,90,0.6)] active:bg-[rgba(213,61,90,0.25)] disabled:opacity-50",
   outline:
-    "border border-[rgba(255,255,255,0.15)] bg-transparent text-[#ededed] hover:bg-[rgba(255,255,255,0.04)] active:bg-[rgba(255,255,255,0.08)]",
+    "border-2 border-[#0a0a0a] bg-transparent text-[#0a0a0a] hover:bg-[#e5005a] hover:border-[#e5005a] hover:text-white active:bg-[#c20049]",
   pixel:
-    "border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.03)] font-pixel-square uppercase tracking-[0.16em] text-[#ededed] hover:border-[rgba(255,255,255,0.18)] hover:bg-[rgba(255,255,255,0.06)]",
+    "border-2 border-[#0a0a0a] bg-white font-pixel-square tracking-[0.12em] text-[#0a0a0a] hover:bg-[#e5005a] hover:border-[#e5005a] hover:text-white",
   glass:
-    "border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] text-[#ededed] hover:bg-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.16)]",
+    "border-2 border-[#0a0a0a] bg-[rgba(255,255,255,0.65)] text-[#0a0a0a] hover:bg-[#e5005a] hover:border-[#e5005a] hover:text-white",
 };
 
 const sizeStyles: Record<Size, string> = {
@@ -44,30 +44,40 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         disabled={disabled || loading}
-        className={`inline-flex items-center justify-center gap-2 rounded-[6px] font-medium transition-[background-color,border-color,color,box-shadow] duration-150 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 ${variantStyles[variant]} ${sizeStyles[size]} ${gradientBorder ? "relative z-10" : ""} ${className}`}
+        className={`group relative inline-flex cursor-pointer items-center justify-center gap-2 rounded-none font-mono text-[10px] font-bold uppercase tracking-[0.14em] transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e5005a] focus-visible:ring-offset-1 ${variantStyles[variant]} ${sizeStyles[size]} ${gradientBorder ? "relative z-10" : ""} ${className}`}
         data-agent-role="button"
         data-agent-state={loading ? "loading" : disabled ? "disabled" : "ready"}
         {...props}
       >
+        {/* Scanline overlay for primary variant on hover */}
+        {variant === "primary" && (
+          <span
+            className="pointer-events-none absolute inset-0 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-200"
+            aria-hidden="true"
+            style={{
+              backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.06) 2px, rgba(255,255,255,0.06) 4px)",
+            }}
+          />
+        )}
         {loading && (
-          <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 16 16" fill="none">
+          <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 16 16" fill="none" style={{ animation: "spin 0.8s linear infinite, glitch-jitter 0.3s steps(2) infinite" }}>
             <rect x="1" y="1" width="5" height="5" fill="currentColor" opacity="0.3" />
             <rect x="10" y="1" width="5" height="5" fill="currentColor" opacity="0.5" />
             <rect x="10" y="10" width="5" height="5" fill="currentColor" opacity="0.7" />
             <rect x="1" y="10" width="5" height="5" fill="currentColor" />
           </svg>
         )}
-        {children}
+        <span className="relative z-10">{children}</span>
       </button>
     );
 
     if (gradientBorder) {
       return (
-        <div className="relative inline-flex rounded-[6px]" style={{ isolation: "isolate" }}>
+        <div className="relative inline-flex rounded-none" style={{ isolation: "isolate" }}>
           <div
-            className="absolute inset-[-1px] rounded-[6px] -z-10"
+            className="absolute inset-[-2px] -z-10 rounded-none"
             style={{
-              background: "linear-gradient(135deg, rgba(255,255,255,0.4), rgba(255,255,255,0.08))",
+              background: "linear-gradient(135deg, #e5005a, #ff4f9f)",
             }}
           />
           {button}

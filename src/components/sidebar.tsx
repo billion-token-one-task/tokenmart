@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMemo, useState } from "react";
-import { getSectionById, shellNavSections } from "@/lib/ui-shell";
+import { useState } from "react";
+import { shellNavSections } from "@/lib/ui-shell";
 import { LogoMark } from "@/components/logo";
 
 function iconFor(name: string) {
@@ -133,49 +133,83 @@ export function Sidebar() {
 
   const nav = (
     <>
-      {/* Header */}
-      <div className="border-b border-[rgba(255,255,255,0.08)] px-4 py-4">
-        <Link href="/" className="flex items-center gap-2.5">
-          <LogoMark size={18} className="text-[#ededed]" />
-          <span className="text-[15px] font-semibold tracking-[-0.02em] text-[#ededed]">
-            TokenMart
+      {/* Pink accent strip at top */}
+      <div className="h-[8px] w-full shrink-0 bg-[#e5005a]" aria-hidden="true" />
+
+      <div className="border-b-2 border-[#0a0a0a] px-5 py-5">
+        <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3">
+            <LogoMark size={22} className="text-[#e5005a]" />
+            <span className="font-display text-[1.15rem] uppercase tracking-[0.04em] text-[#0a0a0a]">
+              TokenMart
+            </span>
+          </Link>
+          {/* Animated pulse dot - status indicator */}
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping bg-[#e5005a] opacity-75" />
+            <span className="relative inline-flex h-2 w-2 bg-[#e5005a]" />
           </span>
-        </Link>
+        </div>
+        <p className="mt-2 max-w-[14rem] font-mono text-[10px] uppercase leading-4 tracking-[0.14em] text-[var(--color-text-tertiary)]">
+          Routing, trust, and exchange infrastructure for agent coordination.
+        </p>
+        {/* Barcode strip decoration */}
+        <div className="mt-3 flex items-center gap-1" aria-hidden="true">
+          <div className="h-[6px] w-[2px] bg-[#0a0a0a]" />
+          <div className="h-[6px] w-[1px] bg-[#0a0a0a]" />
+          <div className="h-[6px] w-[3px] bg-[#0a0a0a]" />
+          <div className="h-[6px] w-[1px] bg-[#0a0a0a]" />
+          <div className="h-[6px] w-[2px] bg-[#0a0a0a]" />
+          <div className="h-[6px] w-[1px] bg-[#0a0a0a]" />
+          <div className="h-[6px] w-[3px] bg-[#e5005a]" />
+          <div className="h-[6px] w-[1px] bg-[#0a0a0a]" />
+          <div className="h-[6px] w-[2px] bg-[#0a0a0a]" />
+          <div className="h-[6px] w-[1px] bg-[#0a0a0a]" />
+          <div className="h-[6px] w-[3px] bg-[#0a0a0a]" />
+          <div className="h-[6px] w-[1px] bg-[#e5005a]" />
+          <div className="h-[6px] w-[2px] bg-[#0a0a0a]" />
+          <div className="h-[6px] w-[1px] bg-[#0a0a0a]" />
+          <span className="ml-2 font-mono text-[8px] uppercase tracking-[0.2em] text-[var(--color-text-quaternary)]">
+            BUILD::v0.1.0
+          </span>
+        </div>
       </div>
 
-      {/* Command search */}
-      <div className="px-3 py-3">
+      <div className="px-4 py-4">
         <button
-          className="flex w-full items-center justify-between rounded-[6px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-3 py-2.5 text-left transition-colors hover:bg-[rgba(255,255,255,0.06)]"
+          className="flex w-full items-center justify-between border-2 border-[#0a0a0a] bg-[var(--color-surface-0)] px-3 py-2.5 text-left transition-all hover:bg-[#e5005a] hover:text-white"
           onClick={() => {
             document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
           }}
         >
-          <span className="flex items-center gap-2 text-[12px] text-[#666]">
+          <span className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em]">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <circle cx="11" cy="11" r="8" />
               <path d="M21 21l-4.35-4.35" />
             </svg>
-            <span className="text-[13px] text-[#666]">Search...</span>
+            <span>Search routes</span>
           </span>
-          <kbd className="rounded border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] px-1.5 py-0.5 font-mono text-[10px] text-[#444]">
+          <kbd className="border-2 border-[#0a0a0a] bg-[var(--color-canvas)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-text-tertiary)]">
             {"\u2318"}K
           </kbd>
         </button>
       </div>
 
-      {/* Nav sections */}
-      <nav className="flex-1 overflow-y-auto px-3 pb-3" data-agent-role="nav-sections">
-        <div className="space-y-5">
+      <nav className="flex-1 overflow-y-auto px-4 pb-4" data-agent-role="nav-sections">
+        <div className="space-y-6">
           {shellNavSections.map((section) => {
             return (
               <section key={section.id} data-agent-section={section.id}>
-                <div className="flex items-center gap-2 px-2 pb-1.5 text-[10px] font-mono uppercase tracking-wider text-[#444]">
-                  <span>{section.title}</span>
-                  <span className="flex-1 h-px bg-gradient-to-r from-[rgba(255,255,255,0.06)] to-transparent" />
-                  <span className="text-[6px] text-[rgba(255,255,255,0.08)]" aria-hidden="true">┄</span>
+                <div className="flex items-center gap-2 px-1 pb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-quaternary)]">
+                  {/* Crosshair marker */}
+                  <span className="text-[#e5005a]" aria-hidden="true">+</span>
+                  <span className="font-semibold text-[#0a0a0a]">{section.title}</span>
+                  <span className="h-[2px] flex-1 bg-[#0a0a0a]" />
+                  <span className="text-[8px] text-[var(--color-text-quaternary)]" aria-hidden="true">
+                    [{section.id.toUpperCase().slice(0, 3)}]
+                  </span>
                 </div>
-                <div className="mt-1 space-y-0.5">
+                <div className="space-y-0.5">
                   {section.items.map((item) => {
                     const active = isActivePath(pathname, item.href);
 
@@ -183,10 +217,10 @@ export function Sidebar() {
                       <Link
                         key={item.href}
                         href={item.href}
-                        className={`relative flex items-center gap-3 rounded-[6px] px-3 py-2 text-[13px] transition-colors ${
+                        className={`relative flex items-center gap-3 px-3 py-2.5 text-[13px] transition-all ${
                           active
-                            ? "bg-[rgba(255,255,255,0.06)] text-[#ededed]"
-                            : "text-[#a1a1a1] hover:bg-[rgba(255,255,255,0.04)] hover:text-[#ededed]"
+                            ? "border-l-[3px] border-l-[#e5005a] border-y border-y-transparent border-r border-r-transparent bg-[#fff0f5] text-[#0a0a0a] font-medium"
+                            : "border-l-[3px] border-transparent text-[var(--color-text-secondary)] hover:bg-[#e5005a] hover:text-white"
                         }`}
                         data-agent-action={`navigate-${item.label.toLowerCase().replace(/\s/g, "-")}`}
                         data-agent-href={item.href}
@@ -195,13 +229,14 @@ export function Sidebar() {
                         aria-current={active ? "page" : undefined}
                         onClick={() => setMobileOpen(false)}
                       >
-                        {active && (
-                          <span className="absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-full bg-[#ededed]" />
-                        )}
-                        <span className={`shrink-0 ${active ? "text-[#ededed]" : "text-[#666]"}`}>
+                        <span className={`shrink-0 ${active ? "text-[#e5005a]" : ""}`}>
                           {iconFor(item.icon)}
                         </span>
                         <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                        {/* Dense monospace metadata */}
+                        <span className="font-mono text-[8px] uppercase tracking-[0.1em] opacity-40" aria-hidden="true">
+                          {item.href.split("/").pop()?.slice(0, 3).toUpperCase()}
+                        </span>
                       </Link>
                     );
                   })}
@@ -212,22 +247,23 @@ export function Sidebar() {
         </div>
       </nav>
 
-      {/* Footer */}
-      <div className="relative border-t border-[rgba(255,255,255,0.08)] px-4 py-3">
-        {/* Subtle dither texture in footer */}
-        <div
-          className="pointer-events-none absolute inset-0 dither-checker opacity-20"
-          aria-hidden="true"
-          style={{
-            maskImage: "linear-gradient(180deg, black 0%, transparent 100%)",
-            WebkitMaskImage: "linear-gradient(180deg, black 0%, transparent 100%)",
-          }}
-        />
+      <div className="relative border-t-2 border-[#0a0a0a] px-5 py-4">
         <div className="relative flex items-center justify-between">
-          <span className="font-mono text-[10px] text-[#444]">TokenMart v1.0</span>
-          <span className="font-mono text-[6px] text-[rgba(255,255,255,0.06)]" aria-hidden="true">
-            ▁▂▃▄▅
+          <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-quaternary)]">
+            Editorial build
           </span>
+          {/* TM-01 in viewfinder-bracketed box */}
+          <span className="viewfinder border-2 border-[#0a0a0a] px-2 py-0.5 font-mono text-[10px] font-semibold tracking-[0.14em] text-[#0a0a0a]" aria-hidden="true">
+            TM-01
+          </span>
+        </div>
+        {/* Dense metadata footer */}
+        <div className="mt-2 flex items-center gap-2 font-mono text-[8px] uppercase tracking-[0.2em] text-[var(--color-text-quaternary)]" aria-hidden="true">
+          <span>SYS::NOMINAL</span>
+          <span className="h-1 w-1 bg-[#e5005a]" />
+          <span>UPLINK::OK</span>
+          <span className="h-1 w-1 bg-[#e5005a]" />
+          <span>v0.1</span>
         </div>
       </div>
     </>
@@ -237,7 +273,7 @@ export function Sidebar() {
     <>
       {/* Mobile toggle */}
       <button
-        className="fixed left-3 top-3 z-50 rounded-md bg-[#0a0a0a] border border-[rgba(255,255,255,0.08)] p-2 text-[#ededed] md:hidden"
+        className="fixed left-3 top-3 z-50 border-2 border-[#0a0a0a] bg-[var(--color-surface-0)] p-2 text-[#0a0a0a] shadow-[2px_2px_0px_#0a0a0a] md:hidden"
         onClick={() => setMobileOpen((open) => !open)}
         aria-label="Toggle navigation"
       >
@@ -253,20 +289,31 @@ export function Sidebar() {
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="md:hidden fixed inset-0 z-40 bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-40 bg-[rgba(10,10,10,0.3)] backdrop-blur-sm md:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
-      {/* Sidebar frame */}
       <aside
-        className={`relative flex h-screen w-[256px] shrink-0 flex-col bg-[#0a0a0a] border-r border-[rgba(255,255,255,0.08)] ${
+        className={`relative flex h-screen w-[252px] shrink-0 flex-col border-r-2 border-[#0a0a0a] bg-[rgba(255,249,252,0.96)] ${
           mobileOpen ? "fixed left-0 top-0 z-40" : "hidden md:flex"
         }`}
         data-agent-role="navigation"
         aria-label="Main navigation"
       >
-        {nav}
+        {/* Subtle diagonal hatch on sidebar background */}
+        <div
+          className="pointer-events-none absolute inset-0 diagonal-hatch opacity-[0.03]"
+          aria-hidden="true"
+        />
+        {/* Scanline on sidebar */}
+        <div
+          className="pointer-events-none absolute inset-0 scanline-overlay opacity-[0.02]"
+          aria-hidden="true"
+        />
+        <div className="relative z-[1] flex h-full flex-col">
+          {nav}
+        </div>
       </aside>
     </>
   );

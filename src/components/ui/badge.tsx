@@ -3,14 +3,14 @@ import { HTMLAttributes } from "react";
 type BadgeVariant = "default" | "success" | "warning" | "danger" | "info" | "outline" | "gradient" | "glass";
 
 const variants: Record<BadgeVariant, string> = {
-  default: "bg-[rgba(255,255,255,0.06)] text-[#a1a1a1] border-[rgba(255,255,255,0.1)]",
-  success: "bg-[rgba(80,227,194,0.1)] text-[#50e3c2] border-[rgba(80,227,194,0.2)]",
-  warning: "bg-[rgba(245,166,35,0.1)] text-[#f5a623] border-[rgba(245,166,35,0.2)]",
-  danger: "bg-[rgba(238,0,0,0.1)] text-[#ff6166] border-[rgba(238,0,0,0.2)]",
-  info: "bg-[rgba(0,112,243,0.1)] text-[#3291ff] border-[rgba(0,112,243,0.2)]",
-  outline: "bg-transparent text-[#666] border-[rgba(255,255,255,0.12)]",
-  gradient: "bg-transparent text-[#ededed] border-transparent",
-  glass: "bg-[rgba(255,255,255,0.04)] text-[#ededed] border-[rgba(255,255,255,0.1)]",
+  default: "bg-[#0a0a0a] text-white border-[#0a0a0a]",
+  success: "bg-[rgba(45,156,115,0.08)] text-[var(--color-success)] border-[rgba(45,156,115,0.4)]",
+  warning: "bg-[rgba(185,112,20,0.08)] text-[var(--color-warning)] border-[rgba(185,112,20,0.4)]",
+  danger: "bg-[rgba(213,61,90,0.08)] text-[var(--color-error)] border-[rgba(213,61,90,0.4)]",
+  info: "bg-[rgba(156,61,115,0.08)] text-[var(--color-info)] border-[rgba(156,61,115,0.4)]",
+  outline: "bg-transparent text-[#0a0a0a] border-[#0a0a0a]",
+  gradient: "bg-transparent text-[#e5005a] border-transparent",
+  glass: "bg-[rgba(255,255,255,0.74)] text-[#0a0a0a] border-[#0a0a0a]",
 };
 
 interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
@@ -19,15 +19,30 @@ interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   pixel?: boolean;
 }
 
+/* Tiny barcode decoration: 4 thin vertical lines */
+function Barcode() {
+  return (
+    <span className="inline-flex items-center gap-px mr-1.5 opacity-40" aria-hidden="true">
+      <span className="inline-block w-[1px] h-2.5 bg-current" />
+      <span className="inline-block w-[2px] h-2.5 bg-current" />
+      <span className="inline-block w-[1px] h-2.5 bg-current" />
+      <span className="inline-block w-[1px] h-2.5 bg-current" />
+      <span className="inline-block w-[2px] h-2.5 bg-current" />
+      <span className="inline-block w-[1px] h-2.5 bg-current" />
+    </span>
+  );
+}
+
 export function Badge({ variant = "default", pixel, className = "", children, ...props }: BadgeProps) {
   if (variant === "gradient") {
     return (
       <span
-        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium ${pixel ? "font-pixel-square uppercase tracking-[0.16em]" : "font-mono"} gradient-border ${className}`}
+        className={`inline-flex items-center gap-1 rounded-none border-2 border-[#e5005a] px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] ${pixel ? "font-pixel-square tracking-[0.12em]" : ""} ${className}`}
         data-agent-role="badge"
         data-agent-variant={variant}
         {...props}
       >
+        <Barcode />
         {children}
       </span>
     );
@@ -35,11 +50,12 @@ export function Badge({ variant = "default", pixel, className = "", children, ..
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium ${pixel ? "font-pixel-square uppercase tracking-[0.16em]" : "font-mono"} ${variants[variant]} ${className}`}
+      className={`inline-flex items-center gap-1 rounded-none border-2 px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] ${pixel ? "font-pixel-square tracking-[0.12em]" : ""} ${variants[variant]} ${className}`}
       data-agent-role="badge"
       data-agent-variant={variant}
       {...props}
     >
+      <Barcode />
       {children}
     </span>
   );

@@ -2,9 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Button, Input } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
+import {
+  AuthCard,
+  AuthEyebrow,
+  AuthPanel,
+  AuthLinks,
+  AuthTitleBlock,
+} from "./../auth-ui";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -62,23 +68,28 @@ export default function LoginPage() {
   }
 
   return (
-    <div
-      className="w-full max-w-[440px] rounded-[8px] border border-[rgba(255,255,255,0.1)] bg-[#0a0a0a] shadow-[0_16px_48px_rgba(0,0,0,0.4)]"
-      style={{ animation: "hero-reveal 0.45s cubic-bezier(0.22,1,0.36,1) both" }}
-    >
-      <div className="p-8">
-        <div className="mb-7">
-          <h1 className="text-[1.8rem] font-semibold tracking-[-0.04em] text-white">
-            Sign in to TokenMart
-          </h1>
-          <p className="mt-3 text-[14px] text-[#a1a1a1] leading-6">
-            Enter your credentials to access your account.
-          </p>
-        </div>
+    <AuthCard action="login" className="max-w-[480px]">
+      <AuthEyebrow label="Operator session / account login" />
+      <AuthTitleBlock
+        title="Sign in to TokenMart"
+        summary="Resume wallet access, claim authority, and routing controls for your operator account."
+      />
 
+      {/* session status readout */}
+      <div className="mb-5 flex items-center gap-3 rounded-none border-2 border-[#0a0a0a] bg-[#0a0a0a] px-3 py-2">
+        <span className="block h-[6px] w-[6px] rounded-none bg-[#E5005A] animate-pulse" />
+        <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-white">
+          SESSION STATUS :: INACTIVE
+        </span>
+        <span className="ml-auto font-mono text-[9px] uppercase tracking-[0.14em] text-white/40">
+          AWAITING CREDENTIALS
+        </span>
+      </div>
+
+      <div className="grid gap-4">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {errors.general && (
-            <div className="rounded-[6px] border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.05)] px-4 py-3 text-[13px] text-[#ee4444]">
+            <div className="rounded-none border-2 border-[#E5005A] bg-[rgba(229,0,90,0.06)] px-4 py-3 font-mono text-[11px] uppercase tracking-[0.08em] text-[#E5005A]">
               {errors.general}
             </div>
           )}
@@ -110,19 +121,51 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <div className="mt-6 text-center text-[13px]">
-          <span className="text-[#666]">Don&apos;t have an account?{" "}</span>
-          <Link href="/register" className="text-[#0070f3] hover:underline">
-            Create one
-          </Link>
+        {/* login metadata specimen card */}
+        <div className="rounded-none border-2 border-[#0a0a0a] p-3">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">LOGIN METADATA</span>
+            <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">SPECIMEN</span>
+          </div>
+          <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5">
+            <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Auth method</div>
+            <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">email+password</div>
+            <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Endpoint</div>
+            <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">/api/v1/auth/login</div>
+            <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Token type</div>
+            <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">refresh_token</div>
+            <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Storage</div>
+            <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">localStorage</div>
+          </div>
         </div>
 
-        <div className="mt-2 text-center text-[13px]">
-          <Link href="/agent-register" className="text-[#666] hover:text-[#a1a1a1] transition-colors">
-            Register a new agent
-          </Link>
-        </div>
+        <AuthPanel
+          title="Session note"
+          body="Sign in first if you need to claim a freshly registered agent or review TokenHall keys tied to your operator account."
+        />
+        <AuthLinks
+          primaryLabel="Create an account"
+          primaryHref="/register"
+          secondaryLabel="Register a new agent"
+          secondaryHref="/agent-register"
+        />
       </div>
-    </div>
+
+      {/* dense footer bar */}
+      <div className="mt-5 -mx-6 -mb-7 sm:-mx-7 border-t-2 border-[#0a0a0a] bg-[#0a0a0a] px-4 py-2 flex items-center justify-between">
+        <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-white/50">
+          CHECKPOINT :: AUTH-LOGIN
+        </span>
+        <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-white/50">
+          TM-2026
+        </span>
+        {/* mini barcode */}
+        <span className="flex items-center gap-[1px]" aria-hidden="true">
+          {[2, 1, 3, 1, 2, 1, 2, 3, 1].map((w, i) => (
+            <span key={i} className="block bg-white/30" style={{ width: `${w}px`, height: "8px" }} />
+          ))}
+        </span>
+      </div>
+    </AuthCard>
   );
 }

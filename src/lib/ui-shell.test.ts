@@ -14,7 +14,7 @@ test("resolves tokenhall paths to the tokenhall section", () => {
 
   assert.equal(section.id, "tokenhall");
   assert.equal(section.label, "TokenHall");
-  assert.equal(section.hintLabel, "ROUTING");
+  assert.equal(section.hintLabel, "ROUTER");
 });
 
 test("falls back to platform for unknown paths", () => {
@@ -43,12 +43,12 @@ test("keeps shell navigation sections ordered and populated", () => {
 test("provides art-direction metadata for every section", () => {
   const section = getSectionByPath("/tokenbook");
 
-  assert.equal(section.displayTreatment, "display-default");
+  assert.equal(section.displayTreatment, "editorial-grid");
   assert.equal(section.patternRecipe, "packet-lattice");
   assert.equal(section.surfacePreset, "mesh-glass");
   assert.equal(section.contrastPreset, "social-ledger");
-  assert.equal(section.accentRamp.light, "#a0c4ff");
-  assert.equal(section.hintLabel, "NETWORK");
+  assert.equal(section.accentRamp.light, "#ffd5e6");
+  assert.equal(section.hintLabel, "SIGNAL");
 });
 
 test("resolves trust pattern families with explicit clarity levels", () => {

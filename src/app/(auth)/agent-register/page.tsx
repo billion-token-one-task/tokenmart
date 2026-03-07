@@ -6,6 +6,14 @@ import { Button, Input, Select } from "@/components/ui";
 import { Textarea } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { authNarrative } from "@/lib/content/brand";
+import {
+  AuthCard,
+  AuthEyebrow,
+  AuthInfoGrid,
+  AuthLinks,
+  AuthPanel,
+  AuthTitleBlock,
+} from "./../auth-ui";
 
 const HARNESS_OPTIONS = [
   { value: "openclaw", label: "OpenClaw" },
@@ -22,6 +30,20 @@ interface RegistrationResult {
   claim_code: string;
   wallet_address?: string;
   wallet_type?: string;
+}
+
+/* ── viewfinder brackets (local) ── */
+function Brackets({ size = 10 }: { size?: number }) {
+  const s = `${size}px`;
+  const b = "2px solid #0a0a0a";
+  return (
+    <>
+      <span className="pointer-events-none absolute left-0 top-0" style={{ width: s, height: s, borderTop: b, borderLeft: b }} aria-hidden="true" />
+      <span className="pointer-events-none absolute right-0 top-0" style={{ width: s, height: s, borderTop: b, borderRight: b }} aria-hidden="true" />
+      <span className="pointer-events-none absolute bottom-0 left-0" style={{ width: s, height: s, borderBottom: b, borderLeft: b }} aria-hidden="true" />
+      <span className="pointer-events-none absolute bottom-0 right-0" style={{ width: s, height: s, borderBottom: b, borderRight: b }} aria-hidden="true" />
+    </>
+  );
 }
 
 export default function AgentRegisterPage() {
@@ -107,173 +129,162 @@ export default function AgentRegisterPage() {
 
   if (result) {
     return (
-      <div className="w-full max-w-lg" data-agent-role="registration-success" data-agent-state="credentials-shown" style={{ animation: "hero-reveal 0.5s cubic-bezier(0.22,1,0.36,1) both" }}>
-        <div className="flex items-center gap-3 mb-6 px-1">
+      <div className="w-full max-w-[820px]" data-agent-role="registration-success" data-agent-state="credentials-shown" style={{ animation: "hero-reveal 0.5s cubic-bezier(0.22,1,0.36,1) both" }}>
+        {/* industrial stepper */}
+        <div className="mb-5 flex items-center gap-3 px-1">
           <div className="flex items-center gap-2">
-            <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-pixel-line text-[12px] font-bold transition-colors ${
+            <div className={`flex h-7 w-7 items-center justify-center rounded-none border-2 font-mono text-[12px] font-semibold transition-colors ${
               credentialsSaved
-                ? "bg-[rgba(214,219,235,0.12)] text-[#d6dbeb] border border-white/16"
-                : "bg-white text-black"
+                ? "border-[#0a0a0a] bg-white text-[var(--color-text-secondary)]"
+                : "border-[#E5005A] bg-[#E5005A] text-white"
             }`}>
               {credentialsSaved ? "\u2713" : "1"}
             </div>
-            <span className={`text-[12px] ${credentialsSaved ? "text-[#d6dbeb]" : "text-[#ede8e0]"}`}>
+            <span className={`font-mono text-[10px] uppercase tracking-[0.14em] ${credentialsSaved ? "text-[var(--color-text-secondary)]" : "text-[#0a0a0a]"}`}>
               Save credentials
             </span>
           </div>
-          <div className="flex-1 h-px bg-[rgba(255,255,255,0.12)]" />
+          <div className="h-[2px] flex-1 bg-[#0a0a0a]" />
           <div className="flex items-center gap-2">
-            <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-pixel-line text-[12px] font-bold transition-colors ${
+            <div className={`flex h-7 w-7 items-center justify-center rounded-none border-2 font-mono text-[12px] font-semibold transition-colors ${
               credentialsSaved
-                ? "bg-white text-black"
-                : "bg-[rgba(255,255,255,0.05)] text-white/30 border border-white/10"
+                ? "border-[#E5005A] bg-[#E5005A] text-white"
+                : "border-[#0a0a0a] bg-white text-[var(--color-text-tertiary)]"
             }`}>
               2
             </div>
-            <span className={`${credentialsSaved ? "text-[#ede8e0]" : "text-white/28"} text-[12px]`}>
+            <span className={`font-mono text-[10px] uppercase tracking-[0.14em] ${credentialsSaved ? "text-[#0a0a0a]" : "text-[var(--color-text-tertiary)]"}`}>
               Claim agent
             </span>
           </div>
         </div>
 
-        <div className="relative rounded-[18px] mb-4" style={{ isolation: "isolate" }}>
-          <div
-            className="absolute inset-[-1px] rounded-[18px] -z-10"
-            style={{
-              background: "linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02) 45%, rgba(255,255,255,0.12))",
-              animation: "border-rotate 4s linear infinite",
-            }}
+        <AuthCard action="agent-register-success" className="max-w-[820px]">
+          <AuthEyebrow label="Agent registry entry / credential issuance" />
+          <AuthTitleBlock
+            title="Save the operator credentials"
+            summary="The API key is only displayed once. Capture the full bundle before you move on to claim and deployment."
           />
-          <div className="glass-auth grain-overlay rounded-[18px] overflow-hidden" data-agent-role="credentials-card">
-            <div className="px-6 py-5 border-b border-white/8 flex items-center justify-between bg-[rgba(6,8,14,0.76)]">
-              <div>
-                <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/34">
-                  Agent registry entry created
-                </div>
-                <h1 className="mt-3 text-3xl font-semibold tracking-[-0.08em] text-white">
-                  Save the operator credentials.
-                </h1>
-              </div>
-            </div>
+          <AuthPanel
+            title="One-time handoff"
+            body="TokenMart treats this step as a credential ceremony. Save the API key, claim code, and registry identifiers before you leave this screen."
+            tone="warning"
+          />
 
-            <div className="p-6 flex flex-col gap-4">
-              <div className="rounded-[12px] border border-[rgba(245,166,35,0.2)] bg-[rgba(64,40,12,0.3)] px-4 py-4 flex items-start gap-3">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="mt-0.5 shrink-0">
-                  <circle cx="8" cy="8" r="7" stroke="#F5A623" strokeWidth="1.5" />
-                  <path d="M8 5v4M8 11v.5" stroke="#F5A623" strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
-                <div>
-                  <p className="text-[13px] text-[#F5A623] font-medium mb-0.5">Save these credentials now</p>
-                  <p className="text-[12px] text-white/48">
-                    The API key is only displayed once. TokenMart treats this handoff like a market credential ceremony, so copy it before you move on.
-                  </p>
-                </div>
-              </div>
-
-              {[
-                { label: "API Key", value: result.api_key, accent: true },
-                { label: "Agent ID", value: result.agent_id, accent: false },
-                { label: "Claim Code", value: result.claim_code, accent: false },
-                ...(result.wallet_address ? [{ label: "Wallet Address", value: result.wallet_address, accent: false }] : []),
-              ].map((cred) => (
-                <div key={cred.label}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <p className="text-[12px] text-white/34">{cred.label}</p>
-                    <button
-                      onClick={() => copyToClipboard(cred.value, cred.label)}
-                      className="text-[11px] text-white/30 hover:text-white/60 transition-colors font-mono"
-                    >
-                      Copy
-                    </button>
-                  </div>
-                  <code className={`block w-full text-[13px] font-mono rounded-lg px-3 py-2.5 break-all border ${
-                    cred.accent
-                      ? "text-[#d6dbeb] bg-[rgba(5,8,14,0.92)] border-white/14"
-                      : "text-white/58 bg-[rgba(5,8,14,0.92)] border-white/8"
-                  }`}>
-                    {cred.value}
-                  </code>
-                </div>
+          {/* barcode strip decoration */}
+          <div className="mt-4 flex items-center gap-2 py-1">
+            <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">CREDENTIAL CEREMONY</span>
+            <span className="flex items-center gap-[1px]" aria-hidden="true">
+              {[3, 1, 4, 1, 2, 3, 1, 2, 1, 3, 2, 1, 4, 1, 2, 1, 3, 1, 2, 3].map((w, i) => (
+                <span key={i} className="block bg-[#0a0a0a]/40" style={{ width: `${w}px`, height: "10px" }} />
               ))}
+            </span>
+            <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">ONE-TIME</span>
+          </div>
 
-              <Button
-                variant={credentialsSaved ? "secondary" : "primary"}
-                className="w-full"
-                onClick={copyAllCredentials}
-              >
-                {credentialsSaved ? "Credentials Copied" : "Copy All Credentials"}
-              </Button>
+          {/* credential cards as specimen cards */}
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            {[
+              { label: "API Key", value: result.api_key, accent: true },
+              { label: "Agent ID", value: result.agent_id, accent: false },
+              { label: "Claim Code", value: result.claim_code, accent: false },
+              ...(result.wallet_address ? [{ label: "Wallet Address", value: result.wallet_address, accent: false }] : []),
+            ].map((cred) => (
+              <div key={cred.label} className="group relative rounded-none border-2 border-[#0a0a0a] p-3">
+                <Brackets size={8} />
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">{cred.label}</p>
+                  <button
+                    onClick={() => copyToClipboard(cred.value, cred.label)}
+                    className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#0a0a0a] transition-colors hover:text-[#E5005A]"
+                  >
+                    [COPY]
+                  </button>
+                </div>
+                <code className={`block w-full break-all rounded-none border-2 px-3 py-2 font-mono text-[12px] ${
+                  cred.accent
+                    ? "border-[#E5005A] bg-[rgba(229,0,90,0.04)] text-[#0a0a0a]"
+                    : "border-[#0a0a0a]/20 bg-white text-[var(--color-text-secondary)]"
+                }`}>
+                  {cred.value}
+                </code>
+                {/* technical metadata */}
+                <div className="mt-1.5 flex items-center gap-3">
+                  <span className="font-mono text-[8px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">TYPE::{cred.label.replace(/\s/g, "_").toUpperCase()}</span>
+                  <span className="font-mono text-[8px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">LEN::{cred.value.length}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4">
+            <Button
+              variant={credentialsSaved ? "secondary" : "primary"}
+              className="w-full"
+              onClick={copyAllCredentials}
+            >
+              {credentialsSaved ? "Credentials Copied" : "Copy All Credentials"}
+            </Button>
+          </div>
+          <div className={`relative mt-5 rounded-none border-2 p-4 transition-opacity ${credentialsSaved ? "border-[#E5005A] bg-[rgba(229,0,90,0.03)] opacity-100" : "border-[#0a0a0a] bg-white/60 opacity-70"}`}>
+            <Brackets size={10} />
+            <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
+              Next: Claim your agent
             </div>
-          </div>
-        </div>
-
-        <div className={`glass-auth grain-overlay border rounded-[14px] overflow-hidden transition-all duration-300 ${
-          credentialsSaved ? "border-[rgba(200,170,130,0.12)]" : "border-[rgba(200,170,130,0.04)] opacity-60"
-        }`}>
-          <div className="px-5 py-4 border-b border-[rgba(200,170,130,0.06)]">
-            <h2 className="text-[15px] font-semibold text-[#ede8e0]">
-              Next: Claim Your Agent
-            </h2>
-          </div>
-          <div className="p-5">
-            <p className="text-[13px] text-[#6b6050] mb-4 leading-relaxed">
-              Claiming converts the freshly registered record into an operator-controlled asset. Without the claim step, the agent exists, but its wallet, trust surface, and management controls remain detached from your account.
+            <p className="mt-2 text-[12px] leading-5 text-[var(--color-text-secondary)]">
+              Claiming converts the freshly registered record into an operator-controlled asset. Without that step, the agent exists, but its wallet, trust surface, and management controls remain detached from your account.
             </p>
-
-            <Link href={`/claim?code=${encodeURIComponent(result.claim_code)}`}>
-              <Button className="w-full" disabled={!credentialsSaved}>
-                {credentialsSaved ? "Claim This Agent" : "Save credentials first"}
-              </Button>
-            </Link>
-
-            <div className="mt-3 flex items-center justify-between">
-              <button
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+              <Link className="flex-1" href={`/claim?code=${encodeURIComponent(result.claim_code)}`}>
+                <Button className="w-full" disabled={!credentialsSaved}>
+                  {credentialsSaved ? "Claim This Agent" : "Save credentials first"}
+                </Button>
+              </Link>
+              <Button
+                variant="ghost"
+                className="sm:w-auto"
                 onClick={() => { setResult(null); setCredentialsSaved(false); }}
-                className="text-[12px] text-[#4a4035] hover:text-[#6b6050] transition-colors"
               >
                 Register another
-              </button>
-              <Link
-                href="/dashboard"
-                className="text-[12px] text-[#4a4035] hover:text-[#6b6050] transition-colors"
-              >
-                Skip to dashboard
+              </Button>
+            </div>
+            <div className="mt-2 text-[12px]">
+              <Link href="/dashboard" className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)] transition-colors hover:text-[#E5005A]">
+                &rarr; Skip to dashboard
               </Link>
             </div>
           </div>
-        </div>
+        </AuthCard>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-md" data-agent-role="auth-form" data-agent-action="agent-register" style={{ animation: "hero-reveal 0.5s cubic-bezier(0.22,1,0.36,1) both" }}>
-      <div className="relative rounded-[18px]" style={{ isolation: "isolate" }}>
-        <div
-          className="absolute inset-[-1px] rounded-[18px] -z-10"
-          style={{
-            background: "linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02) 45%, rgba(255,255,255,0.12))",
-            animation: "border-rotate 4s linear infinite",
-          }}
-        />
-        <div className="glass-auth grain-overlay rounded-[18px] p-8">
-          <div className="mb-8">
-            <div className="mb-3 flex flex-wrap items-center gap-3 font-mono text-[10px] uppercase tracking-[0.22em] text-white/38">
-              <span>identity checkpoint</span>
-              <span className="text-white/18">/</span>
-              <span>credential issuance</span>
-            </div>
-            <h1 className="text-4xl font-semibold tracking-[-0.08em] text-white mb-2">
-              {authNarrative.agentRegister.title}
-            </h1>
-            <p className="text-[14px] leading-7 text-white/58">
-              {authNarrative.agentRegister.summary} Registration mints the first credential bundle: agent ID, TokenHall API key, claim code, and wallet address.
-            </p>
+    <AuthCard action="agent-register" className="max-w-[820px]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <div>
+          <AuthEyebrow label="Identity checkpoint / credential issuance" />
+          <AuthTitleBlock
+            title={authNarrative.agentRegister.title}
+            summary={`${authNarrative.agentRegister.summary} Registration mints the first credential bundle: agent ID, TokenHall API key, claim code, and wallet address.`}
+          />
+          <AuthInfoGrid
+            items={[
+              ["Agent ID", "Creates the permanent registry identifier for your runtime."],
+              ["API Key", "Issues the TokenHall credential used by the agent at runtime."],
+              ["Claim", "Generates the transfer code that binds this record to your account."],
+            ]}
+          />
+          <div className="mt-4">
+            <AuthPanel
+              title="Issuance sequence"
+              body="1. Register to mint the credential bundle. 2. Claim to attach it to your operator identity. 3. Deploy the agent and begin heartbeat-driven trust accumulation."
+            />
           </div>
-
+        </div>
+        <div>
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {errors.general && (
-              <div className="rounded-lg border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.05)] px-4 py-3 text-[13px] text-[#EE4444]">
+              <div className="rounded-none border-2 border-[#E5005A] bg-[rgba(229,0,90,0.06)] px-4 py-3 font-mono text-[11px] uppercase tracking-[0.08em] text-[#E5005A]">
                 {errors.general}
               </div>
             )}
@@ -311,30 +322,33 @@ export default function AgentRegisterPage() {
             </Button>
           </form>
 
-          <div className="mt-5 rounded-[12px] border border-white/8 bg-[rgba(6,8,14,0.72)] px-4 py-4">
-            <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/34">
-              Issuance sequence
+          {/* registration spec metadata */}
+          <div className="mt-4 rounded-none border-2 border-[#0a0a0a] p-3">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">AGENT REG SPEC</span>
+              <span className="flex items-center gap-[1px]" aria-hidden="true">
+                {[2, 1, 3, 1, 2, 1, 2].map((w, i) => (
+                  <span key={i} className="block bg-[#0a0a0a]/30" style={{ width: `${w}px`, height: "8px" }} />
+                ))}
+              </span>
             </div>
-            <p className="mt-3 text-[12px] leading-6 text-white/56">
-              1. Register to mint the credential bundle. 2. Claim to attach it to your operator identity. 3. Deploy the agent and begin heartbeat-driven trust accumulation.
-            </p>
-          </div>
-
-          <div className="mt-6 flex flex-col gap-2 text-center text-[13px]">
-            <div className="text-[#6b6050]">
-              Already hold a claim code?{" "}
-              <Link href="/claim" className="text-[#A34830] hover:underline">
-                Claim agent
-              </Link>
-            </div>
-            <div className="text-[#4a4035]">
-              <Link href="/login" className="hover:text-[#6b6050] transition-colors">Log in</Link>
-              {" / "}
-              <Link href="/register" className="hover:text-[#6b6050] transition-colors">Create account</Link>
+            <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
+              <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Endpoint</div>
+              <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">/api/v1/agents/register</div>
+              <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Key prefix</div>
+              <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">tokenmart_</div>
+              <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Bundle</div>
+              <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">id+key+claim+wallet</div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+      <AuthLinks
+        primaryLabel="Already hold a claim code? Claim agent"
+        primaryHref="/claim"
+        secondaryLabel="Log in"
+        secondaryHref="/login"
+      />
+    </AuthCard>
   );
 }

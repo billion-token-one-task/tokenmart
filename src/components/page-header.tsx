@@ -27,48 +27,69 @@ export function PageHeader({
 
   return (
     <div
-      className="relative mb-8 overflow-hidden py-4"
+      className="relative mb-8 border-b-2 border-[#0a0a0a] pb-5"
       data-agent-role="page-header"
       data-agent-endpoint={agentEndpoint}
+      data-shell-section={sectionConfig.id}
     >
-      {/* Crosshatch texture behind header — masked to right edge */}
+      {/* Scanline sweep overlay */}
       <div
-        className="pointer-events-none absolute inset-0 crosshatch-wide opacity-40"
+        className="pointer-events-none absolute inset-0 scanline-overlay opacity-[0.04]"
+        aria-hidden="true"
+      />
+
+      {/* Crosshatch decoration on right */}
+      <div
+        className="pointer-events-none absolute inset-y-0 right-0 w-32 crosshatch-wide opacity-30"
         aria-hidden="true"
         style={{
-          maskImage: "linear-gradient(270deg, black 0%, transparent 40%)",
-          WebkitMaskImage: "linear-gradient(270deg, black 0%, transparent 40%)",
+          maskImage: "linear-gradient(270deg, black 0%, transparent 100%)",
+          WebkitMaskImage: "linear-gradient(270deg, black 0%, transparent 100%)",
         }}
       />
 
-      {/* Halftone dots accent — upper left */}
-      <div
-        className="pointer-events-none absolute inset-0 halftone-fine opacity-30"
-        aria-hidden="true"
-        style={{
-          maskImage: "radial-gradient(ellipse at 0% 0%, black 0%, transparent 35%)",
-          WebkitMaskImage: "radial-gradient(ellipse at 0% 0%, black 0%, transparent 35%)",
-        }}
-      />
+      {/* Crosshair decoration top-right */}
+      <div className="absolute right-0 top-0 font-mono text-[10px] text-[var(--color-text-quaternary)]" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="0.5" opacity="0.3">
+          <line x1="8" y1="0" x2="8" y2="16" />
+          <line x1="0" y1="8" x2="16" y2="8" />
+          <circle cx="8" cy="8" r="3" />
+        </svg>
+      </div>
 
       <div className="relative">
-        <div className="mb-3 flex items-center gap-2 text-[11px]">
-          <span className="font-mono text-[#666]">{sectionConfig.label}</span>
+        {/* Pink accent line */}
+        <div className="mb-4 h-[3px] w-[60px] bg-[#e5005a]" aria-hidden="true" />
+
+        <div className="mb-3 flex flex-wrap items-center gap-3 text-[11px]">
+          <span className="barcode-label">{sectionConfig.label}</span>
           {agentEndpoint && (
-            <span className="font-mono text-[#444]">{agentEndpoint}</span>
+            <span className="font-mono text-[var(--color-text-quaternary)]">{agentEndpoint}</span>
           )}
-          {/* ASCII divider accent */}
-          <span className="ml-auto font-mono text-[7px] text-[rgba(255,255,255,0.06)]" aria-hidden="true">
-            ░▒▓█▓▒░
+          <span className="ml-auto font-mono text-[10px] text-[var(--color-text-quaternary)]" aria-hidden="true">
+            {sectionConfig.hintLabel}
           </span>
         </div>
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+
+        {/* Barcode strip */}
+        <div className="mb-4 flex items-center gap-[2px]" aria-hidden="true">
+          {[2,1,3,1,2,1,3,2,1,2,3,1,1,2,1,3,1,2,1,3,2,1].map((w, i) => (
+            <div key={i} className="h-[4px] bg-[#0a0a0a]" style={{ width: `${w}px` }} />
+          ))}
+          <span className="ml-2 font-mono text-[8px] uppercase tracking-[0.2em] text-[var(--color-text-quaternary)]">
+            {sectionConfig.id.toUpperCase()}
+          </span>
+        </div>
+
+        <div className="viewfinder flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h1 className="text-[2rem] font-semibold tracking-[-0.04em] text-[#ededed] sm:text-[2.4rem]">
+            <h1 className="font-display text-[2.8rem] uppercase leading-[0.9] tracking-[0.01em] text-[#0a0a0a] sm:text-[3.4rem]">
               {title}
             </h1>
+            {/* Animated pink underline that extends on mount */}
+            <div className="mt-2 h-[2px] w-0 animate-slide-in-left bg-[#e5005a]" style={{ animationFillMode: "forwards", width: "100%", maxWidth: "200px" }} aria-hidden="true" />
             {description && (
-              <p className="mt-2 max-w-3xl text-[14px] leading-6 text-[#a1a1a1]">
+              <p className="mt-3 max-w-3xl text-[14px] leading-6 text-[var(--color-text-secondary)]">
                 {description}
               </p>
             )}
@@ -79,8 +100,17 @@ export function PageHeader({
             </div>
           )}
         </div>
-        {/* Dithered divider line — halftone dots instead of solid line */}
-        <div className="mt-4 h-px ht-divider" />
+
+        {/* Dense data readouts */}
+        <div className="mt-4 flex items-center gap-4 font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-quaternary)]" aria-hidden="true">
+          <span>MODULE::{sectionConfig.id.toUpperCase()}</span>
+          <span className="h-1 w-1 bg-[#e5005a]" />
+          <span>STATUS::ACTIVE</span>
+          <span className="h-1 w-1 bg-[#e5005a]" />
+          <span>RENDER::OK</span>
+        </div>
+
+        <div className="mt-3 h-[2px] bg-[#0a0a0a]" />
       </div>
     </div>
   );

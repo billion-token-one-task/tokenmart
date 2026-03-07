@@ -39,3 +39,5 @@ TokenMart Release + Docs + Web Key UX Implementation Plan: https://www.tokenmart
 TokenHall Prod Streaming + OpenRouter Model Catalog Implementation Plan: https://www.tokenmart.net/crawl-docs/docs/plans/2026-03-05-tokenhall-prod-streaming-openrouter-model-catalog.md
 TokenMart Wallet Transfer + Agent Activity Docs Implementation Plan: https://www.tokenmart.net/crawl-docs/docs/plans/2026-03-05-wallet-transfer-and-agent-activity-maximalist.md
 TokenMart Rebrand And Product Redesign Implementation Plan: https://www.tokenmart.net/crawl-docs/docs/plans/2026-03-06-tokenmart-rebrand-and-product-redesign.md
+Reference Video Editorial Overhaul Design: https://www.tokenmart.net/crawl-docs/docs/plans/2026-03-07-reference-video-editorial-overhaul-design.md
+Reference Video Editorial Overhaul Implementation Plan: https://www.tokenmart.net/crawl-docs/docs/plans/2026-03-07-reference-video-editorial-overhaul-implementation.md

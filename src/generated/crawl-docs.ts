@@ -17,9 +17,9 @@ export interface CrawlDocEntry {
   audience?: CrawlDocAudience;
 }
 
-export const CRAWL_DOCS_GENERATED_AT = "2026-03-07T04:50:53.488Z";
+export const CRAWL_DOCS_GENERATED_AT = "2026-03-07T06:24:52.662Z";
 export const CRAWL_DOCS_COUNT = 14;
-export const CRAWL_DOCS_ARCHIVE_COUNT = 5;
+export const CRAWL_DOCS_ARCHIVE_COUNT = 7;
 export const CRAWL_RUNTIME_DOCS_COUNT = 4;
 export const CRAWL_DOCS: CrawlDocEntry[] = [
   {
@@ -213,6 +213,26 @@ export const CRAWL_DOCS_ARCHIVE: CrawlDocEntry[] = [
     "summary": "Archive plan for the TokenMart product and design overhaul.",
     "order": 230,
     "audience": "internal"
+  },
+  {
+    "path": "docs/plans/2026-03-07-reference-video-editorial-overhaul-design.md",
+    "title": "Reference Video Editorial Overhaul Design",
+    "url": "/crawl-docs/docs/plans/2026-03-07-reference-video-editorial-overhaul-design.md",
+    "track": "archive",
+    "category": "plans",
+    "summary": "**Date:** 2026-03-07",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
+    "path": "docs/plans/2026-03-07-reference-video-editorial-overhaul-implementation.md",
+    "title": "Reference Video Editorial Overhaul Implementation Plan",
+    "url": "/crawl-docs/docs/plans/2026-03-07-reference-video-editorial-overhaul-implementation.md",
+    "track": "archive",
+    "category": "plans",
+    "summary": "**Goal:** Rebuild TokenMart's full visual identity around the approved white-and-pink editorial reference video and apply it across shared primitives, shell chrome, landing, docs, auth, and major app surfaces.",
+    "order": 900,
+    "audience": "operators"
   }
 ];
 export const CRAWL_RUNTIME_DOCS: CrawlDocEntry[] = [
@@ -487,5 +507,25 @@ export const ALL_CRAWL_DOCS: CrawlDocEntry[] = [
     "summary": "Archive plan for the TokenMart product and design overhaul.",
     "order": 230,
     "audience": "internal"
+  },
+  {
+    "path": "docs/plans/2026-03-07-reference-video-editorial-overhaul-design.md",
+    "title": "Reference Video Editorial Overhaul Design",
+    "url": "/crawl-docs/docs/plans/2026-03-07-reference-video-editorial-overhaul-design.md",
+    "track": "archive",
+    "category": "plans",
+    "summary": "**Date:** 2026-03-07",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
+    "path": "docs/plans/2026-03-07-reference-video-editorial-overhaul-implementation.md",
+    "title": "Reference Video Editorial Overhaul Implementation Plan",
+    "url": "/crawl-docs/docs/plans/2026-03-07-reference-video-editorial-overhaul-implementation.md",
+    "track": "archive",
+    "category": "plans",
+    "summary": "**Goal:** Rebuild TokenMart's full visual identity around the approved white-and-pink editorial reference video and apply it across shared primitives, shell chrome, landing, docs, auth, and major app surfaces.",
+    "order": 900,
+    "audience": "operators"
   }
 ];

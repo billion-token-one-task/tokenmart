@@ -28,7 +28,7 @@ export default function DocsPage() {
   return (
     <>
       <DocsHero
-        eyebrow="system directory"
+        eyebrow="DOC INDEX 01"
         title={docsNarrative.hero.title}
         description={docsNarrative.hero.description}
         actions={
@@ -61,43 +61,45 @@ export default function DocsPage() {
       />
 
       <DocsSection
-        eyebrow="TRACKS"
-        title="Choose the lane that matches the job."
+        eyebrow="DOC INDEX 02"
+        title="Choose the track that matches the work."
         description="The docs IA is split so product understanding, implementation detail, runtime references, and archive material stop competing for the same attention."
       >
-        <div className="grid gap-4 xl:grid-cols-2">
-          {DOCS_TRACKS.map((track) => (
-            <DocsTrackCard
-              key={track.track}
-              href={track.href}
-              eyebrow={track.track.toUpperCase()}
-              title={track.label}
-              description={track.description}
-            />
+        <div className="grid gap-0 border-2 border-[#0a0a0a] xl:grid-cols-2">
+          {DOCS_TRACKS.map((track, i) => (
+            <div key={track.track} className={i < DOCS_TRACKS.length - 1 ? "border-b-2 border-[#0a0a0a] xl:border-b-0 xl:odd:border-r-2" : "xl:odd:border-r-2 border-[#0a0a0a]"}>
+              <DocsTrackCard
+                href={track.href}
+                eyebrow={track.track.toUpperCase()}
+                title={track.label}
+                description={track.description}
+              />
+            </div>
           ))}
         </div>
       </DocsSection>
 
       <DocsSection
-        eyebrow="START PATHS"
+        eyebrow="DOC INDEX 03"
         title="Route-level entrypoints"
         description="Each route is curated around a job-to-be-done, not just a file list. Use these pages to move through the product in a deliberate order."
       >
-        <div className="grid gap-4 xl:grid-cols-2">
-          {DOCS_ROUTES.filter((route) => route.href !== "/docs").map((route) => (
-            <DocsTrackCard
-              key={route.href}
-              href={route.href}
-              eyebrow={route.eyebrow}
-              title={route.label}
-              description={route.description}
-            />
+        <div className="grid gap-0 border-2 border-[#0a0a0a] xl:grid-cols-2">
+          {DOCS_ROUTES.filter((route) => route.href !== "/docs").map((route, i, arr) => (
+            <div key={route.href} className={i < arr.length - 1 ? "border-b-2 border-[#0a0a0a] xl:border-b-0 xl:odd:border-r-2" : "xl:odd:border-r-2 border-[#0a0a0a]"}>
+              <DocsTrackCard
+                href={route.href}
+                eyebrow={route.eyebrow}
+                title={route.label}
+                description={route.description}
+              />
+            </div>
           ))}
         </div>
       </DocsSection>
 
       <DocsSection
-        eyebrow="START HERE"
+        eyebrow="DOC INDEX 04"
         title="Recommended first reads"
         description="These are the highest-leverage documents for understanding TokenMart quickly without falling into implementation-plan noise."
       >
@@ -109,7 +111,7 @@ export default function DocsPage() {
       </DocsSection>
 
       <DocsSection
-        eyebrow="FEATURED"
+        eyebrow="DOC INDEX 05"
         title="Featured references from the live crawl manifest"
         description="These cards are pulled from the generated docs metadata, so the in-app docs and crawler surfaces stay aligned."
       >
@@ -121,7 +123,7 @@ export default function DocsPage() {
       </DocsSection>
 
       <DocsSection
-        eyebrow="CRAWLERS"
+        eyebrow="DOC INDEX 06"
         title="Crawler-visible surfaces"
         description="TokenMart keeps its markdown and machine-readable discovery endpoints explicit so search, agents, and external automation can crawl the same knowledge graph humans read."
       >
