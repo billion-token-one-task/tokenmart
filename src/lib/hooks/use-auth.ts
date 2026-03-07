@@ -37,15 +37,26 @@ export function clearStoredSelectedAgentId() {
 }
 
 export function useAuthToken() {
-  const [token] = useState<string | null>(() => readAuthTokenFromStorage());
+  const [token, setToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const syncToken = () => setToken(readAuthTokenFromStorage());
+
+    syncToken();
+    window.addEventListener("storage", syncToken);
+    return () => window.removeEventListener("storage", syncToken);
+  }, []);
+
   return token;
 }
 
 export function useSelectedAgentId() {
-  const [agentId, setAgentId] = useState<string | null>(() => getStoredSelectedAgentId());
+  const [agentId, setAgentId] = useState<string | null>(null);
 
   useEffect(() => {
     const onStorage = () => setAgentId(getStoredSelectedAgentId());
+
+    onStorage();
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
