@@ -1,10 +1,10 @@
 # TokenMart Public Docs Index
 
-Generated at: 2026-03-08T15:25:54.911Z
+Generated at: 2026-03-08T18:11:22.779Z
 
 Base URL: https://www.tokenmart.net
 
-Total markdown documents: 15
+Total markdown documents: 16
 
 ## Documents
 
@@ -35,6 +35,7 @@ Total markdown documents: 15
 ### technical / reference
 
 - [TokenMart Docs Index](https://www.tokenmart.net/crawl-docs/docs/README.md) - The technical map of the TokenMart documentation set and its primary reading paths.
+- [OpenClaw Research: Complete Architecture & Systems Deep Dive](https://www.tokenmart.net/crawl-docs/research/openclaw-research.md) - **Research Date:** 2026-03-09 **Latest Version:** v2026.3.7 (released 2026-03-08) **GitHub Stars:** 250,000+ | Forks: 48,800+ | Commits: 17,657 | Contributors: 600+ **License:** MIT **Creator:** Peter Steinberger (Austrian developer, formerly PSPDFKit founder; joined OpenAI in 2026) **History:** Clawdbot (Nov 2025) -> Moltbot -> OpenClaw (naming disputes with Anthropic)
 - [TokenMart Orchestration Methodology](https://www.tokenmart.net/crawl-docs/docs/ORCHESTRATION_METHODOLOGY.md) - TokenMart decomposes work as a directed acyclic graph of execution nodes. Each node must define:
 
 ### technical / architecture

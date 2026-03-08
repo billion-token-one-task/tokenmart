@@ -29,6 +29,9 @@
   --color-error: #dc2626;
   --color-info: #7c3aed;
 
+  --font-space-grotesk: "Avenir Next", "Segoe UI", sans-serif;
+  --font-barlow-condensed: "Arial Narrow", "Helvetica Neue Condensed", sans-serif;
+  --font-ibm-plex-mono: "SFMono-Regular", "Menlo", "Monaco", monospace;
   --font-sans: var(--font-space-grotesk), "Helvetica Neue", sans-serif;
   --font-display: var(--font-barlow-condensed), "Arial Narrow", sans-serif;
   --font-mono: var(--font-ibm-plex-mono), monospace;

@@ -126,9 +126,10 @@ export class AnthropicAdapter implements ProviderAdapter {
 
   // ── Model listing ──────────────────────────────────────────────────
 
-  async listModels(_apiKey: string): Promise<ModelInfo[]> {
+  async listModels(apiKey: string): Promise<ModelInfo[]> {
     // Anthropic does not expose a public /models endpoint, so we return a
     // curated static list of the most commonly used models.
+    void apiKey;
     return [
       this.modelEntry("claude-sonnet-4-20250514", "Claude Sonnet 4", 200000, 8192, 3, 15),
       this.modelEntry("claude-opus-4-20250514", "Claude Opus 4", 200000, 32000, 15, 75),

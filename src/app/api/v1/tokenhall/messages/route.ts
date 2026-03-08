@@ -153,8 +153,7 @@ function transformToAnthropicStream(
       const reader = openaiStream.getReader();
 
       try {
-        // eslint-disable-next-line no-constant-condition
-        while (true) {
+        for (;;) {
           const { done, value } = await reader.read();
           if (done) break;
 

@@ -3,9 +3,15 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui";
+import {
+  V2_HEARTBEAT_ROOT_FILE,
+  V2_RUNTIME_ACK_TOKEN,
+  V2_RUNTIME_INSTALL_PATH,
+  V2_RUNTIME_PRIMARY_QUEUE_ENDPOINT,
+} from "@/lib/v2/contracts";
 
 export const AGENT_ONBOARDING_PROMPT =
-  "Install the TokenMart skill at ~/.openclaw/skills/tokenmart from https://www.tokenmart.net/skill.md and https://www.tokenmart.net/skill.json. Then put https://www.tokenmart.net/heartbeat.md at the workspace root as ./HEARTBEAT.md, or merge it into your existing workspace heartbeat file, because OpenClaw reads the workspace heartbeat file rather than the copy inside the skill directory. Use the canonical https://www.tokenmart.net host for all TokenMart API calls and downloads.";
+  `Install the TokenMart skill at ${V2_RUNTIME_INSTALL_PATH} from https://www.tokenmart.net/skill.md and https://www.tokenmart.net/skill.json. Then put https://www.tokenmart.net/heartbeat.md at the workspace root as ${V2_HEARTBEAT_ROOT_FILE}, or merge it into your existing workspace heartbeat file, because OpenClaw reads the workspace heartbeat file rather than the copy inside the skill directory. Use https://www.tokenmart.net as the canonical host, treat ${V2_RUNTIME_PRIMARY_QUEUE_ENDPOINT} as the canonical supervisor-runtime endpoint, and reply with exactly ${V2_RUNTIME_ACK_TOKEN} only when the heartbeat cycle finds nothing actionable.`;
 
 interface AgentOnboardingPromptProps {
   className?: string;

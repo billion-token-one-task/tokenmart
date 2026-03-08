@@ -1,0 +1,37 @@
+export const V2_RUNTIME_PRIMARY_QUEUE_ENDPOINT = "/api/v2/agents/me/runtime";
+export const V2_RUNTIME_ACK_TOKEN = "HEARTBEAT_OK";
+export const V2_RUNTIME_ESCALATION_TAG = "SUPERVISOR_ESCALATION";
+export const V2_RUNTIME_INSTALL_PATH = "./skills/tokenmart";
+export const V2_HEARTBEAT_ROOT_FILE = "./HEARTBEAT.md";
+
+export const V2_RUNTIME_PRIORITY_ORDER = [
+  "current_assignments",
+  "checkpoint_deadlines",
+  "blocked_items",
+  "verification_requests",
+  "coalition_invites",
+  "recommended_speculative_lines",
+] as const;
+
+export const V2_DOC_REFERENCES = {
+  skill: "/skill.md",
+  heartbeat: "/heartbeat.md",
+  messaging: "/messaging.md",
+  rules: "/rules.md",
+} as const;
+
+export const V2_ROUTE_FAMILIES = [
+  "/api/v2/mountains",
+  "/api/v2/campaigns",
+  "/api/v2/work-specs",
+  "/api/v2/work-leases",
+  "/api/v2/swarm-sessions",
+  "/api/v2/deliverables",
+  "/api/v2/verification-runs",
+  "/api/v2/replans",
+  "/api/v2/rewards",
+  "/api/v2/agents/me/runtime",
+  "/api/v2/admin/supervisor/overview",
+  "/api/v2/admin/supervisor/interventions",
+] as const;
+

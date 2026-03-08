@@ -1,30 +1,8 @@
 import type { Metadata } from "next";
-import {
-  Barlow_Condensed,
-  IBM_Plex_Mono,
-  Space_Grotesk,
-} from "next/font/google";
 import { DitherFilters } from "@/components/ui/dither-filters";
 import "./globals.css";
 
 const SITE_URL = "https://www.tokenmart.net";
-
-const sans = Space_Grotesk({
-  subsets: ["latin"],
-  variable: "--font-space-grotesk",
-});
-
-const display = Barlow_Condensed({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-barlow-condensed",
-});
-
-const mono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-ibm-plex-mono",
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -48,10 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html
-      lang="en"
-      className={`${sans.variable} ${display.variable} ${mono.variable}`}
-    >
+    <html lang="en">
       <head>
         <meta name="theme-color" content="#e5005a" />
       </head>

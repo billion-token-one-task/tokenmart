@@ -1,444 +1,324 @@
 "use client";
 
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  EmptyState,
-  Skeleton,
-} from "@/components/ui";
-import { authHeaders, useAuthToken } from "@/lib/hooks/use-auth";
+  formatCompactValue,
+  LeaseCard,
+  PhaseRail,
+  RuntimeHero,
+  RuntimeList,
+  RuntimeSection,
+  TelemetryTile,
+} from "@/components/mission-runtime";
+import { Badge, Button, EmptyState, Skeleton } from "@/components/ui";
+import { authHeaders, useAuthState } from "@/lib/hooks/use-auth";
+import { fetchJsonResult, isMissingAgentResponse } from "@/lib/http/client-json";
+import type { AgentRuntimeView, MountainSummary } from "@/lib/v2/types";
 
-interface ScoreComponent {
-  value: number;
-  max: number;
-  label: string;
-}
-
-interface ServiceHealth {
-  score: number;
-  confidence: number;
-  runtime_mode: string;
-  declared_interval_seconds: number | null;
-  components: {
-    cadence: ScoreComponent;
-    challenge_reliability: ScoreComponent;
-    latency: ScoreComponent;
-    chain_continuity: ScoreComponent;
-  };
-  metrics: Record<string, unknown>;
-}
-
-interface OrchestrationCapability {
-  score: number;
-  confidence: number;
-  components: {
-    delivery: ScoreComponent;
-    review: ScoreComponent;
-    collaboration: ScoreComponent;
-    planning: ScoreComponent;
-    decomposition_quality: ScoreComponent;
-  };
-  metrics: Record<string, unknown>;
-}
-
-interface MarketTrust {
-  trust_score: number;
-  karma: number;
-  trust_tier: number;
-}
-
-interface WorkQueueItem {
-  id: string;
-  kind: string;
-  title: string;
-  description: string | null;
-  priority: number;
-  status: string;
-  href: string | null;
-  reasons: string[];
-  metadata: Record<string, unknown>;
-}
-
-interface AgentResponse {
-  agent: {
-    id: string;
-    name: string;
-    description: string | null;
-    trust_tier: number;
-  };
-  daemon_score: {
-    score: number;
-    chain_length: number;
-    service_health_score: number;
-    orchestration_score: number;
-    score_confidence: number;
-    runtime_mode: string;
-  } | null;
-  service_health: ServiceHealth | null;
-  orchestration_capability: OrchestrationCapability | null;
-  market_trust: MarketTrust;
-  credits: {
-    balance: number;
-    total_earned: number;
-    total_spent: number;
-  };
-}
-
-interface DashboardResponse {
-  work_queue: WorkQueueItem[];
-  work_queue_summary: {
-    pending_reviews: number;
-    pending_conversations: number;
-    active_claims: number;
-    recommended_bounties: number;
-    execution_nodes: number;
-  };
-  credits: {
-    balance: string;
-    total_earned: string;
-    total_spent: string;
-  };
-  daemon_score: {
-    score: number;
-    chain_length: number;
-    service_health_score: number;
-    orchestration_score: number;
-    runtime_mode: string;
-  };
-  service_health: ServiceHealth | null;
-  orchestration_capability: OrchestrationCapability | null;
-}
-
-function statusVariant(status: string) {
-  switch (status) {
-    case "completed":
-    case "approved":
-    case "verified":
-      return "success" as const;
-    case "in_progress":
-    case "submitted":
-    case "ready":
+function badgeForTone(tone: "directive" | "warning" | "opportunity") {
+  switch (tone) {
+    case "directive":
+      return "info" as const;
+    case "warning":
       return "warning" as const;
-    case "reject":
-    case "rejected":
+    default:
+      return "success" as const;
+  }
+}
+
+function leaseBadge(status: string) {
+  switch (status) {
+    case "active":
+      return "success" as const;
+    case "checkpoint_due":
+    case "submitted":
+      return "warning" as const;
     case "failed":
-    case "needs_changes":
+    case "expired":
       return "danger" as const;
     default:
       return "outline" as const;
   }
 }
 
-function trustTierLabel(tier: number) {
-  switch (tier) {
-    case 3:
-      return "Established";
-    case 2:
-      return "Trusted";
-    case 1:
-      return "Active";
-    default:
-      return "New";
-  }
-}
-
-function percent(value: number) {
-  return `${Math.round(value * 100)}%`;
-}
-
-function ComponentBar({ component }: { component: ScoreComponent }) {
-  const width = Math.max(0, Math.min(100, (component.value / component.max) * 100));
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between font-mono text-[11px] uppercase tracking-[0.08em] text-[#3b342c]">
-        <span>{component.label}</span>
-        <span>
-          {component.value.toFixed(1)} / {component.max}
-        </span>
-      </div>
-      <div className="h-2 border border-[#0a0a0a] bg-[#faf7f2]">
-        <div className="h-full bg-[#e5005a]" style={{ width: `${width}%` }} />
-      </div>
-    </div>
-  );
-}
-
-function MetricCard({ label, value, note }: { label: string; value: string; note?: string }) {
-  return (
-    <div className="border-2 border-[#0a0a0a] bg-white px-4 py-4">
-      <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#6b6050]">
-        {label}
-      </div>
-      <div className="mt-2 font-mono text-[24px] font-bold text-[#0a0a0a]">{value}</div>
-      {note && <div className="mt-2 font-mono text-[11px] text-[#6b6050]">{note}</div>}
-    </div>
-  );
-}
-
 export default function DashboardPage() {
-  const token = useAuthToken();
-  const [agentData, setAgentData] = useState<AgentResponse | null>(null);
-  const [dashboardData, setDashboardData] = useState<DashboardResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { token, ready: authReady } = useAuthState();
+  const [runtime, setRuntime] = useState<AgentRuntimeView | null>(null);
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const fetchData = useCallback(async () => {
-    if (!token) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const [agentRes, dashRes] = await Promise.all([
-        fetch("/api/v1/agents/me", { headers: authHeaders(token) }),
-        fetch("/api/v1/agents/dashboard", { headers: authHeaders(token) }),
-      ]);
-
-      if (!agentRes.ok) {
-        if (agentRes.status === 404) {
-          setAgentData(null);
-        } else {
-          throw new Error("Failed to load agent profile");
-        }
-      } else {
-        setAgentData(await agentRes.json());
-      }
-
-      if (!dashRes.ok) throw new Error("Failed to load dashboard");
-      setDashboardData(await dashRes.json());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const isLoading = !authReady || (Boolean(token) && (!hasLoaded || loading));
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (!authReady || !token) return;
+
+    let cancelled = false;
+
+    async function loadRuntime() {
+      const result = await fetchJsonResult<AgentRuntimeView>("/api/v2/agents/me/runtime", {
+        headers: authHeaders(token),
+      });
+
+      if (cancelled) return;
+
+      if (!result.ok) {
+        if (isMissingAgentResponse(result.status, result.errorMessage)) {
+          setRuntime(null);
+        } else {
+          setError(result.errorMessage ?? "Failed to load mission runtime");
+        }
+        setHasLoaded(true);
+        setLoading(false);
+        return;
+      }
+
+      setError(null);
+      setRuntime(result.data);
+      setHasLoaded(true);
+      setLoading(false);
+    }
+
+    void loadRuntime();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authReady, refreshKey, token]);
+
+  const handleRefresh = useCallback(() => {
+    if (!token) return;
+
+    setLoading(true);
+    setError(null);
+    setRefreshKey((value) => value + 1);
+  }, [token]);
+
+  const mountains = useMemo(() => runtime?.mission_context.mountains ?? [], [runtime]);
+  const primaryMountain = mountains[0] ?? null;
+
+  const rail = useMemo(() => {
+    const assignments = runtime?.current_assignments.length ?? 0;
+    const checkpoints = runtime?.checkpoint_deadlines.length ?? 0;
+    const verification = runtime?.verification_requests.length ?? 0;
+    const speculative = runtime?.recommended_speculative_lines.length ?? 0;
+
+    return [
+      {
+        id: "leases",
+        label: "Active Leases",
+        count: String(assignments),
+        note: assignments > 0 ? "Supervisor-issued work in motion" : "No leases assigned",
+        active: assignments > 0,
+      },
+      {
+        id: "checkpoints",
+        label: "Checkpoints",
+        count: String(checkpoints),
+        note: checkpoints > 0 ? "Evidence due before lease renewal" : "No immediate checkpoint debt",
+        active: checkpoints > 0,
+      },
+      {
+        id: "verification",
+        label: "Verification",
+        count: String(verification),
+        note: verification > 0 ? "Requested review or replication work" : "Verification inbox is quiet",
+        active: verification > 0,
+      },
+      {
+        id: "speculation",
+        label: "Speculative Lines",
+        count: String(speculative),
+        note: speculative > 0 ? "Optional side routes with mission upside" : "No speculative branches offered",
+      },
+    ];
+  }, [runtime]);
+
+  const supervisorMessages = useMemo(
+    () =>
+      (runtime?.supervisor_messages ?? []).map((message) => ({
+        id: message.id,
+        title: message.subject,
+        description: message.detail,
+        badge: <Badge variant={badgeForTone(message.tone)}>{message.tone}</Badge>,
+        meta: "Supervisor directive surface",
+      })),
+    [runtime]
+  );
+
+  const mountainItems = useMemo(
+    () =>
+      mountains.map((mountain: MountainSummary) => ({
+        id: mountain.id,
+        title: mountain.title,
+        description: mountain.thesis,
+        badge: <Badge variant={mountain.status === "active" ? "success" : "outline"}>{mountain.status}</Badge>,
+        meta: `${mountain.domain} · ${mountain.progress_percent}% verified progress · ${formatCompactValue(mountain.reward_distributed_credits)} credits distributed`,
+      })),
+    [mountains]
+  );
 
   return (
-    <div className="max-w-7xl">
+    <div className="max-w-7xl space-y-8">
       <PageHeader
-        title="Market Core"
-        description="See service health, market trust, orchestration capability, and the ranked agenda your agent should actually work from."
+        title="Mission Home"
+        description="See the supervisor-controlled runtime, why work is assigned to you, and what mountain you are currently helping climb."
         section="platform"
         actions={
-          <Button variant="secondary" onClick={fetchData} disabled={loading}>
-            Refresh
-          </Button>
+          <>
+            <Button variant="secondary" onClick={() => void handleRefresh()} disabled={isLoading}>
+              Refresh runtime
+            </Button>
+            <Link href="/dashboard/runtime">
+              <Button>Open workbench</Button>
+            </Link>
+          </>
         }
       />
 
-      {error && (
-        <div className="mb-6 border-2 border-[rgba(213,61,90,0.4)] bg-[rgba(213,61,90,0.08)] px-4 py-3 font-mono text-[12px] uppercase tracking-[0.08em] text-[var(--color-error)]">
+      {error ? (
+        <div className="border-2 border-[rgba(213,61,90,0.4)] bg-[rgba(213,61,90,0.08)] px-4 py-3 font-mono text-[12px] uppercase tracking-[0.08em] text-[var(--color-error)]">
           {error}
         </div>
-      )}
+      ) : null}
 
-      {loading ? (
+      {isLoading ? (
         <div className="grid gap-4">
-          <Skeleton className="h-32 rounded-none" />
-          <Skeleton className="h-80 rounded-none" />
-          <Skeleton className="h-80 rounded-none" />
+          <Skeleton className="h-40 rounded-none" />
+          <Skeleton className="h-64 rounded-none" />
+          <Skeleton className="h-64 rounded-none" />
         </div>
-      ) : !dashboardData ? (
+      ) : !runtime ? (
         <EmptyState
-          title="No dashboard signal"
-          description="Register an agent to begin collecting health, trust, and orchestration evidence."
+          title="No mission runtime yet"
+          description="Register or select an agent so the supervisor can issue leases, checkpoints, and verification work."
           action={
             <Link href="/agent-register">
-              <Button>Register Agent</Button>
+              <Button>Register agent</Button>
             </Link>
           }
         />
       ) : (
         <>
-          <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <MetricCard
-              label="Service Health"
-              value={String(Math.round(agentData?.service_health?.score ?? dashboardData.service_health?.score ?? 0))}
-              note={agentData?.service_health?.runtime_mode ?? dashboardData.daemon_score.runtime_mode}
+          <RuntimeHero
+            eyebrow="Supervisor Runtime"
+            title={primaryMountain ? primaryMountain.title : "Awaiting assignment"}
+            description={
+              primaryMountain
+                ? primaryMountain.target_problem
+                : "The new v2 runtime routes agents through explicit leases, checkpoints, and verification work instead of the old scored queue."
+            }
+            badges={[
+              `${runtime.current_assignments.length} active assignments`,
+              `${runtime.coalition_invites.length} coalition invites`,
+              `${runtime.verification_requests.length} verification requests`,
+              runtime.mission_context.capability_profile?.collaboration_style ?? "evidence-first",
+            ]}
+          >
+            <LeaseCard
+              title="Why You Were Assigned"
+              subtitle={
+                runtime.supervisor_messages[0]?.detail ??
+                "Supervisor routing uses capability fit, mission reliability, and current load."
+              }
+              status={<Badge variant="glass">role-fit</Badge>}
+              stats={[
+                {
+                  label: "Domains",
+                  value: (runtime.mission_context.capability_profile?.domain_tags ?? []).slice(0, 2).join(" / ") || "unclassified",
+                },
+                {
+                  label: "Preferred Roles",
+                  value:
+                    (runtime.mission_context.capability_profile?.preferred_roles ?? []).slice(0, 2).join(" / ") ||
+                    "not set",
+                },
+                {
+                  label: "Mission Reliability",
+                  value: String(Math.round(runtime.mission_context.reputation?.mission_reliability ?? 0)),
+                },
+                {
+                  label: "Scientific Rigor",
+                  value: String(Math.round(runtime.mission_context.reputation?.scientific_rigor ?? 0)),
+                },
+              ]}
             />
-            <MetricCard
-              label="Orchestration"
-              value={String(Math.round(agentData?.orchestration_capability?.score ?? dashboardData.orchestration_capability?.score ?? 0))}
-              note={`${Math.round((agentData?.orchestration_capability?.confidence ?? dashboardData.orchestration_capability?.confidence ?? 0) * 100)}% confidence`}
+          </RuntimeHero>
+
+          <PhaseRail items={rail} />
+
+          <div className="grid gap-4 xl:grid-cols-4">
+            <TelemetryTile
+              label="Active Leases"
+              value={String(runtime.current_assignments.length)}
+              detail="Work you currently own"
             />
-            <MetricCard
-              label="Market Trust"
-              value={String(Math.round(agentData?.market_trust.trust_score ?? 0))}
-              note={`Tier ${agentData?.market_trust.trust_tier ?? 0} ${trustTierLabel(agentData?.market_trust.trust_tier ?? 0)}`}
+            <TelemetryTile
+              label="Checkpoint Debt"
+              value={String(runtime.checkpoint_deadlines.length)}
+              detail="Evidence windows approaching"
+              tone={runtime.checkpoint_deadlines.length > 0 ? "warning" : "neutral"}
             />
-            <MetricCard
-              label="Credits"
-              value={String(Math.round(agentData?.credits.balance ?? Number(dashboardData.credits.balance)))}
-              note={`Earned ${Math.round(agentData?.credits.total_earned ?? Number(dashboardData.credits.total_earned))}`}
+            <TelemetryTile
+              label="Replication Queue"
+              value={String(runtime.verification_requests.length)}
+              detail="Verification and contradiction handling"
+              tone={runtime.verification_requests.length > 0 ? "warning" : "brand"}
+            />
+            <TelemetryTile
+              label="Open Mountains"
+              value={String(mountains.length)}
+              detail="Mission context visible to this runtime"
+              tone="success"
             />
           </div>
 
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.15fr)]">
-            <Card variant="glass">
-              <CardHeader className="flex items-center justify-between">
-                <div>
-                  <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#6b6050]">
-                    Service Health
-                  </div>
-                  <div className="mt-2 flex items-center gap-2">
-                    <Badge variant="outline">
-                      {(agentData?.service_health?.runtime_mode ?? dashboardData.service_health?.runtime_mode ?? "undeclared").replaceAll("_", " ")}
-                    </Badge>
-                    <Badge variant="glass">
-                      {percent(agentData?.service_health?.confidence ?? dashboardData.service_health?.confidence ?? 0)} confidence
-                    </Badge>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {dashboardData.service_health ? (
-                  <>
-                    <ComponentBar component={dashboardData.service_health.components.cadence} />
-                    <ComponentBar component={dashboardData.service_health.components.challenge_reliability} />
-                    <ComponentBar component={dashboardData.service_health.components.latency} />
-                    <ComponentBar component={dashboardData.service_health.components.chain_continuity} />
-                  </>
-                ) : (
-                  <div className="font-mono text-[12px] text-[#6b6050]">No service health snapshot yet.</div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card variant="glass">
-              <CardHeader className="flex items-center justify-between">
-                <div>
-                  <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#6b6050]">
-                    Orchestration Capability
-                  </div>
-                  <div className="mt-2 flex items-center gap-2">
-                    <Badge variant="outline">
-                      {dashboardData.work_queue_summary.execution_nodes} execution nodes
-                    </Badge>
-                    <Badge variant="glass">
-                      {dashboardData.work_queue_summary.pending_reviews} pending reviews
-                    </Badge>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {dashboardData.orchestration_capability ? (
-                  <>
-                    <ComponentBar component={dashboardData.orchestration_capability.components.delivery} />
-                    <ComponentBar component={dashboardData.orchestration_capability.components.review} />
-                    <ComponentBar component={dashboardData.orchestration_capability.components.collaboration} />
-                    <ComponentBar component={dashboardData.orchestration_capability.components.planning} />
-                    <ComponentBar component={dashboardData.orchestration_capability.components.decomposition_quality} />
-                  </>
-                ) : (
-                  <div className="font-mono text-[12px] text-[#6b6050]">No orchestration snapshot yet.</div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card variant="glass">
-              <CardHeader className="flex items-center justify-between">
-                <div>
-                  <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#6b6050]">
-                    Ranked Agenda
-                  </div>
-                  <div className="mt-2 flex items-center gap-2">
-                    <Badge variant="outline">
-                      {dashboardData.work_queue.length} items
-                    </Badge>
-                    <Badge variant="glass">
-                      tier {agentData?.market_trust.trust_tier ?? 0}
-                    </Badge>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {dashboardData.work_queue.length === 0 ? (
-                  <div className="font-mono text-[12px] text-[#6b6050]">
-                    No ranked agenda items right now.
-                  </div>
-                ) : (
-                  dashboardData.work_queue.slice(0, 8).map((item) => (
-                    <div key={item.id} className="border-2 border-[#0a0a0a] bg-white px-4 py-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant={statusVariant(item.status)}>{item.status}</Badge>
-                        <Badge variant="outline">{item.kind.replaceAll("_", " ")}</Badge>
-                        <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#6b6050]">
-                          priority {item.priority}
-                        </span>
-                      </div>
-                      <div className="mt-3 text-[14px] font-semibold text-[#0a0a0a]">
-                        {item.title}
-                      </div>
-                      {item.description && (
-                        <p className="mt-2 text-[13px] leading-6 text-[#3b342c]">{item.description}</p>
-                      )}
-                      <div className="mt-3 space-y-1 font-mono text-[11px] text-[#6b6050]">
-                        {item.reasons.map((reason, index) => (
-                          <div key={index}>{reason}</div>
-                        ))}
-                      </div>
-                      {item.href && (
-                        <div className="mt-3">
-                          <Link href={item.href}>
-                            <Button size="sm" variant="secondary">
-                              Open Item
-                            </Button>
-                          </Link>
-                        </div>
-                      )}
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
-            <Card variant="glass">
-              <CardHeader>
-                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#6b6050]">
-                  Market Trust
-                </div>
-              </CardHeader>
-              <CardContent className="grid gap-3 md:grid-cols-3">
-                <MetricCard
-                  label="Trust Score"
-                  value={String(Math.round(agentData?.market_trust.trust_score ?? 0))}
+          <RuntimeSection
+            eyebrow="Assignments"
+            title="Lease queue"
+            detail="Every assignment is explicit, bounded, and renews only after evidence-bearing checkpoints."
+          >
+            <div className="grid gap-4 xl:grid-cols-2">
+              {runtime.current_assignments.map((assignment) => (
+                <LeaseCard
+                  key={assignment.lease_id}
+                  title={assignment.title}
+                  subtitle={assignment.summary}
+                  status={<Badge variant={leaseBadge(assignment.status)}>{assignment.status}</Badge>}
+                  stats={[
+                    { label: "Role", value: assignment.role_type },
+                    { label: "Checkpoint", value: assignment.checkpoint_due_at ?? "not set" },
+                    { label: "Lease Ends", value: assignment.expires_at ?? "not set" },
+                    {
+                      label: "Base Credits",
+                      value: formatCompactValue(Number(assignment.reward_envelope.baseCredits ?? assignment.reward_envelope.base_credits ?? 0)),
+                    },
+                  ]}
+                  cta="Open workbench"
+                  href="/dashboard/runtime"
                 />
-                <MetricCard
-                  label="Karma"
-                  value={String(Math.round(agentData?.market_trust.karma ?? 0))}
-                />
-                <MetricCard
-                  label="Trust Tier"
-                  value={`T${agentData?.market_trust.trust_tier ?? 0}`}
-                  note={trustTierLabel(agentData?.market_trust.trust_tier ?? 0)}
-                />
-              </CardContent>
-            </Card>
+              ))}
+            </div>
+          </RuntimeSection>
 
-            <Card variant="glass">
-              <CardHeader>
-                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#6b6050]">
-                  Queue Summary
-                </div>
-              </CardHeader>
-              <CardContent className="grid gap-3 md:grid-cols-5">
-                <MetricCard label="Pending Reviews" value={String(dashboardData.work_queue_summary.pending_reviews)} />
-                <MetricCard label="Conversations" value={String(dashboardData.work_queue_summary.pending_conversations)} />
-                <MetricCard label="Active Claims" value={String(dashboardData.work_queue_summary.active_claims)} />
-                <MetricCard label="Open Bounties" value={String(dashboardData.work_queue_summary.recommended_bounties)} />
-                <MetricCard label="Execution Nodes" value={String(dashboardData.work_queue_summary.execution_nodes)} />
-              </CardContent>
-            </Card>
+          <div className="grid gap-8 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+            <RuntimeSection
+              eyebrow="Supervisor Messages"
+              title="What the supervisor wants next"
+              detail="These messages replace implicit queue drift with explicit intervention and explanation."
+            >
+              <RuntimeList items={supervisorMessages} />
+            </RuntimeSection>
+
+            <RuntimeSection
+              eyebrow="Mission Context"
+              title="Mountains in view"
+              detail="Follow the operator-defined mountains rather than optimizing for generic marketplace activity."
+            >
+              <RuntimeList items={mountainItems} />
+            </RuntimeSection>
           </div>
         </>
       )}

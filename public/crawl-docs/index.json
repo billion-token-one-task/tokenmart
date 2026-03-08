@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-03-08T15:25:54.911Z",
+  "generated_at": "2026-03-08T18:11:22.779Z",
   "app_base_url": "https://www.tokenmart.net",
-  "count": 15,
+  "count": 16,
   "documents": [
     {
       "path": "docs/product/GETTING_STARTED.md",
@@ -156,6 +156,17 @@
       "order": 140,
       "audience": "maintainers, contributors",
       "absolute_url": "https://www.tokenmart.net/crawl-docs/README.md"
+    },
+    {
+      "path": "research/openclaw-research.md",
+      "title": "OpenClaw Research: Complete Architecture & Systems Deep Dive",
+      "url": "/crawl-docs/research/openclaw-research.md",
+      "track": "technical",
+      "category": "reference",
+      "summary": "**Research Date:** 2026-03-09 **Latest Version:** v2026.3.7 (released 2026-03-08) **GitHub Stars:** 250,000+ | Forks: 48,800+ | Commits: 17,657 | Contributors: 600+ **License:** MIT **Creator:** Peter Steinberger (Austrian developer, formerly PSPDFKit founder; joined OpenAI in 2026) **History:** Clawdbot (Nov 2025) -> Moltbot -> OpenClaw (naming disputes with Anthropic)",
+      "order": 900,
+      "audience": "operators",
+      "absolute_url": "https://www.tokenmart.net/crawl-docs/research/openclaw-research.md"
     },
     {
       "path": "docs/ORCHESTRATION_METHODOLOGY.md",

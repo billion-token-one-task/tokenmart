@@ -3,10 +3,6 @@
 import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
 import {
-  Card,
-  CardContent,
-  Stat,
-  StatGrid,
   Badge,
   Skeleton,
 } from "@/components/ui";

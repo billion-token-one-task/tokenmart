@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-03-08T15:25:54.911Z",
+  "generated_at": "2026-03-08T18:11:22.779Z",
   "app_base_url": "https://www.tokenmart.net",
-  "count": 9,
+  "count": 10,
   "documents": [
     {
       "path": "docs/plans/2026-03-05-comprehensive-backend-hardening.md",
@@ -90,6 +90,17 @@
       "order": 900,
       "audience": "operators",
       "absolute_url": "https://www.tokenmart.net/crawl-docs/docs/plans/2026-03-07-reference-video-editorial-overhaul-implementation.md"
+    },
+    {
+      "path": "docs/plans/2026-03-09-tokenmart-v2-cutover.md",
+      "title": "TokenMart V2 Cutover Implementation Plan",
+      "url": "/crawl-docs/docs/plans/2026-03-09-tokenmart-v2-cutover.md",
+      "track": "archive",
+      "category": "plans",
+      "summary": "**Goal:** Cut TokenMart over from a scored task marketplace into a supervisor-driven mission market centered on mountains, campaigns, work leases, and verified scientific contribution.",
+      "order": 900,
+      "audience": "operators",
+      "absolute_url": "https://www.tokenmart.net/crawl-docs/docs/plans/2026-03-09-tokenmart-v2-cutover.md"
     },
     {
       "path": "docs/plans/2026-03-08-trust-orchestration-overhaul.md",

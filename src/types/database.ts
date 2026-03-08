@@ -1371,6 +1371,912 @@ export interface Database {
           },
         ];
       };
+      mountains: {
+        Row: {
+          id: string;
+          title: string;
+          summary: string | null;
+          description: string | null;
+          status: string;
+          priority: number;
+          created_by_account_id: string | null;
+          steward_agent_id: string | null;
+          target_outcome: string | null;
+          success_criteria: Json;
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          summary?: string | null;
+          description?: string | null;
+          status?: string;
+          priority?: number;
+          created_by_account_id?: string | null;
+          steward_agent_id?: string | null;
+          target_outcome?: string | null;
+          success_criteria?: Json;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          summary?: string | null;
+          description?: string | null;
+          status?: string;
+          priority?: number;
+          created_by_account_id?: string | null;
+          steward_agent_id?: string | null;
+          target_outcome?: string | null;
+          success_criteria?: Json;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "mountains_created_by_account_id_fkey";
+            columns: ["created_by_account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "mountains_steward_agent_id_fkey";
+            columns: ["steward_agent_id"];
+            isOneToOne: false;
+            referencedRelation: "agents";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      campaigns: {
+        Row: {
+          id: string;
+          mountain_id: string;
+          title: string;
+          summary: string | null;
+          description: string | null;
+          status: string;
+          campaign_kind: string;
+          coordination_mode: string;
+          priority: number;
+          created_by_account_id: string | null;
+          lead_agent_id: string | null;
+          budget_credits: string | null;
+          start_at: string | null;
+          target_end_at: string | null;
+          completed_at: string | null;
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          mountain_id: string;
+          title: string;
+          summary?: string | null;
+          description?: string | null;
+          status?: string;
+          campaign_kind?: string;
+          coordination_mode?: string;
+          priority?: number;
+          created_by_account_id?: string | null;
+          lead_agent_id?: string | null;
+          budget_credits?: string | null;
+          start_at?: string | null;
+          target_end_at?: string | null;
+          completed_at?: string | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          mountain_id?: string;
+          title?: string;
+          summary?: string | null;
+          description?: string | null;
+          status?: string;
+          campaign_kind?: string;
+          coordination_mode?: string;
+          priority?: number;
+          created_by_account_id?: string | null;
+          lead_agent_id?: string | null;
+          budget_credits?: string | null;
+          start_at?: string | null;
+          target_end_at?: string | null;
+          completed_at?: string | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "campaigns_created_by_account_id_fkey";
+            columns: ["created_by_account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "campaigns_lead_agent_id_fkey";
+            columns: ["lead_agent_id"];
+            isOneToOne: false;
+            referencedRelation: "agents";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "campaigns_mountain_id_fkey";
+            columns: ["mountain_id"];
+            isOneToOne: false;
+            referencedRelation: "mountains";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      swarm_sessions: {
+        Row: {
+          id: string;
+          mountain_id: string;
+          campaign_id: string;
+          title: string;
+          summary: string | null;
+          objective: string | null;
+          status: string;
+          session_kind: string;
+          created_by_account_id: string | null;
+          lead_agent_id: string | null;
+          roster: Json;
+          coordination_contract: Json;
+          metadata: Json;
+          started_at: string | null;
+          last_activity_at: string | null;
+          ended_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          mountain_id: string;
+          campaign_id: string;
+          title: string;
+          summary?: string | null;
+          objective?: string | null;
+          status?: string;
+          session_kind?: string;
+          created_by_account_id?: string | null;
+          lead_agent_id?: string | null;
+          roster?: Json;
+          coordination_contract?: Json;
+          metadata?: Json;
+          started_at?: string | null;
+          last_activity_at?: string | null;
+          ended_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          mountain_id?: string;
+          campaign_id?: string;
+          title?: string;
+          summary?: string | null;
+          objective?: string | null;
+          status?: string;
+          session_kind?: string;
+          created_by_account_id?: string | null;
+          lead_agent_id?: string | null;
+          roster?: Json;
+          coordination_contract?: Json;
+          metadata?: Json;
+          started_at?: string | null;
+          last_activity_at?: string | null;
+          ended_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "swarm_sessions_campaign_id_fkey";
+            columns: ["campaign_id"];
+            isOneToOne: false;
+            referencedRelation: "campaigns";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "swarm_sessions_created_by_account_id_fkey";
+            columns: ["created_by_account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "swarm_sessions_lead_agent_id_fkey";
+            columns: ["lead_agent_id"];
+            isOneToOne: false;
+            referencedRelation: "agents";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "swarm_sessions_mountain_id_fkey";
+            columns: ["mountain_id"];
+            isOneToOne: false;
+            referencedRelation: "mountains";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      work_specs: {
+        Row: {
+          id: string;
+          mountain_id: string;
+          campaign_id: string;
+          parent_work_spec_id: string | null;
+          title: string;
+          summary: string | null;
+          description: string | null;
+          work_kind: string;
+          status: string;
+          execution_mode: string;
+          priority: number;
+          created_by_account_id: string | null;
+          preferred_agent_id: string | null;
+          source_task_id: string | null;
+          source_goal_id: string | null;
+          source_execution_plan_id: string | null;
+          source_execution_node_id: string | null;
+          reward_amount: string;
+          attempt_budget: number;
+          input_contract: Json;
+          output_contract: Json;
+          acceptance_criteria: Json;
+          lease_policy: Json;
+          verification_policy: Json;
+          reward_policy: Json;
+          metadata: Json;
+          due_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          mountain_id: string;
+          campaign_id: string;
+          parent_work_spec_id?: string | null;
+          title: string;
+          summary?: string | null;
+          description?: string | null;
+          work_kind?: string;
+          status?: string;
+          execution_mode?: string;
+          priority?: number;
+          created_by_account_id?: string | null;
+          preferred_agent_id?: string | null;
+          source_task_id?: string | null;
+          source_goal_id?: string | null;
+          source_execution_plan_id?: string | null;
+          source_execution_node_id?: string | null;
+          reward_amount?: string;
+          attempt_budget?: number;
+          input_contract?: Json;
+          output_contract?: Json;
+          acceptance_criteria?: Json;
+          lease_policy?: Json;
+          verification_policy?: Json;
+          reward_policy?: Json;
+          metadata?: Json;
+          due_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          mountain_id?: string;
+          campaign_id?: string;
+          parent_work_spec_id?: string | null;
+          title?: string;
+          summary?: string | null;
+          description?: string | null;
+          work_kind?: string;
+          status?: string;
+          execution_mode?: string;
+          priority?: number;
+          created_by_account_id?: string | null;
+          preferred_agent_id?: string | null;
+          source_task_id?: string | null;
+          source_goal_id?: string | null;
+          source_execution_plan_id?: string | null;
+          source_execution_node_id?: string | null;
+          reward_amount?: string;
+          attempt_budget?: number;
+          input_contract?: Json;
+          output_contract?: Json;
+          acceptance_criteria?: Json;
+          lease_policy?: Json;
+          verification_policy?: Json;
+          reward_policy?: Json;
+          metadata?: Json;
+          due_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "work_specs_campaign_id_fkey";
+            columns: ["campaign_id"];
+            isOneToOne: false;
+            referencedRelation: "campaigns";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "work_specs_created_by_account_id_fkey";
+            columns: ["created_by_account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "work_specs_mountain_id_fkey";
+            columns: ["mountain_id"];
+            isOneToOne: false;
+            referencedRelation: "mountains";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "work_specs_parent_work_spec_id_fkey";
+            columns: ["parent_work_spec_id"];
+            isOneToOne: false;
+            referencedRelation: "work_specs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "work_specs_preferred_agent_id_fkey";
+            columns: ["preferred_agent_id"];
+            isOneToOne: false;
+            referencedRelation: "agents";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "work_specs_source_execution_node_id_fkey";
+            columns: ["source_execution_node_id"];
+            isOneToOne: false;
+            referencedRelation: "execution_plan_nodes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "work_specs_source_execution_plan_id_fkey";
+            columns: ["source_execution_plan_id"];
+            isOneToOne: false;
+            referencedRelation: "execution_plans";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "work_specs_source_goal_id_fkey";
+            columns: ["source_goal_id"];
+            isOneToOne: false;
+            referencedRelation: "goals";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "work_specs_source_task_id_fkey";
+            columns: ["source_task_id"];
+            isOneToOne: false;
+            referencedRelation: "tasks";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      work_leases: {
+        Row: {
+          id: string;
+          mountain_id: string;
+          campaign_id: string;
+          work_spec_id: string;
+          swarm_session_id: string | null;
+          agent_id: string;
+          supervisor_account_id: string | null;
+          status: string;
+          lease_mode: string;
+          lease_reason: string | null;
+          attempt_number: number;
+          priority: number;
+          claimed_at: string | null;
+          activated_at: string | null;
+          expires_at: string | null;
+          released_at: string | null;
+          last_heartbeat_at: string | null;
+          submission_deadline_at: string | null;
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          mountain_id: string;
+          campaign_id: string;
+          work_spec_id: string;
+          swarm_session_id?: string | null;
+          agent_id: string;
+          supervisor_account_id?: string | null;
+          status?: string;
+          lease_mode?: string;
+          lease_reason?: string | null;
+          attempt_number?: number;
+          priority?: number;
+          claimed_at?: string | null;
+          activated_at?: string | null;
+          expires_at?: string | null;
+          released_at?: string | null;
+          last_heartbeat_at?: string | null;
+          submission_deadline_at?: string | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          mountain_id?: string;
+          campaign_id?: string;
+          work_spec_id?: string;
+          swarm_session_id?: string | null;
+          agent_id?: string;
+          supervisor_account_id?: string | null;
+          status?: string;
+          lease_mode?: string;
+          lease_reason?: string | null;
+          attempt_number?: number;
+          priority?: number;
+          claimed_at?: string | null;
+          activated_at?: string | null;
+          expires_at?: string | null;
+          released_at?: string | null;
+          last_heartbeat_at?: string | null;
+          submission_deadline_at?: string | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "work_leases_agent_id_fkey";
+            columns: ["agent_id"];
+            isOneToOne: false;
+            referencedRelation: "agents";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "work_leases_campaign_id_fkey";
+            columns: ["campaign_id"];
+            isOneToOne: false;
+            referencedRelation: "campaigns";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "work_leases_mountain_id_fkey";
+            columns: ["mountain_id"];
+            isOneToOne: false;
+            referencedRelation: "mountains";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "work_leases_supervisor_account_id_fkey";
+            columns: ["supervisor_account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "work_leases_swarm_session_id_fkey";
+            columns: ["swarm_session_id"];
+            isOneToOne: false;
+            referencedRelation: "swarm_sessions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "work_leases_work_spec_id_fkey";
+            columns: ["work_spec_id"];
+            isOneToOne: false;
+            referencedRelation: "work_specs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      deliverables: {
+        Row: {
+          id: string;
+          mountain_id: string;
+          campaign_id: string;
+          work_spec_id: string;
+          work_lease_id: string | null;
+          swarm_session_id: string | null;
+          agent_id: string;
+          superseded_by_deliverable_id: string | null;
+          status: string;
+          deliverable_kind: string;
+          title: string;
+          summary: string | null;
+          body: string | null;
+          artifact_uri: string | null;
+          content_hash: string | null;
+          payload: Json;
+          metrics: Json;
+          metadata: Json;
+          submitted_at: string | null;
+          accepted_at: string | null;
+          rejected_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          mountain_id: string;
+          campaign_id: string;
+          work_spec_id: string;
+          work_lease_id?: string | null;
+          swarm_session_id?: string | null;
+          agent_id: string;
+          superseded_by_deliverable_id?: string | null;
+          status?: string;
+          deliverable_kind?: string;
+          title: string;
+          summary?: string | null;
+          body?: string | null;
+          artifact_uri?: string | null;
+          content_hash?: string | null;
+          payload?: Json;
+          metrics?: Json;
+          metadata?: Json;
+          submitted_at?: string | null;
+          accepted_at?: string | null;
+          rejected_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          mountain_id?: string;
+          campaign_id?: string;
+          work_spec_id?: string;
+          work_lease_id?: string | null;
+          swarm_session_id?: string | null;
+          agent_id?: string;
+          superseded_by_deliverable_id?: string | null;
+          status?: string;
+          deliverable_kind?: string;
+          title?: string;
+          summary?: string | null;
+          body?: string | null;
+          artifact_uri?: string | null;
+          content_hash?: string | null;
+          payload?: Json;
+          metrics?: Json;
+          metadata?: Json;
+          submitted_at?: string | null;
+          accepted_at?: string | null;
+          rejected_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "deliverables_agent_id_fkey";
+            columns: ["agent_id"];
+            isOneToOne: false;
+            referencedRelation: "agents";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "deliverables_campaign_id_fkey";
+            columns: ["campaign_id"];
+            isOneToOne: false;
+            referencedRelation: "campaigns";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "deliverables_mountain_id_fkey";
+            columns: ["mountain_id"];
+            isOneToOne: false;
+            referencedRelation: "mountains";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "deliverables_superseded_by_deliverable_id_fkey";
+            columns: ["superseded_by_deliverable_id"];
+            isOneToOne: false;
+            referencedRelation: "deliverables";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "deliverables_swarm_session_id_fkey";
+            columns: ["swarm_session_id"];
+            isOneToOne: false;
+            referencedRelation: "swarm_sessions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "deliverables_work_lease_id_fkey";
+            columns: ["work_lease_id"];
+            isOneToOne: false;
+            referencedRelation: "work_leases";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "deliverables_work_spec_id_fkey";
+            columns: ["work_spec_id"];
+            isOneToOne: false;
+            referencedRelation: "work_specs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      verification_runs: {
+        Row: {
+          id: string;
+          mountain_id: string;
+          campaign_id: string;
+          work_spec_id: string;
+          work_lease_id: string | null;
+          swarm_session_id: string | null;
+          deliverable_id: string | null;
+          verifier_agent_id: string | null;
+          reviewer_account_id: string | null;
+          status: string;
+          verification_kind: string;
+          score: string | null;
+          findings: Json;
+          checks: Json;
+          logs_uri: string | null;
+          metadata: Json;
+          started_at: string | null;
+          completed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          mountain_id: string;
+          campaign_id: string;
+          work_spec_id: string;
+          work_lease_id?: string | null;
+          swarm_session_id?: string | null;
+          deliverable_id?: string | null;
+          verifier_agent_id?: string | null;
+          reviewer_account_id?: string | null;
+          status?: string;
+          verification_kind?: string;
+          score?: string | null;
+          findings?: Json;
+          checks?: Json;
+          logs_uri?: string | null;
+          metadata?: Json;
+          started_at?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          mountain_id?: string;
+          campaign_id?: string;
+          work_spec_id?: string;
+          work_lease_id?: string | null;
+          swarm_session_id?: string | null;
+          deliverable_id?: string | null;
+          verifier_agent_id?: string | null;
+          reviewer_account_id?: string | null;
+          status?: string;
+          verification_kind?: string;
+          score?: string | null;
+          findings?: Json;
+          checks?: Json;
+          logs_uri?: string | null;
+          metadata?: Json;
+          started_at?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "verification_runs_campaign_id_fkey";
+            columns: ["campaign_id"];
+            isOneToOne: false;
+            referencedRelation: "campaigns";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "verification_runs_deliverable_id_fkey";
+            columns: ["deliverable_id"];
+            isOneToOne: false;
+            referencedRelation: "deliverables";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "verification_runs_mountain_id_fkey";
+            columns: ["mountain_id"];
+            isOneToOne: false;
+            referencedRelation: "mountains";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "verification_runs_reviewer_account_id_fkey";
+            columns: ["reviewer_account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "verification_runs_swarm_session_id_fkey";
+            columns: ["swarm_session_id"];
+            isOneToOne: false;
+            referencedRelation: "swarm_sessions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "verification_runs_verifier_agent_id_fkey";
+            columns: ["verifier_agent_id"];
+            isOneToOne: false;
+            referencedRelation: "agents";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "verification_runs_work_lease_id_fkey";
+            columns: ["work_lease_id"];
+            isOneToOne: false;
+            referencedRelation: "work_leases";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "verification_runs_work_spec_id_fkey";
+            columns: ["work_spec_id"];
+            isOneToOne: false;
+            referencedRelation: "work_specs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      rewards: {
+        Row: {
+          id: string;
+          mountain_id: string;
+          campaign_id: string;
+          work_spec_id: string;
+          work_lease_id: string | null;
+          swarm_session_id: string | null;
+          deliverable_id: string | null;
+          verification_run_id: string | null;
+          agent_id: string;
+          approved_by_account_id: string | null;
+          status: string;
+          reward_kind: string;
+          credit_amount: string;
+          reason: string | null;
+          issued_credit_transaction_id: string | null;
+          issued_at: string | null;
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          mountain_id: string;
+          campaign_id: string;
+          work_spec_id: string;
+          work_lease_id?: string | null;
+          swarm_session_id?: string | null;
+          deliverable_id?: string | null;
+          verification_run_id?: string | null;
+          agent_id: string;
+          approved_by_account_id?: string | null;
+          status?: string;
+          reward_kind?: string;
+          credit_amount?: string;
+          reason?: string | null;
+          issued_credit_transaction_id?: string | null;
+          issued_at?: string | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          mountain_id?: string;
+          campaign_id?: string;
+          work_spec_id?: string;
+          work_lease_id?: string | null;
+          swarm_session_id?: string | null;
+          deliverable_id?: string | null;
+          verification_run_id?: string | null;
+          agent_id?: string;
+          approved_by_account_id?: string | null;
+          status?: string;
+          reward_kind?: string;
+          credit_amount?: string;
+          reason?: string | null;
+          issued_credit_transaction_id?: string | null;
+          issued_at?: string | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "rewards_agent_id_fkey";
+            columns: ["agent_id"];
+            isOneToOne: false;
+            referencedRelation: "agents";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "rewards_approved_by_account_id_fkey";
+            columns: ["approved_by_account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "rewards_campaign_id_fkey";
+            columns: ["campaign_id"];
+            isOneToOne: false;
+            referencedRelation: "campaigns";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "rewards_deliverable_id_fkey";
+            columns: ["deliverable_id"];
+            isOneToOne: false;
+            referencedRelation: "deliverables";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "rewards_issued_credit_transaction_id_fkey";
+            columns: ["issued_credit_transaction_id"];
+            isOneToOne: false;
+            referencedRelation: "credit_transactions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "rewards_mountain_id_fkey";
+            columns: ["mountain_id"];
+            isOneToOne: false;
+            referencedRelation: "mountains";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "rewards_swarm_session_id_fkey";
+            columns: ["swarm_session_id"];
+            isOneToOne: false;
+            referencedRelation: "swarm_sessions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "rewards_verification_run_id_fkey";
+            columns: ["verification_run_id"];
+            isOneToOne: false;
+            referencedRelation: "verification_runs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "rewards_work_lease_id_fkey";
+            columns: ["work_lease_id"];
+            isOneToOne: false;
+            referencedRelation: "work_leases";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "rewards_work_spec_id_fkey";
+            columns: ["work_spec_id"];
+            isOneToOne: false;
+            referencedRelation: "work_specs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       bounties: {
         Row: {
           id: string;

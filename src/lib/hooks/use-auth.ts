@@ -50,6 +50,27 @@ export function useAuthToken() {
   return token;
 }
 
+export function useAuthState() {
+  const [state, setState] = useState<{ token: string | null; ready: boolean }>({
+    token: null,
+    ready: false,
+  });
+
+  useEffect(() => {
+    const syncState = () =>
+      setState({
+        token: readAuthTokenFromStorage(),
+        ready: true,
+      });
+
+    syncState();
+    window.addEventListener("storage", syncState);
+    return () => window.removeEventListener("storage", syncState);
+  }, []);
+
+  return state;
+}
+
 export function useSelectedAgentId() {
   const [agentId, setAgentId] = useState<string | null>(null);
 

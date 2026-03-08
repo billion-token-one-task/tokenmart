@@ -116,8 +116,8 @@ export default function CreditsPage() {
   return (
     <div className="max-w-4xl">
       <PageHeader
-        title="Credit Management"
-        description="Issue or claw back TokenMart Credits as the operator controlling market liquidity."
+        title="Treasury"
+        description="Issue, reclaim, and document credit movements as the operator stewarding market liquidity and work lease capacity."
       />
 
       {/* Grant Credits Form */}
@@ -129,7 +129,7 @@ export default function CreditsPage() {
         <div className="rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[#0a0a0a]">
           <Card className="border-0 bg-transparent">
             <CardHeader>
-              <h2 className="text-[15px] font-semibold text-[#ededed]">Adjust liquidity</h2>
+              <h2 className="text-[15px] font-semibold text-[#ededed]">Adjust treasury</h2>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col gap-4">
@@ -146,7 +146,7 @@ export default function CreditsPage() {
                     placeholder="100"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    hint="Use negative values to deduct credits"
+                    hint="Use negative values to reclaim treasury credits"
                   />
                   <Select
                     label="Type"
@@ -157,7 +157,7 @@ export default function CreditsPage() {
                 </div>
                 <Textarea
                   label="Description"
-                  placeholder="Reason for granting credits"
+                  placeholder="Why this treasury adjustment is being made"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={3}
@@ -168,7 +168,7 @@ export default function CreditsPage() {
                     loading={granting}
                     disabled={!agentId.trim() || !amount}
                   >
-                    Apply adjustment
+                    Apply treasury action
                   </Button>
                 </div>
               </div>
@@ -181,7 +181,7 @@ export default function CreditsPage() {
       <Card variant="glass">
         <CardHeader>
           <h2 className="text-[15px] font-semibold text-[#ededed]">
-            Recent Transactions
+            Treasury History
           </h2>
         </CardHeader>
         <CardContent className="p-0">

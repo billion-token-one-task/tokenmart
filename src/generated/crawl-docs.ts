@@ -17,9 +17,9 @@ export interface CrawlDocEntry {
   audience?: CrawlDocAudience;
 }
 
-export const CRAWL_DOCS_GENERATED_AT = "2026-03-08T15:25:54.911Z";
-export const CRAWL_DOCS_COUNT = 15;
-export const CRAWL_DOCS_ARCHIVE_COUNT = 9;
+export const CRAWL_DOCS_GENERATED_AT = "2026-03-08T18:11:22.779Z";
+export const CRAWL_DOCS_COUNT = 16;
+export const CRAWL_DOCS_ARCHIVE_COUNT = 10;
 export const CRAWL_RUNTIME_DOCS_COUNT = 4;
 export const CRAWL_DOCS: CrawlDocEntry[] = [
   {
@@ -163,6 +163,16 @@ export const CRAWL_DOCS: CrawlDocEntry[] = [
     "audience": "maintainers, contributors"
   },
   {
+    "path": "research/openclaw-research.md",
+    "title": "OpenClaw Research: Complete Architecture & Systems Deep Dive",
+    "url": "/crawl-docs/research/openclaw-research.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "**Research Date:** 2026-03-09 **Latest Version:** v2026.3.7 (released 2026-03-08) **GitHub Stars:** 250,000+ | Forks: 48,800+ | Commits: 17,657 | Contributors: 600+ **License:** MIT **Creator:** Peter Steinberger (Austrian developer, formerly PSPDFKit founder; joined OpenAI in 2026) **History:** Clawdbot (Nov 2025) -> Moltbot -> OpenClaw (naming disputes with Anthropic)",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
     "path": "docs/ORCHESTRATION_METHODOLOGY.md",
     "title": "TokenMart Orchestration Methodology",
     "url": "/crawl-docs/docs/ORCHESTRATION_METHODOLOGY.md",
@@ -251,6 +261,16 @@ export const CRAWL_DOCS_ARCHIVE: CrawlDocEntry[] = [
     "track": "archive",
     "category": "plans",
     "summary": "**Goal:** Rebuild TokenMart's full visual identity around the approved white-and-pink editorial reference video and apply it across shared primitives, shell chrome, landing, docs, auth, and major app surfaces.",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
+    "path": "docs/plans/2026-03-09-tokenmart-v2-cutover.md",
+    "title": "TokenMart V2 Cutover Implementation Plan",
+    "url": "/crawl-docs/docs/plans/2026-03-09-tokenmart-v2-cutover.md",
+    "track": "archive",
+    "category": "plans",
+    "summary": "**Goal:** Cut TokenMart over from a scored task marketplace into a supervisor-driven mission market centered on mountains, campaigns, work leases, and verified scientific contribution.",
     "order": 900,
     "audience": "operators"
   },
@@ -449,6 +469,16 @@ export const ALL_CRAWL_DOCS: CrawlDocEntry[] = [
     "audience": "maintainers, contributors"
   },
   {
+    "path": "research/openclaw-research.md",
+    "title": "OpenClaw Research: Complete Architecture & Systems Deep Dive",
+    "url": "/crawl-docs/research/openclaw-research.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "**Research Date:** 2026-03-09 **Latest Version:** v2026.3.7 (released 2026-03-08) **GitHub Stars:** 250,000+ | Forks: 48,800+ | Commits: 17,657 | Contributors: 600+ **License:** MIT **Creator:** Peter Steinberger (Austrian developer, formerly PSPDFKit founder; joined OpenAI in 2026) **History:** Clawdbot (Nov 2025) -> Moltbot -> OpenClaw (naming disputes with Anthropic)",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
     "path": "docs/ORCHESTRATION_METHODOLOGY.md",
     "title": "TokenMart Orchestration Methodology",
     "url": "/crawl-docs/docs/ORCHESTRATION_METHODOLOGY.md",
@@ -575,6 +605,16 @@ export const ALL_CRAWL_DOCS: CrawlDocEntry[] = [
     "track": "archive",
     "category": "plans",
     "summary": "**Goal:** Rebuild TokenMart's full visual identity around the approved white-and-pink editorial reference video and apply it across shared primitives, shell chrome, landing, docs, auth, and major app surfaces.",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
+    "path": "docs/plans/2026-03-09-tokenmart-v2-cutover.md",
+    "title": "TokenMart V2 Cutover Implementation Plan",
+    "url": "/crawl-docs/docs/plans/2026-03-09-tokenmart-v2-cutover.md",
+    "track": "archive",
+    "category": "plans",
+    "summary": "**Goal:** Cut TokenMart over from a scored task marketplace into a supervisor-driven mission market centered on mountains, campaigns, work leases, and verified scientific contribution.",
     "order": 900,
     "audience": "operators"
   },
