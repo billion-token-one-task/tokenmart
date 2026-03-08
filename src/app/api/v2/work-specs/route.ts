@@ -1,8 +1,13 @@
 import { NextRequest } from "next/server";
 import { jsonNoStore } from "@/lib/http/api-response";
 import { readJsonObject, asTrimmedString, asFiniteNumber } from "@/lib/http/input";
-import { requireV2Admin, requireV2Identity } from "@/lib/v2/auth";
-import { createWorkSpec, listWorkSpecs } from "@/lib/v2/runtime";
+import {
+  applyV2MutationRateLimit,
+  requireV2Admin,
+  resolveOptionalV2Identity,
+} from "@/lib/v2/auth";
+import { runtimeErrorResponse } from "@/lib/v2/errors";
+import { createWorkSpec, listWorkSpecs, viewerFromIdentity } from "@/lib/v2/runtime";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,15 +17,21 @@ function asStringArray(value: unknown) {
 }
 
 export async function GET(request: NextRequest) {
-  const auth = await requireV2Identity(request);
+  const auth = await resolveOptionalV2Identity(request);
   if (!auth.ok) return auth.response;
-  const work_specs = await listWorkSpecs();
-  return jsonNoStore({ work_specs });
+  try {
+    const work_specs = await listWorkSpecs(viewerFromIdentity(auth.identity));
+    return jsonNoStore({ work_specs });
+  } catch (error) {
+    return runtimeErrorResponse(error);
+  }
 }
 
 export async function POST(request: NextRequest) {
   const auth = await requireV2Admin(request);
   if (!auth.ok) return auth.response;
+  const rateLimit = await applyV2MutationRateLimit(auth.identity.context);
+  if (!rateLimit.ok) return rateLimit.response;
 
   const json = await readJsonObject<Record<string, unknown>>(request);
   if (!json.ok) {
@@ -45,20 +56,23 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const work_spec = await createWorkSpec({
-    mountainId,
-    campaignId: asTrimmedString(json.data.campaign_id),
-    title,
-    summary,
-    contributionType,
-    roleType,
-    allowedRoleTypes: asStringArray(json.data.allowed_role_types),
-    checkpointCadenceMinutes: asFiniteNumber(json.data.checkpoint_cadence_minutes) ?? 60,
-    priority: asFiniteNumber(json.data.priority) ?? 50,
-    riskClass: asTrimmedString(json.data.risk_class) ?? "moderate",
-    speculative: Boolean(json.data.speculative),
-  });
+  try {
+    const work_spec = await createWorkSpec({
+      mountainId,
+      campaignId: asTrimmedString(json.data.campaign_id),
+      title,
+      summary,
+      contributionType,
+      roleType,
+      allowedRoleTypes: asStringArray(json.data.allowed_role_types),
+      checkpointCadenceMinutes: asFiniteNumber(json.data.checkpoint_cadence_minutes) ?? 60,
+      priority: asFiniteNumber(json.data.priority) ?? 50,
+      riskClass: asTrimmedString(json.data.risk_class) ?? "moderate",
+      speculative: Boolean(json.data.speculative),
+    });
 
-  return jsonNoStore({ work_spec }, { status: 201 });
+    return jsonNoStore({ work_spec }, { status: 201, headers: rateLimit.headers });
+  } catch (error) {
+    return runtimeErrorResponse(error);
+  }
 }
-

@@ -1,4 +1,5 @@
 import { type ReactNode } from "react";
+import { SectionPattern } from "@/components/ui/section-pattern";
 import {
   resolveSectionConfig,
   type ShellSectionId,
@@ -32,6 +33,11 @@ export function PageHeader({
       data-agent-endpoint={agentEndpoint}
       data-shell-section={sectionConfig.id}
     >
+      <SectionPattern
+        section={sectionConfig.id}
+        className="opacity-20"
+        opacity={0.45}
+      />
       {/* Scanline sweep overlay */}
       <div
         className="pointer-events-none absolute inset-0 scanline-overlay opacity-[0.04]"
@@ -110,7 +116,25 @@ export function PageHeader({
           <span>RENDER::OK</span>
         </div>
 
-        <div className="mt-3 h-[2px] bg-[#0a0a0a]" />
+        <div className="mt-3 flex flex-col gap-2">
+          <div className="h-[2px] bg-[#0a0a0a]" />
+          <div className="header-telemetry-strip">
+            <div className="header-telemetry-track">
+              {[
+                `SECTION::${sectionConfig.label.toUpperCase()}`,
+                `EYEBROW::${sectionConfig.eyebrow}`,
+                `HINT::${sectionConfig.hintLabel}`,
+                "MISSION-RUNTIME::LIVE",
+                "PINK-SIGNAL::LOCKED",
+                "READOUT::NOMINAL",
+              ].map((entry, index) => (
+                <span key={`${entry}-${index}`} className="header-telemetry-chip">
+                  {entry}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

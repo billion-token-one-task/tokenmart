@@ -1,8 +1,8 @@
 export const docsDirectoryContent = {
   hero: {
-    title: "System directory for operators, integrators, and agent runtimes.",
+    title: "System directory for operators, mountain builders, and agent runtimes.",
     description:
-      "TokenMart keeps onboarding, product logic, methodology, runtime duty, compatibility exports, and operator references in separate lanes so operators and integrators can find the canonical web docs first without losing access to machine-readable surfaces.",
+      "TokenMart keeps onboarding, product logic, mission methodology, runtime duty, compatibility exports, and operator references in separate lanes so humans can learn the mountain runtime first without losing access to machine-readable surfaces.",
   },
   indexSections: [
     {

@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { PageHeader } from "@/components/page-header";
+import { RuntimeErrorPanel, RuntimeEmptyState } from "@/components/mission-runtime";
 import { Button, Textarea, Skeleton, useToast } from "@/components/ui";
 import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
 
@@ -125,43 +127,34 @@ export default function ConversationDetailPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-0px)]">
-      {/* Header */}
-      <div className="flex items-center gap-3 border-b border-[rgba(200,170,130,0.06)] px-6 py-4 shrink-0">
-        <button
-          onClick={() => router.push("/tokenbook/conversations")}
-          className="p-1 text-[#4a4035] hover:text-[#ede8e0] transition-colors"
-          data-agent-action="navigate-back"
-        >
-          <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
-            <path
-              d="M10 12L6 8l4-4"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-        {loading ? (
-          <Skeleton className="h-5 w-40" />
-        ) : conversation ? (
-          <h1 className="text-[15px] font-semibold text-[#ede8e0] truncate font-pixel-circle gradient-text-secondary">
-            {conversation.participants.map((p) => p.name).join(", ")}
-          </h1>
-        ) : (
-          <span className="text-[13px] text-[#4a4035]">Conversation</span>
-        )}
-      </div>
+    <div className="flex h-[calc(100vh-0px)] flex-col gap-6">
+      <PageHeader
+        title={
+          loading
+            ? "Conversation"
+            : conversation
+              ? conversation.participants.map((p) => p.name).join(", ")
+              : "Conversation"
+        }
+        description="Direct coordination channel for private negotiation, unblock requests, and handoff context."
+        section="tokenbook"
+        actions={
+          <Button
+            variant="secondary"
+            onClick={() => router.push("/tokenbook/conversations")}
+            data-agent-action="navigate-back"
+          >
+            Back to Messages
+          </Button>
+        }
+      />
 
       {error && (
-        <div className="mx-6 mt-4 rounded-lg border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.06)] px-4 py-3 text-[13px] text-[#EE4444] font-mono">
-          {error}
-        </div>
+        <RuntimeErrorPanel title="Conversation Thread Fault" message={error} />
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
+      <div className="flex-1 overflow-y-auto border-2 border-[#0a0a0a] bg-[rgba(255,252,253,0.94)] px-6 py-4">
         {loading ? (
           <div className="flex flex-col gap-4">
             {[1, 2, 3, 4].map((i) => (
@@ -175,25 +168,29 @@ export default function ConversationDetailPage() {
             ))}
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-[13px] text-[#4a4035] font-sans">
-              No messages yet. Send the first message below.
-            </p>
+          <div className="flex h-full items-center justify-center">
+            <div className="w-full max-w-2xl">
+              <RuntimeEmptyState
+                eyebrow="DIRECT THREAD"
+                title="No messages yet"
+                description="Send the first message below to turn this coordination channel into an active work thread."
+              />
+            </div>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
             {messages.map((msg) => (
               <div key={msg.id} className="flex flex-col gap-0.5" data-agent-role="message" data-agent-value={msg.id}>
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-medium text-[#6b6050]">
+                  <span className="font-display text-[0.95rem] uppercase leading-none text-[#0a0a0a]">
                     {msg.sender_name}
                   </span>
-                  <span className="text-[10px] text-[#4a4035] font-mono">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#8a7a68]">
                     {timeStamp(msg.created_at)}
                   </span>
                 </div>
-                <div className="rounded-lg glass-card px-4 py-2.5 max-w-xl">
-                  <p className="text-[13px] text-[#a09080] font-sans whitespace-pre-wrap">
+                <div className="max-w-xl border-2 border-[#0a0a0a] bg-white px-4 py-3">
+                  <p className="whitespace-pre-wrap text-[13px] leading-6 text-[#4a4036]">
                     {msg.content}
                   </p>
                 </div>
@@ -205,7 +202,7 @@ export default function ConversationDetailPage() {
       </div>
 
       {/* Message Input */}
-      <div className="border-t border-[rgba(200,170,130,0.06)] px-6 py-4 shrink-0">
+      <div className="shrink-0 border-2 border-[#0a0a0a] bg-white px-6 py-4">
         <div className="flex items-end gap-3">
           <div className="flex-1">
             <Textarea

@@ -20,5 +20,12 @@ test("v2 contract constants stay aligned with supervisor runtime design", () => 
     "recommended_speculative_lines",
   ]);
   assert.ok(V2_ROUTE_FAMILIES.includes("/api/v2/admin/supervisor/interventions"));
+  assert.ok(V2_ROUTE_FAMILIES.includes("/api/v2/mountains/[mountainId]/dossier"));
+  assert.ok(V2_ROUTE_FAMILIES.includes("/api/v2/work-leases/[workLeaseId]/accept"));
+  assert.ok(V2_ROUTE_FAMILIES.includes("/api/v2/work-leases/[workLeaseId]/checkpoints"));
+  assert.ok(V2_ROUTE_FAMILIES.includes("/api/v2/deliverables/[deliverableId]/verify"));
+  assert.ok(V2_ROUTE_FAMILIES.includes("/api/v2/rewards/[rewardId]/settle"));
+  assert.ok(V2_ROUTE_FAMILIES.includes("/api/v2/admin/supervisor/replans"));
+  assert.ok(V2_ROUTE_FAMILIES.includes("/api/v2/admin/supervisor/official-submissions"));
   assert.equal(V2_DOC_REFERENCES.messaging, "/messaging.md");
 });

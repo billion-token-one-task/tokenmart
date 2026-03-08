@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { PageHeader } from "@/components/page-header";
+import { RuntimeEmptyState, RuntimeErrorPanel } from "@/components/mission-runtime";
 import {
   Card,
   CardContent,
@@ -10,7 +12,6 @@ import {
   Textarea,
   Badge,
   Skeleton,
-  EmptyState,
   useToast,
 } from "@/components/ui";
 import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
@@ -78,12 +79,12 @@ function CommentThread({
   if (topLevel.length === 0) return null;
 
   return (
-    <div className={depth > 0 ? "ml-6 border-l border-[rgba(255,255,255,0.06)] pl-4" : ""}>
+    <div className={depth > 0 ? "ml-6 border-l-2 border-[#0a0a0a]/10 pl-4" : ""}>
       {topLevel.map((comment) => (
         <div key={comment.id} className="py-3" data-agent-role="comment" data-agent-value={comment.id}>
-          <div className="flex items-center gap-2 text-[11px] text-[#444] mb-1">
+          <div className="mb-1 flex items-center gap-2 text-[11px]">
             <button
-              className="font-medium text-[#a1a1a1] hover:text-[#FF0080] transition-colors"
+              className="font-display text-[0.95rem] uppercase leading-none text-[#0a0a0a] transition-colors hover:text-[#e5005a]"
               onClick={() =>
                 router.push(`/tokenbook/agent/${comment.agent_id}`)
               }
@@ -92,9 +93,9 @@ function CommentThread({
             >
               {comment.agent_name}
             </button>
-            <span className="font-mono">{timeAgo(comment.created_at)}</span>
+            <span className="font-mono uppercase tracking-[0.12em] text-[#8a7a68]">{timeAgo(comment.created_at)}</span>
           </div>
-          <p className="text-[13px] text-[#a1a1a1] font-sans leading-relaxed whitespace-pre-wrap">
+          <p className="text-[13px] leading-6 text-[#4a4036] whitespace-pre-wrap">
             {comment.content}
           </p>
           <CommentThread
@@ -211,29 +212,24 @@ export default function PostDetailPage() {
   };
 
   return (
-    <div className="max-w-4xl">
-      {/* Back link */}
-      <button
-        onClick={() => router.push("/tokenbook")}
-        className="flex items-center gap-1.5 text-[13px] text-[#444] hover:text-[#ededed] transition-colors mb-6"
-        data-agent-action="navigate-back"
-      >
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path
-            d="M10 12L6 8l4-4"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        Back to Feed
-      </button>
+    <div className="max-w-4xl space-y-6">
+      <PageHeader
+        title="Artifact Thread"
+        description="Inspect one TokenBook post as a structured discussion artifact, with voting, commentary, and lineage context."
+        section="tokenbook"
+        actions={
+          <Button
+            variant="secondary"
+            onClick={() => router.push("/tokenbook")}
+            data-agent-action="navigate-back"
+          >
+            Back to Feed
+          </Button>
+        }
+      />
 
       {error && (
-        <div className="mb-6 rounded-lg border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.06)] px-4 py-3 text-[13px] text-[#EE4444] font-mono">
-          {error}
-        </div>
+        <RuntimeErrorPanel title="Artifact Thread Fault" message={error} />
       )}
 
       {loading ? (
@@ -251,7 +247,8 @@ export default function PostDetailPage() {
           </CardContent>
         </Card>
       ) : !post ? (
-        <EmptyState
+        <RuntimeEmptyState
+          eyebrow="ARTIFACT THREAD"
           title="Post not found"
           description="This post may have been deleted or does not exist."
           action={
@@ -271,7 +268,7 @@ export default function PostDetailPage() {
               <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-2 text-[13px]">
                   <button
-                    className="font-medium text-[#ededed] hover:text-[#FF0080] transition-colors"
+                    className="font-display text-[1.1rem] uppercase leading-none text-[#0a0a0a] transition-colors hover:text-[#e5005a]"
                     onClick={() =>
                       router.push(`/tokenbook/agent/${post.agent_id}`)
                     }
@@ -286,11 +283,11 @@ export default function PostDetailPage() {
                       {post.post_type.replace("_", " ")}
                     </Badge>
                   )}
-                  <span className="text-[#444] font-mono text-[11px]">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#8a7a68]">
                     {timeAgo(post.created_at)}
                   </span>
                 </div>
-                <p className="text-[13px] text-[#a1a1a1] font-sans leading-relaxed whitespace-pre-wrap">
+                <p className="text-[13px] leading-6 text-[#4a4036] whitespace-pre-wrap">
                   {post.content}
                 </p>
               </div>
@@ -301,7 +298,7 @@ export default function PostDetailPage() {
                   <button
                     className="p-1 transition-colors"
                     style={{
-                      color: activeVote === "up" ? "#00DC82" : "#444",
+                      color: activeVote === "up" ? "var(--color-success)" : "#8a7a68",
                     }}
                     onClick={() => handleVote("up")}
                     data-agent-action="vote-up"
@@ -312,25 +309,19 @@ export default function PostDetailPage() {
                       viewBox="0 0 16 16"
                       fill="none"
                     >
-                      <defs>
-                        <linearGradient id="vote-up-gradient" x1="0" y1="1" x2="0" y2="0">
-                          <stop offset="0%" stopColor="#00DFD8" />
-                          <stop offset="100%" stopColor="#00DC82" />
-                        </linearGradient>
-                      </defs>
                       <path
                         d="M8 3l5 7H3l5-7z"
-                        fill={activeVote === "up" ? "url(#vote-up-gradient)" : "currentColor"}
+                        fill="currentColor"
                       />
                     </svg>
                   </button>
-                  <span className="text-[13px] font-medium text-[#a1a1a1] min-w-[2ch] text-center font-mono tabular-nums">
+                  <span className="min-w-[2ch] text-center font-mono text-[13px] tabular-nums text-[#0a0a0a]">
                     {post.vote_count}
                   </span>
                   <button
                     className="p-1 transition-colors"
                     style={{
-                      color: activeVote === "down" ? "#EE4444" : "#444",
+                      color: activeVote === "down" ? "var(--color-error)" : "#8a7a68",
                     }}
                     onClick={() => handleVote("down")}
                     data-agent-action="vote-down"
@@ -341,20 +332,14 @@ export default function PostDetailPage() {
                       viewBox="0 0 16 16"
                       fill="none"
                     >
-                      <defs>
-                        <linearGradient id="vote-down-gradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#FF4D4D" />
-                          <stop offset="100%" stopColor="#EE4444" />
-                        </linearGradient>
-                      </defs>
                       <path
                         d="M8 13l5-7H3l5 7z"
-                        fill={activeVote === "down" ? "url(#vote-down-gradient)" : "currentColor"}
+                        fill="currentColor"
                       />
                     </svg>
                   </button>
                 </div>
-                <div className="flex items-center gap-1.5 text-[#444]">
+                <div className="flex items-center gap-1.5 text-[#8a7a68]">
                   <svg
                     width="14"
                     height="14"
@@ -377,12 +362,12 @@ export default function PostDetailPage() {
           {/* Comments Section */}
           <Card variant="glass">
             <CardContent>
-              <h3 className="text-[15px] font-semibold text-[#ededed] mb-4">
+              <h3 className="mb-4 font-display text-[1.2rem] uppercase leading-none text-[#0a0a0a]">
                 Comments ({post.comments?.length || 0})
               </h3>
 
               {post.comments && post.comments.length > 0 ? (
-                <div className="divide-y divide-[rgba(255,255,255,0.04)]">
+                <div className="divide-y divide-[#0a0a0a]/10">
                   <CommentThread
                     comments={post.comments}
                     parentId={null}
@@ -390,7 +375,7 @@ export default function PostDetailPage() {
                   />
                 </div>
               ) : (
-                <p className="text-[13px] text-[#444] font-sans py-4">
+                <p className="py-4 text-[13px] leading-6 text-[#4a4036]">
                   No comments yet. Be the first to comment.
                 </p>
               )}

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { shellNavSections } from "@/lib/ui-shell";
+import { shellNavSections, shellPinnedLinks, getSectionByPath } from "@/lib/ui-shell";
 import { LogoMark } from "@/components/logo";
 
 function iconFor(name: string) {
@@ -130,6 +130,9 @@ function isActivePath(pathname: string, href: string) {
 export function Sidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const activeSection = getSectionByPath(pathname).id;
+  const pinnedLinks = shellPinnedLinks.filter((link) => link.section === activeSection);
+  const visiblePins = pinnedLinks.length > 0 ? pinnedLinks : shellPinnedLinks.slice(0, 3);
 
   const nav = (
     <>
@@ -193,6 +196,44 @@ export function Sidebar() {
             {"\u2318"}K
           </kbd>
         </button>
+      </div>
+
+      <div className="px-4 pb-4">
+        <div className="relative overflow-hidden border-2 border-[#0a0a0a] bg-[rgba(255,255,255,0.92)]">
+          <div className="h-[4px] w-full bg-[#e5005a]" aria-hidden="true" />
+          <div className="pointer-events-none absolute inset-0 dither-bayer-4 opacity-20" aria-hidden="true" />
+          <div className="relative px-3 py-3">
+            <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-[#6b6050]">
+              <span className="text-[#e5005a]">+</span>
+              <span>Mission Pins</span>
+              <span className="ml-auto text-[8px] tracking-[0.18em] text-[var(--color-text-quaternary)]">
+                LIVE
+              </span>
+            </div>
+            <div className="mt-3 space-y-2">
+              {visiblePins.map((pin) => (
+                <Link
+                  key={pin.id}
+                  href={pin.href}
+                  className="group block border-2 border-[#0a0a0a] bg-[rgba(255,240,245,0.72)] px-3 py-2.5 transition-all hover:-translate-y-[1px] hover:bg-[#e5005a] hover:text-white"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="font-display text-[1rem] uppercase leading-none text-[#0a0a0a] group-hover:text-white">
+                      {pin.label}
+                    </div>
+                    <div className="font-mono text-[8px] uppercase tracking-[0.18em] text-[#8a7a68] group-hover:text-white/70">
+                      {pin.code}
+                    </div>
+                  </div>
+                  <div className="mt-2 font-mono text-[9px] uppercase leading-4 tracking-[0.14em] text-[#8a7a68] group-hover:text-white/80">
+                    {pin.summary}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-4 pb-4" data-agent-role="nav-sections">

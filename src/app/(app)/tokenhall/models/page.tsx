@@ -10,6 +10,7 @@ import {
   CardContent,
   Badge,
   EmptyState,
+  InlineNotice,
   Skeleton,
   useToast,
 } from "@/components/ui";
@@ -161,7 +162,7 @@ export default function TokenHallModelsPage() {
                 <Skeleton className="h-3 w-24 mb-4" />
                 <div className="flex items-center justify-between">
                   <Skeleton className="h-3 w-48" />
-                  <Skeleton className="h-8 w-20 rounded-lg" />
+                  <Skeleton className="h-8 w-20" />
                 </div>
               </CardContent>
             </Card>
@@ -178,9 +179,7 @@ export default function TokenHallModelsPage() {
           title="Models"
           description="Price, filter, and route across the live model inventory backing the TokenHall exchange."
         />
-        <div className="rounded-lg border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.06)] px-5 py-4 text-[13px] text-[#EE4444] font-mono">
-          {error}
-        </div>
+        <InlineNotice tone="error" title="Model Catalog Fault" message={error} />
       </div>
     );
   }
@@ -242,14 +241,14 @@ export default function TokenHallModelsPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {filteredModels.map((model) => (
-            <Card key={model.id} variant="glass" className="hover:border-[rgba(255,255,255,0.14)] transition-colors">
+            <Card key={model.id} variant="glass" className="transition-colors hover:border-[#e5005a] hover:bg-[#fff5f9]">
               <CardContent>
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-[15px] font-medium text-[#ededed] truncate">
+                    <h3 className="text-[15px] font-medium text-[#0a0a0a] truncate">
                       {model.name}
                     </h3>
-                    <p className="text-[12px] text-[#444] mt-0.5 truncate font-mono">
+                    <p className="mt-0.5 truncate font-mono text-[12px] text-[#8a7a68]">
                       {model.id}
                     </p>
                   </div>
@@ -258,7 +257,7 @@ export default function TokenHallModelsPage() {
                   </Badge>
                 </div>
 
-                <div className="flex items-center gap-4 mb-4 text-[13px] text-[#666]">
+                <div className="mb-4 flex items-center gap-4 text-[13px] text-[#4a4036]">
                   <div className="flex items-center gap-1.5">
                     <svg
                       width="14"
@@ -267,7 +266,7 @@ export default function TokenHallModelsPage() {
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="2"
-                      className="text-[#444]"
+                      className="text-[#8a7a68]"
                     >
                       <path d="M4 7V4h16v3M9 20h6M12 4v16" />
                     </svg>
@@ -278,14 +277,14 @@ export default function TokenHallModelsPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4 text-[13px]">
                     <div>
-                      <span className="text-[#444]">Input: </span>
-                      <span className="text-[#a1a1a1] font-mono tabular-nums">
+                      <span className="text-[#8a7a68]">Input: </span>
+                      <span className="font-mono tabular-nums text-[#4a4036]">
                         {formatPricing(model.pricing.input)}/1M
                       </span>
                     </div>
                     <div>
-                      <span className="text-[#444]">Output: </span>
-                      <span className="text-[#a1a1a1] font-mono tabular-nums">
+                      <span className="text-[#8a7a68]">Output: </span>
+                      <span className="font-mono tabular-nums text-[#4a4036]">
                         {formatPricing(model.pricing.output)}/1M
                       </span>
                     </div>

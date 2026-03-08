@@ -2,18 +2,21 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
 import {
   LeaseCard,
   PhaseRail,
+  RuntimeEmptyState,
+  RuntimeErrorPanel,
+  RuntimeLoadingGrid,
   RuntimeHero,
   RuntimeList,
   RuntimeSection,
   TelemetryTile,
   formatCompactValue,
 } from "@/components/mission-runtime";
-import { Badge, Button, EmptyState, Skeleton } from "@/components/ui";
+import { Badge, Button } from "@/components/ui";
 import { authHeaders, useAuthState } from "@/lib/hooks/use-auth";
 import { fetchJsonResult } from "@/lib/http/client-json";
 import type {
@@ -69,6 +72,7 @@ const emptyState: MountainDetailState = {
 
 export default function MountainDetailPage() {
   const params = useParams<{ mountainId: string }>();
+  const searchParams = useSearchParams();
   const mountainId = params?.mountainId ?? "";
   const { token, ready: authReady } = useAuthState();
   const [data, setData] = useState<MountainDetailState>(emptyState);
@@ -76,6 +80,7 @@ export default function MountainDetailPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const legacyMode = searchParams.get("legacy");
 
   const isLoading = !authReady || (Boolean(token) && mountainId.length > 0 && (!hasLoaded || loading));
 
@@ -112,7 +117,7 @@ export default function MountainDetailPage() {
           fetchJsonResult<{ verification_runs?: VerificationRunRecord[] }>("/api/v2/verification-runs", {
             headers: authHeaders(token),
           }),
-          fetchJsonResult<{ reward_splits?: RewardSplitRecord[] }>("/api/v2/rewards", {
+          fetchJsonResult<{ rewards?: RewardSplitRecord[]; reward_splits?: RewardSplitRecord[] }>("/api/v2/rewards", {
             headers: authHeaders(token),
           }),
         ]);
@@ -132,7 +137,7 @@ export default function MountainDetailPage() {
       const workLeases = (leasesResult.data?.work_leases ?? []).filter((lease) => lease.mountain_id === mountainId);
       const deliverables = (deliverablesResult.data?.deliverables ?? []).filter((deliverable) => deliverable.mountain_id === mountainId);
       const verificationRuns = (verificationResult.data?.verification_runs ?? []).filter((run) => run.mountain_id === mountainId);
-      const rewards = (rewardsResult.data?.reward_splits ?? []).filter((reward) => reward.mountain_id === mountainId);
+      const rewards = (rewardsResult.data?.rewards ?? rewardsResult.data?.reward_splits ?? []).filter((reward) => reward.mountain_id === mountainId);
 
       setError(null);
       setData({
@@ -269,6 +274,54 @@ export default function MountainDetailPage() {
     [data.rewards]
   );
 
+  const timelineItems = useMemo(() => {
+    const events = [
+      ...data.workLeases.map((lease) => ({
+        id: `lease-${lease.id}`,
+        timestamp: lease.updated_at,
+        title: lease.assigned_agent_id ?? "Lease reassignment",
+        description: lease.rationale ?? "Execution lease updated.",
+        badge: <Badge variant={statusVariant(lease.status)}>{lease.status}</Badge>,
+        meta: `lease · ${lease.work_spec_id}`,
+      })),
+      ...data.deliverables.map((deliverable) => ({
+        id: `deliverable-${deliverable.id}`,
+        timestamp: deliverable.updated_at,
+        title: deliverable.title,
+        description: deliverable.summary,
+        badge: <Badge variant="glass">{deliverable.deliverable_type}</Badge>,
+        meta: `artifact · ${deliverable.work_spec_id ?? "unscoped"}`,
+      })),
+      ...data.verificationRuns.map((run) => ({
+        id: `verification-${run.id}`,
+        timestamp: run.updated_at,
+        title: run.verification_type,
+        description:
+          run.findings[0]?.issue?.toString() ??
+          run.findings[0]?.statement?.toString() ??
+          "Verification status updated.",
+        badge: <Badge variant={statusVariant(run.outcome)}>{run.outcome}</Badge>,
+        meta: `verification · ${run.deliverable_id ?? "no deliverable"}`,
+      })),
+      ...data.rewards.map((reward) => ({
+        id: `reward-${reward.id}`,
+        timestamp: reward.updated_at,
+        title: `${reward.role} / ${reward.amount_credits} credits`,
+        description: reward.rationale,
+        badge: <Badge variant={reward.settlement_status === "settled" ? "success" : "warning"}>{reward.settlement_status}</Badge>,
+        meta: `reward · ${reward.beneficiary_agent_id ?? reward.beneficiary_account_id ?? "unassigned"}`,
+      })),
+    ];
+
+    return events
+      .sort((left, right) => new Date(right.timestamp).getTime() - new Date(left.timestamp).getTime())
+      .slice(0, 10)
+      .map(({ timestamp, ...item }) => ({
+        ...item,
+        meta: `${item.meta} · ${timestamp}`,
+      }));
+  }, [data.deliverables, data.rewards, data.verificationRuns, data.workLeases]);
+
   return (
     <div className="max-w-7xl space-y-8">
       <PageHeader
@@ -287,20 +340,27 @@ export default function MountainDetailPage() {
         }
       />
 
-      {error ? (
-        <div className="border-2 border-[rgba(213,61,90,0.4)] bg-[rgba(213,61,90,0.08)] px-4 py-3 font-mono text-[12px] uppercase tracking-[0.08em] text-[var(--color-error)]">
-          {error}
+      {legacyMode ? (
+        <div className="border-2 border-[#0a0a0a] bg-[rgba(255,255,255,0.86)] px-4 py-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <Badge variant="glass">legacy task record</Badge>
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#6b6050]">
+              COMPAT::TASK_TO_MOUNTAIN
+            </span>
+          </div>
+          <p className="mt-3 text-[13px] leading-6 text-[#4a4036]">
+            This page is the v2-compatible destination for an older task URL. Review the mission chronology, campaign pressure, verification status, and settlement ledger here instead of the archived task model.
+          </p>
         </div>
       ) : null}
 
+      {error ? <RuntimeErrorPanel title="Mountain Dossier Fault" message={error} /> : null}
+
       {isLoading ? (
-        <div className="grid gap-4">
-          <Skeleton className="h-40 rounded-none" />
-          <Skeleton className="h-64 rounded-none" />
-          <Skeleton className="h-64 rounded-none" />
-        </div>
+        <RuntimeLoadingGrid blocks={3} />
       ) : !mountain ? (
-        <EmptyState
+        <RuntimeEmptyState
+          eyebrow="DOSSIER UNAVAILABLE"
           title="Mountain not found"
           description="This route no longer renders legacy task snapshots. Open the mountain builder to create or inspect a v2 mission."
           action={
@@ -415,6 +475,14 @@ export default function MountainDetailPage() {
               <RuntimeList items={verificationItems} />
             </RuntimeSection>
           </div>
+
+          <RuntimeSection
+            eyebrow="Timeline"
+            title="Mission chronology"
+            detail="The operator should be able to scan the mountain as one evolving control surface, from lease movement through artifacts, verification, and settlement."
+          >
+            <RuntimeList items={timelineItems} />
+          </RuntimeSection>
 
           <RuntimeSection
             eyebrow="Settlement"

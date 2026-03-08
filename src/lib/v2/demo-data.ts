@@ -3,6 +3,8 @@ import type {
   CampaignRecord,
   CapabilityProfileRecord,
   DeliverableRecord,
+  MountainExternalTargetRecord,
+  MountainMembershipRecord,
   MountainRecord,
   ReputationScoreRecord,
   ReplanRecord,
@@ -13,352 +15,21 @@ import type {
   WorkLeaseRecord,
   WorkSpecRecord,
 } from "./types";
+import { buildFixtureRecords } from "./seed";
 
-const now = new Date("2026-03-09T09:00:00.000Z");
+const fixtures = buildFixtureRecords();
 
-function iso(offsetHours: number) {
-  return new Date(now.getTime() + offsetHours * 60 * 60 * 1000).toISOString();
-}
-
-export const demoMountains: MountainRecord[] = [
-  {
-    id: "mountain-riemann",
-    slug: "riemann-frontier",
-    title: "Riemann Frontier",
-    thesis:
-      "Use swarms of theorem-search, literature-synthesis, and verifier agents to compress the search space around hard analytic number theory subproblems.",
-    target_problem: "Produce verified intermediate advances toward zeta-zero structure conjectures.",
-    success_criteria:
-      "Three independently replicated derivation chains plus one synthesis artifact accepted by admin governance.",
-    domain: "mathematics",
-    horizon: "18 months",
-    visibility: "public",
-    status: "active",
-    created_by_account_id: "admin-seed",
-    total_budget_credits: 250000,
-    budget_envelopes: {
-      decomposition: 25000,
-      execution: 145000,
-      replication: 40000,
-      synthesis: 25000,
-      emergency: 15000,
-    },
-    governance_policy: {
-      replicationRequiredForClaims: true,
-      humanEscalationOnContradiction: true,
-    },
-    decomposition_policy: {
-      maxBranchDepth: 4,
-      preferredRoleMix: ["proposer", "executor", "verifier", "synthesizer"],
-    },
-    settlement_policy_mode: "dynamic_difficulty",
-    settlement_policy: {
-      contradictionResolutionBonus: 1.35,
-      replicationBonus: 1.25,
-    },
-    tags: ["analytic-number-theory", "proof-search", "replication"],
-    metadata: {
-      milestoneNarrative: "Mount proof attempts around zero-density lemmas and explicit formula variants.",
-    },
-    launched_at: iso(-240),
-    completed_at: null,
-    created_at: iso(-360),
-    updated_at: iso(-2),
-  },
-  {
-    id: "mountain-crispr",
-    slug: "crispr-alignment-map",
-    title: "CRISPR Alignment Map",
-    thesis:
-      "Fund multi-agent experiment-design and paper-synthesis loops that discover robust editing strategy patterns across fragmented literature.",
-    target_problem: "Create a verified strategy atlas for off-target minimization.",
-    success_criteria:
-      "A public atlas with traceable citations, replication notes, and contradiction-resolved design recommendations.",
-    domain: "biology",
-    horizon: "12 months",
-    visibility: "scoped",
-    status: "active",
-    created_by_account_id: "admin-seed",
-    total_budget_credits: 180000,
-    budget_envelopes: {
-      decomposition: 18000,
-      execution: 100000,
-      replication: 30000,
-      synthesis: 20000,
-      emergency: 12000,
-    },
-    governance_policy: {
-      requireDualVerification: true,
-      reviewerPairing: "mentor-reviewer",
-    },
-    decomposition_policy: {
-      maxBranchDepth: 5,
-      duplicationOnHighRisk: true,
-    },
-    settlement_policy_mode: "coalition_formula",
-    settlement_policy: {
-      proposerShare: 0.1,
-      executorShare: 0.5,
-      verifierShare: 0.25,
-      synthesizerShare: 0.15,
-    },
-    tags: ["biology", "literature-mining", "atlas"],
-    metadata: {
-      milestoneNarrative: "Map interventions, assays, and failure modes into reusable design clusters.",
-    },
-    launched_at: iso(-180),
-    completed_at: null,
-    created_at: iso(-300),
-    updated_at: iso(-4),
-  },
-];
-
-export const demoCampaigns: CampaignRecord[] = [
-  {
-    id: "campaign-zero-density",
-    mountain_id: "mountain-riemann",
-    title: "Zero-density lemma decomposition",
-    summary: "Split the proof frontier into executable lemma audits, tool-assisted derivations, and contradiction hunts.",
-    hypothesis: "Most progress will come from aggressively verifying boundary assumptions around density estimates.",
-    status: "active",
-    risk_ceiling: "high",
-    decomposition_aggressiveness: 86,
-    replication_policy: { minIndependentReplications: 2 },
-    governance_policy: { requireHumanCheckpointAtMilestone: true },
-    budget_credits: 90000,
-    milestone_order: 1,
-    owner_account_id: "admin-seed",
-    created_at: iso(-300),
-    updated_at: iso(-3),
-  },
-  {
-    id: "campaign-citation-atlas",
-    mountain_id: "mountain-crispr",
-    title: "Citation atlas and contradiction map",
-    summary: "Turn scattered CRISPR literature into a navigable contradiction-aware atlas.",
-    hypothesis: "The core bottleneck is synthesis fidelity rather than raw retrieval volume.",
-    status: "active",
-    risk_ceiling: "medium",
-    decomposition_aggressiveness: 72,
-    replication_policy: { minIndependentReplications: 1 },
-    governance_policy: { requireLineageLinks: true },
-    budget_credits: 64000,
-    milestone_order: 1,
-    owner_account_id: "admin-seed",
-    created_at: iso(-220),
-    updated_at: iso(-2),
-  },
-];
-
-export const demoWorkSpecs: WorkSpecRecord[] = [
-  {
-    id: "spec-lemma-audit",
-    mountain_id: "mountain-riemann",
-    campaign_id: "campaign-zero-density",
-    parent_work_spec_id: null,
-    title: "Audit lemma assumptions in explicit formula branch",
-    summary: "Trace every imported assumption in the explicit formula argument and mark unsupported jumps for replication.",
-    status: "in_progress",
-    contribution_type: "verification",
-    role_type: "verifier",
-    allowed_role_types: ["verifier", "synthesizer"],
-    input_contract: { requiredArtifacts: ["lineage graph", "source citations"] },
-    output_contract: { requiredDeliverables: ["assumption table", "blocker list"] },
-    verification_contract: { contradictionEscalation: true },
-    dependency_edges: [],
-    reward_envelope: { baseCredits: 4200, multiplier: "difficulty" },
-    checkpoint_cadence_minutes: 180,
-    duplication_policy: { allowRedundantVerification: true },
-    risk_class: "high",
-    priority: 94,
-    speculative: false,
-    synthesis_required: true,
-    owner_account_id: "admin-seed",
-    metadata: { assignmentRationale: "High leverage verification bottleneck." },
-    created_at: iso(-72),
-    updated_at: iso(-2),
-  },
-  {
-    id: "spec-replication-atlas",
-    mountain_id: "mountain-crispr",
-    campaign_id: "campaign-citation-atlas",
-    parent_work_spec_id: null,
-    title: "Generate replication-ready contradiction atlas",
-    summary: "Cluster contradictory CRISPR papers by assay, guide design, and reported off-target behavior.",
-    status: "ready",
-    contribution_type: "synthesis",
-    role_type: "synthesizer",
-    allowed_role_types: ["synthesizer", "reviewer", "proposer"],
-    input_contract: { requiredArtifacts: ["paper summaries", "assay map"] },
-    output_contract: { requiredDeliverables: ["atlas", "replication briefs"] },
-    verification_contract: { requireReplicationRequests: true },
-    dependency_edges: [],
-    reward_envelope: { baseCredits: 5100, synthesisBonus: 1.2 },
-    checkpoint_cadence_minutes: 240,
-    duplication_policy: { duplicateOnContradiction: true },
-    risk_class: "moderate",
-    priority: 88,
-    speculative: true,
-    synthesis_required: false,
-    owner_account_id: "admin-seed",
-    metadata: { assignmentRationale: "Unblocks public artifact narrative." },
-    created_at: iso(-48),
-    updated_at: iso(-5),
-  },
-];
-
-export const demoWorkLeases: WorkLeaseRecord[] = [
-  {
-    id: "lease-lemma-audit",
-    mountain_id: "mountain-riemann",
-    campaign_id: "campaign-zero-density",
-    work_spec_id: "spec-lemma-audit",
-    assigned_agent_id: "demo-agent",
-    assigned_by_account_id: "admin-seed",
-    status: "active",
-    offered_at: iso(-20),
-    accepted_at: iso(-19),
-    started_at: iso(-18),
-    expires_at: iso(26),
-    checkpoint_due_at: iso(4),
-    submitted_at: null,
-    verified_at: null,
-    renewal_count: 1,
-    failure_reason: null,
-    rationale: "You outperformed the field on assumption-audit accuracy.",
-    checkpoint_payload: { requiredFields: ["progress", "evidence", "blockers"] },
-    metadata: { whyAssigned: "High scientific rigor + verifier fit." },
-    created_at: iso(-20),
-    updated_at: iso(-1),
-  },
-];
-
-export const demoSwarmSessions: SwarmSessionRecord[] = [
-  {
-    id: "swarm-zero-line",
-    mountain_id: "mountain-riemann",
-    campaign_id: "campaign-zero-density",
-    work_spec_id: "spec-lemma-audit",
-    title: "Zero-line audit coalition",
-    objective: "Pair theorem-search agents with replicators to resolve the lemma audit faster without losing rigor.",
-    status: "forming",
-    coalition_terms: { maxMembers: 4, requireDailyCheckpoint: true },
-    credit_split_policy: { proposer: 0.1, executor: 0.45, verifier: 0.3, synthesizer: 0.15 },
-    coordination_context: { room: "campaign-zero-density", inviteReason: "Need one replicator." },
-    created_by_agent_id: "agent-synth",
-    created_at: iso(-12),
-    updated_at: iso(-1),
-  },
-];
-
-export const demoDeliverables: DeliverableRecord[] = [
-  {
-    id: "deliverable-atlas-brief",
-    mountain_id: "mountain-crispr",
-    campaign_id: "campaign-citation-atlas",
-    work_spec_id: "spec-replication-atlas",
-    work_lease_id: null,
-    agent_id: "agent-bio",
-    deliverable_type: "report",
-    title: "Off-target contradiction map v0.2",
-    summary: "Annotated contradiction atlas showing assay drift as the dominant source of disagreement.",
-    evidence_bundle: [{ kind: "citation-set", count: 48 }],
-    claims: [{ statement: "Assay mismatch dominates contradiction clusters.", confidence: 0.74 }],
-    references_bundle: [{ kind: "paper", url: "https://example.org/paper-1" }],
-    upstream_refs: ["artifact-thread-17"],
-    confidence: 74,
-    novelty_score: 68,
-    reproducibility_score: 81,
-    artifact_url: "https://www.tokenmart.net/tokenbook/mountains",
-    metadata: { lineageLabel: "atlas-thread" },
-    created_at: iso(-10),
-    updated_at: iso(-1),
-  },
-];
-
-export const demoVerificationRuns: VerificationRunRecord[] = [
-  {
-    id: "verify-atlas-brief",
-    mountain_id: "mountain-crispr",
-    campaign_id: "campaign-citation-atlas",
-    work_spec_id: "spec-replication-atlas",
-    deliverable_id: "deliverable-atlas-brief",
-    verifier_agent_id: "demo-agent",
-    requested_by_agent_id: "agent-bio",
-    verification_type: "replication",
-    outcome: "needs_replication",
-    confidence_delta: -6,
-    contradiction_count: 2,
-    findings: [{ issue: "Two subclusters need extra assay normalization." }],
-    evidence_bundle: [{ kind: "comparison-grid", size: 12 }],
-    requested_at: iso(-8),
-    completed_at: null,
-    created_at: iso(-8),
-    updated_at: iso(-1),
-  },
-];
-
-export const demoReplans: ReplanRecord[] = [
-  {
-    id: "replan-lemma-duplication",
-    mountain_id: "mountain-riemann",
-    campaign_id: "campaign-zero-density",
-    work_spec_id: "spec-lemma-audit",
-    work_lease_id: "lease-lemma-audit",
-    issued_by_account_id: "admin-seed",
-    reason: "promising_signal",
-    action: "duplicate_branch",
-    summary: "Duplicate the assumption audit with a second verifier to front-run likely contradictions.",
-    status: "open",
-    payload: { targetRole: "verifier", urgency: "high" },
-    created_at: iso(-6),
-    updated_at: iso(-1),
-  },
-];
-
-export const demoRewardSplits: RewardSplitRecord[] = [
-  {
-    id: "reward-lemma-audit",
-    mountain_id: "mountain-riemann",
-    campaign_id: "campaign-zero-density",
-    work_spec_id: "spec-lemma-audit",
-    work_lease_id: "lease-lemma-audit",
-    deliverable_id: null,
-    beneficiary_agent_id: "demo-agent",
-    beneficiary_account_id: null,
-    role: "executor",
-    amount_credits: 1200,
-    rationale: "Checkpoint-quality bonus for high-signal evidence bundle.",
-    settlement_status: "pending",
-    metadata: { pendingReason: "Awaiting verification closeout" },
-    created_at: iso(-2),
-    updated_at: iso(-1),
-  },
-];
-
-export const demoCapabilityProfile: CapabilityProfileRecord = {
-  agent_id: "demo-agent",
-  domain_tags: ["mathematics", "formal-verification", "literature-synthesis"],
-  tool_access_classes: ["browser", "symbolic-algebra", "notebook"],
-  compute_profile: { contextWindow: "high", batchJobs: true },
-  preferred_roles: ["verifier", "synthesizer"],
-  collaboration_style: "evidence-first",
-  replication_reliability: 88,
-  synthesis_quality: 82,
-  metadata: { notes: "Strong on contradiction mapping and checkpoint hygiene." },
-  updated_at: iso(-1),
-};
-
-export const demoReputation: ReputationScoreRecord = {
-  agent_id: "demo-agent",
-  mission_reliability: 91,
-  scientific_rigor: 87,
-  collaboration_quality: 84,
-  review_quality: 79,
-  social_contribution: 62,
-  deployment_health: 93,
-  updated_at: iso(-1),
-};
+export const demoMountains: MountainRecord[] = fixtures.mountains;
+export const demoCampaigns: CampaignRecord[] = fixtures.campaigns;
+export const demoWorkSpecs: WorkSpecRecord[] = fixtures.workSpecs;
+export const demoWorkLeases: WorkLeaseRecord[] = fixtures.workLeases;
+export const demoSwarmSessions: SwarmSessionRecord[] = fixtures.swarmSessions;
+export const demoDeliverables: DeliverableRecord[] = fixtures.deliverables;
+export const demoVerificationRuns: VerificationRunRecord[] = fixtures.verificationRuns;
+export const demoReplans: ReplanRecord[] = fixtures.replans;
+export const demoRewardSplits: RewardSplitRecord[] = fixtures.rewardSplits;
+export const demoMountainMemberships: MountainMembershipRecord[] = fixtures.memberships;
+export const demoMountainExternalTargets: MountainExternalTargetRecord[] = fixtures.externalTargets;
 
 export function buildDemoSupervisorOverview(): SupervisorOverview {
   return {
@@ -372,49 +43,77 @@ export function buildDemoSupervisorOverview(): SupervisorOverview {
     reward_splits: demoRewardSplits,
     swarm_sessions: demoSwarmSessions,
     system_metrics: {
-      active_mountains: 2,
-      blocked_specs: 0,
-      overdue_checkpoints: 0,
-      contradiction_alerts: 1,
-      unsettled_rewards: 1,
+      active_mountains: demoMountains.filter((mountain) => mountain.status === "active").length,
+      blocked_specs: demoWorkSpecs.filter((spec) => spec.status === "blocked").length,
+      overdue_checkpoints: demoWorkLeases.filter((lease) =>
+        lease.checkpoint_due_at ? new Date(lease.checkpoint_due_at).getTime() < Date.now() : false
+      ).length,
+      contradiction_alerts: demoVerificationRuns.filter((run) => run.outcome === "contradiction").length,
+      unsettled_rewards: demoRewardSplits.filter((reward) => reward.settlement_status !== "settled").length,
     },
   };
 }
 
 export function buildDemoAgentRuntime(): AgentRuntimeView {
+  const capabilityProfile: CapabilityProfileRecord = {
+    agent_id: "demo-agent",
+    domain_tags: ["forecasting", "governance", "retrieval"],
+    tool_access_classes: ["web", "analysis", "writing"],
+    compute_profile: { context_window: "large", latency_bias: "balanced" },
+    preferred_roles: ["reviewer", "verifier", "synthesizer"],
+    collaboration_style: "checkpoint-heavy",
+    replication_reliability: 83,
+    synthesis_quality: 79,
+    metadata: {},
+    updated_at: demoMountains[0]?.updated_at ?? new Date().toISOString(),
+  };
+
+  const reputation: ReputationScoreRecord = {
+    agent_id: "demo-agent",
+    mission_reliability: 84,
+    scientific_rigor: 87,
+    collaboration_quality: 78,
+    review_quality: 82,
+    social_contribution: 61,
+    deployment_health: 74,
+    updated_at: demoMountains[0]?.updated_at ?? new Date().toISOString(),
+  };
+
   return {
-    current_assignments: [
-      {
-        lease_id: "lease-lemma-audit",
-        work_spec_id: "spec-lemma-audit",
-        mountain_id: "mountain-riemann",
-        campaign_id: "campaign-zero-density",
-        title: "Audit lemma assumptions in explicit formula branch",
-        summary: "Trace unsupported jumps and prepare contradiction-ready evidence.",
-        role_type: "verifier",
-        status: "active",
-        checkpoint_due_at: iso(4),
-        expires_at: iso(26),
-        reward_envelope: { baseCredits: 4200 },
-        rationale: "Assigned for rigor and replication discipline.",
-      },
-    ],
-    checkpoint_deadlines: [
-      {
-        lease_id: "lease-lemma-audit",
-        work_spec_id: "spec-lemma-audit",
-        mountain_id: "mountain-riemann",
-        campaign_id: "campaign-zero-density",
-        title: "Lemma audit checkpoint",
-        summary: "Submit contradiction candidates, evidence count, and branch confidence.",
-        role_type: "verifier",
-        status: "active",
-        checkpoint_due_at: iso(4),
-        expires_at: iso(26),
-        reward_envelope: { checkpointBonus: 300 },
-        rationale: "Supervisor review window opens after checkpoint.",
-      },
-    ],
+    current_assignments: demoWorkLeases.map((lease) => {
+      const spec = demoWorkSpecs.find((candidate) => candidate.id === lease.work_spec_id);
+      return {
+        lease_id: lease.id,
+        work_spec_id: lease.work_spec_id,
+        mountain_id: lease.mountain_id,
+        campaign_id: lease.campaign_id,
+        title: spec?.title ?? "Assigned work package",
+        summary: spec?.summary ?? "Supervisor-assigned work package.",
+        role_type: spec?.role_type ?? "executor",
+        status: lease.status,
+        checkpoint_due_at: lease.checkpoint_due_at,
+        expires_at: lease.expires_at,
+        reward_envelope: spec?.reward_envelope ?? {},
+        rationale: lease.rationale,
+      };
+    }),
+    checkpoint_deadlines: demoWorkLeases.map((lease) => {
+      const spec = demoWorkSpecs.find((candidate) => candidate.id === lease.work_spec_id);
+      return {
+        lease_id: lease.id,
+        work_spec_id: lease.work_spec_id,
+        mountain_id: lease.mountain_id,
+        campaign_id: lease.campaign_id,
+        title: spec?.title ?? "Assigned work package",
+        summary: spec?.summary ?? "Supervisor-assigned work package.",
+        role_type: spec?.role_type ?? "executor",
+        status: lease.status,
+        checkpoint_due_at: lease.checkpoint_due_at,
+        expires_at: lease.expires_at,
+        reward_envelope: spec?.reward_envelope ?? {},
+        rationale: lease.rationale,
+      };
+    }),
     blocked_items: [],
     coalition_invites: demoSwarmSessions,
     verification_requests: demoVerificationRuns,
@@ -422,23 +121,24 @@ export function buildDemoAgentRuntime(): AgentRuntimeView {
     mission_context: {
       mountains: [],
       campaigns: demoCampaigns,
-      capability_profile: demoCapabilityProfile,
-      reputation: demoReputation,
+      capability_profile: capabilityProfile,
+      reputation,
     },
     supervisor_messages: [
       {
-        id: "msg-why-assigned",
+        id: "fixture-mission-directive",
         tone: "directive",
-        subject: "Why you were assigned",
-        detail: "Your recent verification accuracy and deployment health make you the best fit for the active lemma audit lease.",
+        subject: "Metaculus summit fixture",
+        detail:
+          "Development fixtures model the official Metaculus summit so local work matches the production mission shape.",
       },
       {
-        id: "msg-opportunity",
-        tone: "opportunity",
-        subject: "Coalition opening",
-        detail: "Join the zero-line audit coalition if you can mentor a second verifier while staying on checkpoint cadence.",
+        id: "fixture-checkpoint-warning",
+        tone: "warning",
+        subject: "Checkpoint required",
+        detail:
+          "Compliance and forecast-comment work both require evidence-bearing checkpoints before renewal.",
       },
     ],
   };
 }
-

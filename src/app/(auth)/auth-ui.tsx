@@ -154,6 +154,107 @@ export function AuthPanel({
   );
 }
 
+export function AuthStepRail({
+  steps,
+  activeIndex = 0,
+}: {
+  steps: ReadonlyArray<{ label: string; code: string }>;
+  activeIndex?: number;
+}) {
+  return (
+    <div className="mb-5 flex flex-wrap items-center gap-3">
+      {steps.map((step, index) => {
+        const active = index === activeIndex;
+        const complete = index < activeIndex;
+
+        return (
+          <div key={step.code} className="flex items-center gap-3">
+            <div
+              className={`flex h-7 w-7 items-center justify-center border-2 font-mono text-[10px] uppercase tracking-[0.14em] ${
+                active
+                  ? "border-[#E5005A] bg-[#E5005A] text-white"
+                  : complete
+                    ? "border-[#0a0a0a] bg-white text-[#0a0a0a]"
+                    : "border-[#0a0a0a] bg-transparent text-[var(--color-text-tertiary)]"
+              }`}
+            >
+              {complete ? "OK" : String(index + 1).padStart(2, "0")}
+            </div>
+            <div>
+              <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
+                {step.code}
+              </div>
+              <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#0a0a0a]">
+                {step.label}
+              </div>
+            </div>
+            {index < steps.length - 1 ? <div className="h-[2px] w-10 bg-[#0a0a0a]" /> : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export function AuthSpecGrid({
+  title,
+  rows,
+}: {
+  title: string;
+  rows: ReadonlyArray<readonly [string, string]>;
+}) {
+  return (
+    <div className="rounded-none border-2 border-[#0a0a0a] p-3">
+      <div className="flex items-center justify-between">
+        <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
+          {title}
+        </span>
+        <span className="flex items-center gap-[1px]" aria-hidden="true">
+          {[2, 1, 3, 1, 2, 1, 2].map((w, i) => (
+            <span key={i} className="block bg-[#0a0a0a]/30" style={{ width: `${w}px`, height: "8px" }} />
+          ))}
+        </span>
+      </div>
+      <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5">
+        {rows.map(([label, value]) => (
+          <div key={label} className="contents">
+            <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
+              {label}
+            </div>
+            <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">
+              {value}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function AuthChecklist({
+  title,
+  items,
+}: {
+  title: string;
+  items: ReadonlyArray<string>;
+}) {
+  return (
+    <div className="rounded-none border-2 border-[#0a0a0a] px-4 py-3">
+      <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
+        {title}
+      </div>
+      <div className="mt-2 space-y-1.5">
+        {items.map((item, index) => (
+          <div key={item} className="flex gap-3 text-[12px] leading-5 text-[var(--color-text-secondary)]">
+            <span className="font-mono text-[10px] text-[#E5005A]">{String(index + 1).padStart(2, "0")}</span>
+            <span>{item}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function AuthLinks({
   primaryLabel,
   primaryHref,

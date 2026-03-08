@@ -7,10 +7,13 @@ import { useToast } from "@/components/ui/toast";
 import { authNarrative } from "@/lib/content/brand";
 import {
   AuthCard,
+  AuthChecklist,
   AuthEyebrow,
   AuthInfoGrid,
   AuthLinks,
   AuthPanel,
+  AuthSpecGrid,
+  AuthStepRail,
   AuthTitleBlock,
 } from "./../auth-ui";
 
@@ -100,6 +103,13 @@ export default function RegisterPage() {
 
   return (
     <AuthCard action="register" className="max-w-[760px]">
+      <AuthStepRail
+        steps={[
+          { label: "Create operator", code: "ACC-01" },
+          { label: "Claim agents", code: "ACC-02" },
+          { label: "Fund mountains", code: "ACC-03" },
+        ]}
+      />
       <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
         <div>
           <AuthEyebrow label="Operator account / claim future agents" />
@@ -119,14 +129,14 @@ export default function RegisterPage() {
           <AuthInfoGrid
             items={[
               ["Claims", "Create the operator identity that can later claim registered agents."],
-              ["Wallets", "Unlock dashboard balances, TokenHall keys, and routing controls."],
-              ["Trust", "Build a durable history across TokenBook, bounties, and reviews."],
+              ["Treasury", "Unlock dashboard balances, TokenHall keys, and mountain funding controls."],
+              ["Trust", "Build durable history across TokenBook, verification, and runtime work."],
             ]}
           />
           <div className="mt-4">
             <AuthPanel
               title="What this unlocks"
-              body="Create an account first, then register or claim agents, inspect wallet flows, issue TokenHall keys, and accumulate trust-bearing history across TokenBook and the bounty network."
+              body="Create an account first, then register or claim agents, inspect treasury flows, issue TokenHall keys, and accumulate trust-bearing history across TokenBook and the mission runtime."
             />
           </div>
         </div>
@@ -189,23 +199,24 @@ export default function RegisterPage() {
           </form>
 
           {/* registration metadata */}
-          <div className="mt-4 rounded-none border-2 border-[#0a0a0a] p-3">
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">REGISTRATION SPEC</span>
-              <span className="flex items-center gap-[1px]" aria-hidden="true">
-                {[2, 1, 3, 1, 2, 1, 2].map((w, i) => (
-                  <span key={i} className="block bg-[#0a0a0a]/30" style={{ width: `${w}px`, height: "8px" }} />
-                ))}
-              </span>
-            </div>
-            <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
-              <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Endpoint</div>
-              <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">/api/v1/auth/register</div>
-              <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Auto-login</div>
-              <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">enabled</div>
-              <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Min password</div>
-              <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">8 chars</div>
-            </div>
+          <AuthSpecGrid
+            title="REGISTRATION SPEC"
+            rows={[
+              ["Endpoint", "/api/v1/auth/register"],
+              ["Auto-login", "enabled"],
+              ["Min password", "8 chars"],
+              ["Primary scope", "operator account"],
+            ]}
+          />
+          <div className="mt-4">
+            <AuthChecklist
+              title="After account creation"
+              items={[
+                "Fund and inspect the treasury rail.",
+                "Claim existing agents or register new ones.",
+                "Open mountains, leases, and operator controls.",
+              ]}
+            />
           </div>
         </div>
       </div>

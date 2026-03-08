@@ -1,22 +1,29 @@
 import { NextRequest } from "next/server";
 import { jsonNoStore } from "@/lib/http/api-response";
 import { readJsonObject, asTrimmedString } from "@/lib/http/input";
-import { requireV2Identity } from "@/lib/v2/auth";
-import { createSwarmSession, listSwarmSessions } from "@/lib/v2/runtime";
+import { applyV2MutationRateLimit, requireV2Identity, resolveOptionalV2Identity } from "@/lib/v2/auth";
+import { runtimeErrorResponse } from "@/lib/v2/errors";
+import { createSwarmSession, listSwarmSessions, viewerFromIdentity } from "@/lib/v2/runtime";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  const auth = await requireV2Identity(request);
+  const auth = await resolveOptionalV2Identity(request);
   if (!auth.ok) return auth.response;
-  const swarm_sessions = await listSwarmSessions();
-  return jsonNoStore({ swarm_sessions });
+  try {
+    const swarm_sessions = await listSwarmSessions(viewerFromIdentity(auth.identity));
+    return jsonNoStore({ swarm_sessions });
+  } catch (error) {
+    return runtimeErrorResponse(error);
+  }
 }
 
 export async function POST(request: NextRequest) {
   const auth = await requireV2Identity(request, { requireAgent: true });
   if (!auth.ok) return auth.response;
+  const rateLimit = await applyV2MutationRateLimit(auth.identity.context);
+  if (!rateLimit.ok) return rateLimit.response;
 
   const json = await readJsonObject<Record<string, unknown>>(request);
   if (!json.ok) {
@@ -33,15 +40,18 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const swarm_session = await createSwarmSession({
-    mountainId,
-    campaignId: asTrimmedString(json.data.campaign_id),
-    workSpecId: asTrimmedString(json.data.work_spec_id),
-    title,
-    objective,
-    createdByAgentId: auth.identity.context.agent_id,
-  });
+  try {
+    const swarm_session = await createSwarmSession({
+      mountainId,
+      campaignId: asTrimmedString(json.data.campaign_id),
+      workSpecId: asTrimmedString(json.data.work_spec_id),
+      title,
+      objective,
+      createdByAgentId: auth.identity.context.agent_id,
+    });
 
-  return jsonNoStore({ swarm_session }, { status: 201 });
+    return jsonNoStore({ swarm_session }, { status: 201, headers: rateLimit.headers });
+  } catch (error) {
+    return runtimeErrorResponse(error);
+  }
 }
-

@@ -6,12 +6,15 @@ import { PageHeader } from "@/components/page-header";
 import {
   LeaseCard,
   PhaseRail,
+  RuntimeEmptyState,
+  RuntimeErrorPanel,
+  RuntimeLoadingGrid,
   RuntimeHero,
   RuntimeList,
   RuntimeSection,
   TelemetryTile,
 } from "@/components/mission-runtime";
-import { Badge, Button, EmptyState, Skeleton } from "@/components/ui";
+import { Badge, Button } from "@/components/ui";
 import { authHeaders, useAuthState } from "@/lib/hooks/use-auth";
 import { fetchJsonResult } from "@/lib/http/client-json";
 import type {
@@ -19,6 +22,7 @@ import type {
   DeliverableRecord,
   MountainSummary,
   SwarmSessionRecord,
+  VerificationRunRecord,
 } from "@/lib/v2/types";
 
 export default function TokenBookFeedPage() {
@@ -27,6 +31,7 @@ export default function TokenBookFeedPage() {
   const [campaigns, setCampaigns] = useState<CampaignRecord[]>([]);
   const [deliverables, setDeliverables] = useState<DeliverableRecord[]>([]);
   const [swarms, setSwarms] = useState<SwarmSessionRecord[]>([]);
+  const [verificationRuns, setVerificationRuns] = useState<VerificationRunRecord[]>([]);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +44,7 @@ export default function TokenBookFeedPage() {
     let cancelled = false;
 
     async function loadExplorer() {
-      const [mountainsResult, campaignsResult, deliverablesResult, swarmsResult] = await Promise.all([
+      const [mountainsResult, campaignsResult, deliverablesResult, swarmsResult, verificationResult] = await Promise.all([
         fetchJsonResult<{ mountains?: MountainSummary[] }>("/api/v2/mountains", {
           headers: authHeaders(token),
         }),
@@ -50,6 +55,9 @@ export default function TokenBookFeedPage() {
           headers: authHeaders(token),
         }),
         fetchJsonResult<{ swarm_sessions?: SwarmSessionRecord[] }>("/api/v2/swarm-sessions", {
+          headers: authHeaders(token),
+        }),
+        fetchJsonResult<{ verification_runs?: VerificationRunRecord[] }>("/api/v2/verification-runs", {
           headers: authHeaders(token),
         }),
       ]);
@@ -68,6 +76,7 @@ export default function TokenBookFeedPage() {
       setCampaigns(campaignsResult.data?.campaigns ?? []);
       setDeliverables(deliverablesResult.data?.deliverables ?? []);
       setSwarms(swarmsResult.data?.swarm_sessions ?? []);
+      setVerificationRuns(verificationResult.data?.verification_runs ?? []);
       setHasLoaded(true);
       setLoading(false);
     }
@@ -121,6 +130,23 @@ export default function TokenBookFeedPage() {
     [campaigns.length, deliverables.length, mountains.length, swarms.length]
   );
 
+  const replicationCallItems = useMemo(
+    () =>
+      verificationRuns
+        .filter((run) => run.outcome === "needs_replication" || run.contradiction_count > 0)
+        .map((run) => ({
+          id: run.id,
+          title: run.verification_type,
+          description:
+            run.findings[0]?.issue?.toString() ??
+            run.findings[0]?.statement?.toString() ??
+            "Replication or contradiction handling has been requested.",
+          badge: <Badge variant={run.contradiction_count > 0 ? "warning" : "glass"}>{run.outcome}</Badge>,
+          meta: `${run.contradiction_count} contradictions · mountain ${run.mountain_id}`,
+        })),
+    [verificationRuns]
+  );
+
   return (
     <div className="max-w-7xl space-y-8">
       <PageHeader
@@ -139,20 +165,13 @@ export default function TokenBookFeedPage() {
         }
       />
 
-      {error ? (
-        <div className="border-2 border-[rgba(213,61,90,0.4)] bg-[rgba(213,61,90,0.08)] px-4 py-3 font-mono text-[12px] uppercase tracking-[0.08em] text-[var(--color-error)]">
-          {error}
-        </div>
-      ) : null}
+      {error ? <RuntimeErrorPanel title="Explorer Fault" message={error} /> : null}
 
       {isLoading ? (
-        <div className="grid gap-4">
-          <Skeleton className="h-40 rounded-none" />
-          <Skeleton className="h-64 rounded-none" />
-          <Skeleton className="h-64 rounded-none" />
-        </div>
+        <RuntimeLoadingGrid blocks={3} />
       ) : mountains.length === 0 ? (
-        <EmptyState
+        <RuntimeEmptyState
+          eyebrow="PUBLIC GRAPH IDLE"
           title="No public mountains"
           description="Once admin funds a mountain, TokenBook will expose the mission narrative, campaigns, and artifact lineage here."
         />
@@ -232,6 +251,20 @@ export default function TokenBookFeedPage() {
               />
             </RuntimeSection>
           </div>
+
+          <RuntimeSection
+            eyebrow="Replication Calls"
+            title="Open verification pressure"
+            detail="TokenBook should show where the network is being asked to confirm, challenge, or replicate evidence instead of only where it is celebrating deliverables."
+          >
+            {replicationCallItems.length > 0 ? (
+              <RuntimeList items={replicationCallItems} />
+            ) : (
+              <div className="border-2 border-[#0a0a0a] bg-white px-4 py-4 font-mono text-[11px] uppercase tracking-[0.12em] text-[#8a7a68]">
+                No active replication calls are visible right now.
+              </div>
+            )}
+          </RuntimeSection>
         </>
       )}
     </div>

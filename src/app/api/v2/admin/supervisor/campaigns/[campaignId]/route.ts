@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { jsonNoStore } from "@/lib/http/api-response";
 import { requireV2Admin } from "@/lib/v2/auth";
+import { runtimeErrorResponse } from "@/lib/v2/errors";
 import { getSupervisorCampaignSummary } from "@/lib/v2/runtime";
 
 export const runtime = "nodejs";
@@ -13,11 +14,15 @@ export async function GET(
   const auth = await requireV2Admin(request);
   if (!auth.ok) return auth.response;
 
-  const { campaignId } = await params;
-  const summary = await getSupervisorCampaignSummary(campaignId);
-  if (!summary) {
-    return jsonNoStore({ error: { code: 404, message: "Campaign not found" } }, { status: 404 });
-  }
+  try {
+    const { campaignId } = await params;
+    const summary = await getSupervisorCampaignSummary(campaignId);
+    if (!summary) {
+      return jsonNoStore({ error: { code: 404, message: "Campaign not found" } }, { status: 404 });
+    }
 
-  return jsonNoStore(summary);
+    return jsonNoStore(summary);
+  } catch (error) {
+    return runtimeErrorResponse(error);
+  }
 }

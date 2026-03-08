@@ -1,22 +1,33 @@
 import { NextRequest } from "next/server";
 import { jsonNoStore } from "@/lib/http/api-response";
 import { readJsonObject, asTrimmedString, asFiniteNumber } from "@/lib/http/input";
-import { requireV2Admin, requireV2Identity } from "@/lib/v2/auth";
-import { createCampaign, listCampaigns } from "@/lib/v2/runtime";
+import {
+  applyV2MutationRateLimit,
+  requireV2Admin,
+  resolveOptionalV2Identity,
+} from "@/lib/v2/auth";
+import { runtimeErrorResponse } from "@/lib/v2/errors";
+import { createCampaign, listCampaigns, viewerFromIdentity } from "@/lib/v2/runtime";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  const auth = await requireV2Identity(request);
+  const auth = await resolveOptionalV2Identity(request);
   if (!auth.ok) return auth.response;
-  const campaigns = await listCampaigns();
-  return jsonNoStore({ campaigns });
+  try {
+    const campaigns = await listCampaigns(viewerFromIdentity(auth.identity));
+    return jsonNoStore({ campaigns });
+  } catch (error) {
+    return runtimeErrorResponse(error);
+  }
 }
 
 export async function POST(request: NextRequest) {
   const auth = await requireV2Admin(request);
   if (!auth.ok) return auth.response;
+  const rateLimit = await applyV2MutationRateLimit(auth.identity.context);
+  if (!rateLimit.ok) return rateLimit.response;
 
   const json = await readJsonObject<Record<string, unknown>>(request);
   if (!json.ok) {
@@ -33,17 +44,20 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const campaign = await createCampaign({
-    mountainId,
-    title,
-    summary,
-    hypothesis: asTrimmedString(json.data.hypothesis),
-    budgetCredits: asFiniteNumber(json.data.budget_credits) ?? 0,
-    riskCeiling: asTrimmedString(json.data.risk_ceiling) ?? "medium",
-    decompositionAggressiveness: asFiniteNumber(json.data.decomposition_aggressiveness) ?? 50,
-    ownerAccountId: auth.identity.context.account_id,
-  });
+  try {
+    const campaign = await createCampaign({
+      mountainId,
+      title,
+      summary,
+      hypothesis: asTrimmedString(json.data.hypothesis),
+      budgetCredits: asFiniteNumber(json.data.budget_credits) ?? 0,
+      riskCeiling: asTrimmedString(json.data.risk_ceiling) ?? "medium",
+      decompositionAggressiveness: asFiniteNumber(json.data.decomposition_aggressiveness) ?? 50,
+      ownerAccountId: auth.identity.context.account_id,
+    });
 
-  return jsonNoStore({ campaign }, { status: 201 });
+    return jsonNoStore({ campaign }, { status: 201, headers: rateLimit.headers });
+  } catch (error) {
+    return runtimeErrorResponse(error);
+  }
 }
-

@@ -4,11 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import {
   LeaseCard,
+  RuntimeEmptyState,
+  RuntimeErrorPanel,
+  RuntimeLoadingGrid,
   RuntimeHero,
   RuntimeList,
   RuntimeSection,
 } from "@/components/mission-runtime";
-import { Badge, Button, EmptyState, Skeleton, Textarea, useToast } from "@/components/ui";
+import { Badge, Button, Textarea, useToast } from "@/components/ui";
 import { authHeaders, useAuthState } from "@/lib/hooks/use-auth";
 import { fetchJsonResult, isMissingAgentResponse } from "@/lib/http/client-json";
 import type { AgentRuntimeView } from "@/lib/v2/types";
@@ -123,6 +126,40 @@ export default function RuntimeWorkbenchPage() {
     [runtime]
   );
 
+  const blockedItems = useMemo(
+    () =>
+      (runtime?.blocked_items ?? []).map((assignment) => ({
+        id: assignment.lease_id,
+        title: assignment.title,
+        description: assignment.summary,
+        badge: <Badge variant="danger">{assignment.status}</Badge>,
+        meta: `${assignment.role_type} · mountain ${assignment.mountain_id} · checkpoint or escalation required`,
+      })),
+    [runtime]
+  );
+
+  const evidencePreview = useMemo(
+    () => [
+      {
+        label: "Checkpoint note",
+        value: draftCheckpoint.trim() ? `${draftCheckpoint.trim().length} chars` : "empty",
+      },
+      {
+        label: "Deliverable summary",
+        value: draftDeliverable.trim() ? `${draftDeliverable.trim().length} chars` : "empty",
+      },
+      {
+        label: "Verification inbox",
+        value: String(runtime?.verification_requests.length ?? 0),
+      },
+      {
+        label: "Speculative routes",
+        value: String(runtime?.recommended_speculative_lines.length ?? 0),
+      },
+    ],
+    [draftCheckpoint, draftDeliverable, runtime]
+  );
+
   const handleSubmitArtifact = async () => {
     if (!token || !activeAssignment || !draftDeliverable.trim()) return;
 
@@ -171,20 +208,13 @@ export default function RuntimeWorkbenchPage() {
         }
       />
 
-      {error ? (
-        <div className="border-2 border-[rgba(213,61,90,0.4)] bg-[rgba(213,61,90,0.08)] px-4 py-3 font-mono text-[12px] uppercase tracking-[0.08em] text-[var(--color-error)]">
-          {error}
-        </div>
-      ) : null}
+      {error ? <RuntimeErrorPanel title="Workbench Fault" message={error} /> : null}
 
       {isLoading ? (
-        <div className="grid gap-4">
-          <Skeleton className="h-40 rounded-none" />
-          <Skeleton className="h-56 rounded-none" />
-          <Skeleton className="h-56 rounded-none" />
-        </div>
+        <RuntimeLoadingGrid blocks={3} />
       ) : !runtime ? (
-        <EmptyState
+        <RuntimeEmptyState
+          eyebrow="WORKBENCH OFFLINE"
           title="No runtime loaded"
           description="Select an agent or register one before using the mission workbench."
         />
@@ -260,6 +290,74 @@ export default function RuntimeWorkbenchPage() {
                   meta: "Supervisor message",
                 }))}
               />
+            </RuntimeSection>
+          </div>
+
+          <div className="grid gap-8 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+            <RuntimeSection
+              eyebrow="Evidence Packet"
+              title="Submission readiness"
+              detail="The workbench should make evidence quality legible before you send the artifact into verification."
+            >
+              <div className="grid gap-3 sm:grid-cols-2">
+                {evidencePreview.map((item) => (
+                  <div key={item.label} className="border-2 border-[#0a0a0a] bg-white px-3 py-3">
+                    <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#6b6050]">
+                      {item.label}
+                    </div>
+                    <div className="mt-2 font-mono text-[12px] uppercase tracking-[0.12em] text-[#0a0a0a]">
+                      {item.value}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {activeAssignment ? (
+                <div className="mt-4 border-2 border-[#0a0a0a] bg-white px-4 py-4">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#6b6050]">
+                    Lease context
+                  </div>
+                  <div className="mt-2 text-[13px] leading-6 text-[#4a4036]">
+                    {activeAssignment.summary}
+                  </div>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <div className="border-2 border-[#0a0a0a] bg-[rgba(255,255,255,0.8)] px-3 py-3">
+                      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#6b6050]">
+                        Base credits
+                      </div>
+                      <div className="mt-2 font-mono text-[12px] uppercase tracking-[0.12em] text-[#0a0a0a]">
+                        {String(
+                          activeAssignment.reward_envelope.baseCredits ??
+                            activeAssignment.reward_envelope.base_credits ??
+                            "unscoped",
+                        )}
+                      </div>
+                    </div>
+                    <div className="border-2 border-[#0a0a0a] bg-[rgba(255,255,255,0.8)] px-3 py-3">
+                      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#6b6050]">
+                        Lease id
+                      </div>
+                      <div className="mt-2 font-mono text-[12px] uppercase tracking-[0.12em] text-[#0a0a0a]">
+                        {activeAssignment.lease_id.slice(0, 12)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </RuntimeSection>
+
+            <RuntimeSection
+              eyebrow="Blocked Work"
+              title="Escalation queue"
+              detail="If work is stalled, the runtime should surface it here instead of letting it silently decay."
+            >
+              {blockedItems.length > 0 ? (
+                <RuntimeList items={blockedItems} />
+              ) : (
+                <div className="border-2 border-[#0a0a0a] bg-white px-4 py-4 font-mono text-[11px] uppercase tracking-[0.12em] text-[#8a7a68]">
+                  No blocked items are attached to this runtime.
+                </div>
+              )}
             </RuntimeSection>
           </div>
 

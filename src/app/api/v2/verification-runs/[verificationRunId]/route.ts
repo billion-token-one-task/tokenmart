@@ -1,15 +1,16 @@
 import { NextRequest } from "next/server";
 import { jsonNoStore } from "@/lib/http/api-response";
 import { readJsonObject } from "@/lib/http/input";
-import { requireV2Identity } from "@/lib/v2/auth";
-import { getVerificationRun, updateVerificationRun } from "@/lib/v2/runtime";
+import {
+  applyV2MutationRateLimit,
+  requireV2Admin,
+  requireV2Identity,
+} from "@/lib/v2/auth";
+import { runtimeErrorResponse } from "@/lib/v2/errors";
+import { getVerificationRun, updateVerificationRun, viewerFromIdentity } from "@/lib/v2/runtime";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function ownsVerification(agentId: string | null, verifierAgentId: string | null) {
-  return Boolean(agentId) && Boolean(verifierAgentId) && agentId === verifierAgentId;
-}
 
 export async function GET(
   request: NextRequest,
@@ -18,48 +19,34 @@ export async function GET(
   const auth = await requireV2Identity(request);
   if (!auth.ok) return auth.response;
 
-  const { verificationRunId } = await params;
-  const verification_run = await getVerificationRun(verificationRunId);
-  if (!verification_run) {
-    return jsonNoStore({ error: { code: 404, message: "Verification run not found" } }, { status: 404 });
-  }
-
-  const canAccess =
-    auth.identity.accountRole === "admin" ||
-    auth.identity.accountRole === "super_admin" ||
-    ownsVerification(auth.identity.context.agent_id, verification_run.verifier_agent_id);
-
-  if (!canAccess) {
-    return jsonNoStore(
-      { error: { code: 403, message: "Verification visibility is limited to admins or the verifier" } },
-      { status: 403 },
+  try {
+    const { verificationRunId } = await params;
+    const verification_run = await getVerificationRun(
+      verificationRunId,
+      viewerFromIdentity(auth.identity),
     );
+    if (!verification_run) {
+      return jsonNoStore({ error: { code: 404, message: "Verification run not found" } }, { status: 404 });
+    }
+    return jsonNoStore({ verification_run });
+  } catch (error) {
+    return runtimeErrorResponse(error);
   }
-
-  return jsonNoStore({ verification_run });
 }
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ verificationRunId: string }> },
 ) {
-  const auth = await requireV2Identity(request, { requireAgent: false });
+  const auth = await requireV2Admin(request);
   if (!auth.ok) return auth.response;
+  const rateLimit = await applyV2MutationRateLimit(auth.identity.context);
+  if (!rateLimit.ok) return rateLimit.response;
 
   const { verificationRunId } = await params;
-  const existing = await getVerificationRun(verificationRunId);
+  const existing = await getVerificationRun(verificationRunId, viewerFromIdentity(auth.identity));
   if (!existing) {
     return jsonNoStore({ error: { code: 404, message: "Verification run not found" } }, { status: 404 });
-  }
-
-  const isAdmin =
-    auth.identity.accountRole === "admin" || auth.identity.accountRole === "super_admin";
-  const isOwner = ownsVerification(auth.identity.context.agent_id, existing.verifier_agent_id);
-  if (!isAdmin && !isOwner) {
-    return jsonNoStore(
-      { error: { code: 403, message: "Verification updates are limited to admins or the verifier" } },
-      { status: 403 },
-    );
   }
 
   const json = await readJsonObject<Record<string, unknown>>(request);
@@ -67,19 +54,24 @@ export async function PATCH(
     return jsonNoStore({ error: { code: 400, message: json.error } }, { status: 400 });
   }
 
-  const patch = isAdmin
-    ? json.data
-    : {
-        outcome: json.data.outcome,
-        findings: json.data.findings,
-        evidence_bundle: json.data.evidence_bundle,
-        completed_at: json.data.completed_at,
-      };
+  const patch = {
+    verification_type: json.data.verification_type,
+    outcome: json.data.outcome,
+    findings: json.data.findings,
+    evidence_bundle: json.data.evidence_bundle,
+    completed_at: json.data.completed_at,
+    confidence_delta: json.data.confidence_delta,
+    contradiction_count: json.data.contradiction_count,
+  };
 
-  const verification_run = await updateVerificationRun(verificationRunId, patch);
-  if (!verification_run) {
-    return jsonNoStore({ error: { code: 404, message: "Verification run not found" } }, { status: 404 });
+  try {
+    const verification_run = await updateVerificationRun(verificationRunId, patch);
+    if (!verification_run) {
+      return jsonNoStore({ error: { code: 404, message: "Verification run not found" } }, { status: 404 });
+    }
+
+    return jsonNoStore({ verification_run }, { headers: rateLimit.headers });
+  } catch (error) {
+    return runtimeErrorResponse(error);
   }
-
-  return jsonNoStore({ verification_run });
 }

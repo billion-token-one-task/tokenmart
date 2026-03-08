@@ -76,6 +76,23 @@ export interface ShellNavSection {
   items: ShellNavItem[];
 }
 
+export interface ShellPinnedLink {
+  id: string;
+  label: string;
+  href: string;
+  section: ShellSectionId;
+  summary: string;
+  code: string;
+}
+
+export interface ShellTelemetrySignal {
+  id: string;
+  label: string;
+  value: string;
+  tone: "brand" | "warning" | "success" | "neutral";
+  href: string;
+}
+
 export const shellSectionOrder: ShellNavSection["id"][] = [
   "platform",
   "tokenhall",
@@ -260,7 +277,7 @@ export const shellNavSections: ShellNavSection[] = [
     items: [
       {
         id: "dashboard",
-        label: "Overview",
+        label: "Mission Home",
         href: "/dashboard",
         icon: "grid",
         shortcut: "D",
@@ -268,7 +285,7 @@ export const shellNavSections: ShellNavSection[] = [
       },
       {
         id: "agents",
-        label: "Runtime",
+        label: "Workbench",
         href: "/dashboard/runtime",
         icon: "agent",
         agentEndpoint: "/api/v2/agents/me/runtime",
@@ -295,7 +312,7 @@ export const shellNavSections: ShellNavSection[] = [
     items: [
       {
         id: "th-overview",
-        label: "Overview",
+        label: "Treasury Rail",
         href: "/tokenhall",
         icon: "bolt",
         shortcut: "H",
@@ -331,7 +348,7 @@ export const shellNavSections: ShellNavSection[] = [
     items: [
       {
         id: "tb-feed",
-        label: "Mountains",
+        label: "Mountain Feed",
         href: "/tokenbook/mountains",
         icon: "newspaper",
         shortcut: "F",
@@ -359,7 +376,7 @@ export const shellNavSections: ShellNavSection[] = [
     items: [
       {
         id: "admin",
-        label: "Supervisor",
+        label: "Mission Control",
         href: "/admin/supervisor",
         icon: "gear",
         shortcut: "A",
@@ -389,6 +406,73 @@ export const shellNavSections: ShellNavSection[] = [
         agentEndpoint: "/api/v2/rewards",
       },
     ],
+  },
+];
+
+export const shellPinnedLinks: ShellPinnedLink[] = [
+  {
+    id: "summit",
+    label: "Pinned Mountain",
+    href: "/admin/mountains",
+    section: "platform",
+    summary: "Open the live mountain contract wall and inspect mission pressure.",
+    code: "MNT-01",
+  },
+  {
+    id: "runtime",
+    label: "Checkpoint Lane",
+    href: "/dashboard/runtime",
+    section: "platform",
+    summary: "Move directly into leases, checkpoints, evidence, and verification.",
+    code: "WRK-02",
+  },
+  {
+    id: "tokenbook",
+    label: "Artifact Lineage",
+    href: "/tokenbook/mountains",
+    section: "tokenbook",
+    summary: "Trace campaign rooms, deliverables, and coalition signal across the mission graph.",
+    code: "SIG-03",
+  },
+  {
+    id: "treasury",
+    label: "Treasury Pulse",
+    href: "/admin/treasury",
+    section: "tokenhall",
+    summary: "Track burn, settlement posture, and reward distribution from one rail.",
+    code: "TRY-04",
+  },
+  {
+    id: "supervisor",
+    label: "Supervisor Watch",
+    href: "/admin/supervisor",
+    section: "admin",
+    summary: "Monitor contradictions, blocked specs, and operator intervention pressure.",
+    code: "OPS-05",
+  },
+];
+
+export const shellFallbackTelemetry: ShellTelemetrySignal[] = [
+  {
+    id: "mountains",
+    label: "Mountains",
+    value: "SYNC",
+    tone: "brand",
+    href: "/admin/mountains",
+  },
+  {
+    id: "checkpoints",
+    label: "Checkpoints",
+    value: "LIVE",
+    tone: "warning",
+    href: "/dashboard/runtime",
+  },
+  {
+    id: "lineage",
+    label: "Lineage",
+    value: "TRACE",
+    tone: "success",
+    href: "/tokenbook/mountains",
   },
 ];
 

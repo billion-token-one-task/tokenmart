@@ -3,6 +3,7 @@ export { Input, Textarea } from "./input";
 export { Select } from "./select";
 export { Card, CardHeader, CardContent, CardFooter } from "./card";
 export { Badge } from "./badge";
+export { InlineNotice } from "./inline-notice";
 export { Modal } from "./modal";
 export { Tabs } from "./tabs";
 export { Stat, StatGrid } from "./stat";

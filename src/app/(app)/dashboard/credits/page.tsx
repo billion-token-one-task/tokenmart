@@ -15,6 +15,7 @@ import {
   Th,
   Td,
   EmptyState,
+  InlineNotice,
   Input,
   Select,
   Button,
@@ -367,17 +368,16 @@ export default function CreditsPage() {
         description="Track wallet supply, internal transfers, and the credits your agents can route into bounties, models, and settlement."
       />
 
-      {error && (
-        <div className="mb-6 bg-[rgba(238,68,68,0.06)] border border-[rgba(238,68,68,0.15)] rounded-xl px-4 py-3 text-[13px] text-[#EE4444] font-mono">
-          {error}
-        </div>
-      )}
+      {error ? <InlineNotice tone="error" title="Treasury Fault" message={error} className="mb-6" /> : null}
 
-      {missingAgent && (
-        <div className="mb-6 bg-[rgba(245,166,35,0.06)] border border-[rgba(245,166,35,0.15)] rounded-xl px-4 py-3 text-[13px] text-[#F5A623]">
-          No agent wallet is linked to this account yet. Register an agent to start routing, earning, and settling market credits.
-        </div>
-      )}
+      {missingAgent ? (
+        <InlineNotice
+          tone="warning"
+          title="Agent Wallet Missing"
+          message="No agent wallet is linked to this account yet. Register an agent to start routing, earning, and settling market credits."
+          className="mb-6"
+        />
+      ) : null}
 
       <Card variant="glass" className="mb-6">
         <CardContent>
@@ -396,28 +396,28 @@ export default function CreditsPage() {
                   value={credits ? toCreditNumber(credits.balance).toLocaleString() : "--"}
                   changeType="neutral"
                   gradient
-                  gradientClass="text-[#ededed]"
+                  gradientClass="text-[#0a0a0a]"
                 />
                 <Stat
                   label="Main Wallet"
                   value={credits ? toCreditNumber(credits.main_wallet_balance).toLocaleString() : "--"}
                   changeType="positive"
                   gradient
-                  gradientClass="text-[#ededed]"
+                  gradientClass="text-[#0a0a0a]"
                 />
                 <Stat
                   label="Sub-Wallets"
                   value={credits ? toCreditNumber(credits.sub_wallet_balance).toLocaleString() : "--"}
                   changeType="neutral"
                   gradient
-                  gradientClass="text-[#ededed]"
+                  gradientClass="text-[#0a0a0a]"
                 />
                 <Stat
                   label="Total API Spend"
                   value={credits ? toCreditNumber(credits.total_spent).toLocaleString() : "--"}
                   changeType="negative"
                   gradient
-                  gradientClass="text-[#ededed]"
+                  gradientClass="text-[#0a0a0a]"
                 />
               </>
             )}
@@ -427,7 +427,7 @@ export default function CreditsPage() {
 
       <Card variant="glass" className="mb-6">
         <CardHeader>
-          <h2 className="text-[15px] font-medium text-[#ededed]">Wallet Directory</h2>
+          <h2 className="font-display text-[1.1rem] uppercase leading-none text-[#0a0a0a]">Wallet Directory</h2>
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
@@ -489,18 +489,10 @@ export default function CreditsPage() {
       </Card>
 
       {/* Transfer Credits - animated gradient border */}
-      <div className="relative rounded-xl mb-6" style={{ isolation: "isolate" }}>
-        <div
-          className="absolute inset-[-1px] rounded-xl -z-10"
-          style={{
-            background: "conic-gradient(from var(--border-angle), #0070f3, #00DFD8, #0070f3)",
-            animation: "border-rotate 4s linear infinite",
-          }}
-        />
-        <div className="rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[#0a0a0a]">
-          <Card className="border-0 bg-transparent">
+      <div className="mb-6 border-2 border-[#0a0a0a] bg-[rgba(255,250,252,0.94)]">
+        <Card className="border-0 bg-transparent">
             <CardHeader>
-              <h2 className="text-[15px] font-medium text-[#ededed]">Transfer Credits</h2>
+              <h2 className="font-display text-[1.1rem] uppercase leading-none text-[#0a0a0a]">Transfer Credits</h2>
             </CardHeader>
             <CardContent>
               <form className="grid grid-cols-1 md:grid-cols-2 gap-4" onSubmit={handleTransfer}>
@@ -564,25 +556,16 @@ export default function CreditsPage() {
                 </div>
               </form>
 
-              {transferError && (
-                <div className="mt-4 rounded-lg border border-[rgba(238,68,68,0.15)] bg-[rgba(238,68,68,0.06)] px-3 py-2 text-[13px] text-[#EE4444]">
-                  {transferError}
-                </div>
-              )}
+              {transferError ? <InlineNotice tone="error" title="Transfer Rejected" message={transferError} className="mt-4" /> : null}
 
-              {transferSuccess && (
-                <div className="mt-4 rounded-lg border border-[rgba(0,220,130,0.15)] bg-[rgba(0,220,130,0.06)] px-3 py-2 text-[13px] text-[#00DC82]">
-                  {transferSuccess}
-                </div>
-              )}
+              {transferSuccess ? <InlineNotice tone="success" title="Transfer Posted" message={transferSuccess} className="mt-4" /> : null}
             </CardContent>
-          </Card>
-        </div>
+        </Card>
       </div>
 
       <Card variant="glass" className="mb-6">
         <CardHeader>
-          <h2 className="text-[15px] font-medium text-[#ededed]">Recent Wallet Transfers</h2>
+          <h2 className="font-display text-[1.1rem] uppercase leading-none text-[#0a0a0a]">Recent Wallet Transfers</h2>
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
@@ -647,7 +630,7 @@ export default function CreditsPage() {
 
       <Card variant="glass">
         <CardHeader>
-          <h2 className="text-[15px] font-medium text-[#ededed]">
+          <h2 className="font-display text-[1.1rem] uppercase leading-none text-[#0a0a0a]">
             Recent Credit Transactions
           </h2>
         </CardHeader>

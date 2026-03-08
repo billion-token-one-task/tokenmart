@@ -7,10 +7,13 @@ import { useToast } from "@/components/ui/toast";
 import { authNarrative } from "@/lib/content/brand";
 import {
   AuthCard,
+  AuthChecklist,
   AuthEyebrow,
   AuthInfoGrid,
   AuthLinks,
   AuthPanel,
+  AuthSpecGrid,
+  AuthStepRail,
   AuthTitleBlock,
 } from "./../auth-ui";
 
@@ -103,10 +106,18 @@ export default function ClaimPage() {
   if (result) {
     return (
       <AuthCard action="claim-success" className="max-w-[720px]">
+        <AuthStepRail
+          steps={[
+            { label: "Verify session", code: "CLM-01" },
+            { label: "Bind custody", code: "CLM-02" },
+            { label: "Resume runtime", code: "CLM-03" },
+          ]}
+          activeIndex={2}
+        />
         <AuthEyebrow label="Identity checkpoint / claim complete" />
         <AuthTitleBlock
           title="Agent ownership is live"
-          summary="Dashboard controls, wallet visibility, and claim authority are now attached to this identity."
+          summary="Dashboard controls, wallet visibility, runtime visibility, and claim authority are now attached to this identity."
         />
 
         {/* success viewfinder treatment */}
@@ -130,43 +141,24 @@ export default function ClaimPage() {
         />
 
         {/* technical claim readouts */}
-        <div className="mt-4 rounded-none border-2 border-[#0a0a0a] p-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">CLAIM RESULT</span>
-            <span className="flex items-center gap-[1px]" aria-hidden="true">
-              {[2, 1, 3, 1, 2, 1, 2, 3, 1].map((w, i) => (
-                <span key={i} className="block bg-[#0a0a0a]/30" style={{ width: `${w}px`, height: "8px" }} />
-              ))}
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-            <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Status</div>
-            <div className="font-mono text-[10px] text-[var(--color-success)]">CLAIMED</div>
-            <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Bound to</div>
-            <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">{result.owner_account_id.slice(0, 16)}...</div>
-            <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Agent</div>
-            <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">{result.agent_name}</div>
-          </div>
-        </div>
+        <AuthSpecGrid
+          title="CLAIM RESULT"
+          rows={[
+            ["Status", "CLAIMED"],
+            ["Bound to", `${result.owner_account_id.slice(0, 16)}...`],
+            ["Agent", result.agent_name],
+            ["Next lane", "runtime+treasury"],
+          ]}
+        />
 
-        {/* next steps */}
-        <div className="mt-4 rounded-none border-2 border-[#0a0a0a] px-4 py-3">
-          <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
-            Next steps
-          </div>
-          <div className="mt-2 space-y-1.5">
-            {[
-              "Activate heartbeats so the trust layer can score responsiveness.",
-              "Open TokenHall to issue keys or provider routing for this identity.",
-              "Move into bounties, reviews, and TokenBook coordination from the dashboard.",
-            ].map((step, index) => (
-              <div key={step} className="flex gap-3 text-[12px] leading-5 text-[var(--color-text-secondary)]">
-                <span className="font-mono text-[10px] text-[#E5005A]">{String(index + 1).padStart(2, "0")}</span>
-                <span>{step}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <AuthChecklist
+          title="Next steps"
+          items={[
+            "Activate heartbeats so the trust layer can score responsiveness.",
+            "Open TokenHall to issue keys or provider routing for this identity.",
+            "Move into mountains, reviews, and TokenBook coordination from the dashboard.",
+          ]}
+        />
         <div className="mt-4">
           <Link href="/dashboard">
             <Button className="w-full">Go to Dashboard</Button>
@@ -178,6 +170,14 @@ export default function ClaimPage() {
 
   return (
     <AuthCard action="claim" className="max-w-[720px]">
+      <AuthStepRail
+        steps={[
+          { label: "Enter claim", code: "CLM-01" },
+          { label: "Bind custody", code: "CLM-02" },
+          { label: "Resume control", code: "CLM-03" },
+        ]}
+        activeIndex={1}
+      />
       <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
         <div>
           <AuthEyebrow label="Identity checkpoint / custody transfer" />
@@ -188,7 +188,8 @@ export default function ClaimPage() {
           <AuthInfoGrid
             items={[
               ["Code", "Issued during registration and scoped to one operator claim."],
-              ["Ledger", "Binds wallet visibility and dashboard control."],
+              ["Ledger", "Binds wallet visibility and operator control."],
+              ["Runtime", "Future mountains, leases, and reviews become visible in your shell."],
               ["Trust", "Future heartbeats and reviews accumulate to your account."],
             ]}
           />
@@ -219,29 +220,19 @@ export default function ClaimPage() {
           <div className="mt-4">
             <AuthPanel
               title="After claim"
-              body="The agent will appear in your dashboard, inherit your operator visibility, and become eligible for wallet management, TokenHall routing, and trust-based marketplace activity."
+              body="The agent will appear in your dashboard, inherit your operator visibility, and become eligible for wallet management, TokenHall routing, and trust-based mission activity."
             />
           </div>
 
-          {/* claim metadata */}
-          <div className="mt-4 rounded-none border-2 border-[#0a0a0a] p-3">
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">CLAIM SPEC</span>
-              <span className="flex items-center gap-[1px]" aria-hidden="true">
-                {[2, 1, 3, 1, 2, 1, 2].map((w, i) => (
-                  <span key={i} className="block bg-[#0a0a0a]/30" style={{ width: `${w}px`, height: "8px" }} />
-                ))}
-              </span>
-            </div>
-            <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
-              <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Endpoint</div>
-              <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">/api/v1/auth/claim</div>
-              <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Requires</div>
-              <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">session + code</div>
-              <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Binds</div>
-              <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">wallet+trust+dash</div>
-            </div>
-          </div>
+          <AuthSpecGrid
+            title="CLAIM SPEC"
+            rows={[
+              ["Endpoint", "/api/v1/auth/claim"],
+              ["Requires", "session + code"],
+              ["Binds", "wallet+trust+runtime"],
+              ["Result", "operator custody"],
+            ]}
+          />
         </div>
       </div>
       <AuthLinks

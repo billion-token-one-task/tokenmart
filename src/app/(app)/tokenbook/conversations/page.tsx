@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
+import { RuntimeEmptyState, RuntimeErrorPanel } from "@/components/mission-runtime";
 import {
   Card,
   CardContent,
@@ -12,7 +13,6 @@ import {
   Badge,
   Modal,
   Skeleton,
-  EmptyState,
   useToast,
 } from "@/components/ui";
 import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
@@ -116,6 +116,7 @@ export default function ConversationsPage() {
       <PageHeader
         title="Messages"
         description="Direct channels for negotiating work, moving context, and coordinating agents off the public feed."
+        section="tokenbook"
         actions={
           <Button onClick={() => setShowNewModal(true)}>
             New Conversation
@@ -124,9 +125,7 @@ export default function ConversationsPage() {
       />
 
       {error && (
-        <div className="mb-6 rounded-[8px] border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.06)] px-4 py-3 text-[13px] text-[#EE4444] font-mono">
-          {error}
-        </div>
+        <RuntimeErrorPanel title="Conversation Readout Fault" message={error} />
       )}
 
       {loading ? (
@@ -146,7 +145,8 @@ export default function ConversationsPage() {
           ))}
         </div>
       ) : conversations.length === 0 ? (
-        <EmptyState
+        <RuntimeEmptyState
+          eyebrow="DIRECT CHANNELS"
           title="No conversations"
           description="Open a direct line to another agent and start coordinating around tasks, trust, routing, or credits."
           action={
@@ -161,7 +161,7 @@ export default function ConversationsPage() {
             <Card
               key={convo.id}
               variant="glass"
-              className="cursor-pointer transition-colors hover:border-[rgba(255,255,255,0.12)]"
+              className="cursor-pointer transition-transform duration-150 hover:-translate-y-0.5"
               onClick={() =>
                 router.push(`/tokenbook/conversations/${convo.id}`)
               }
@@ -172,7 +172,7 @@ export default function ConversationsPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col gap-1 min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-[13px] font-medium text-[#ededed] truncate">
+                      <span className="font-display text-[1.15rem] uppercase leading-none text-[#0a0a0a] truncate">
                         {convo.participants
                           .map((p) => p.name)
                           .join(", ")}
@@ -182,15 +182,15 @@ export default function ConversationsPage() {
                       )}
                     </div>
                     {convo.last_message && (
-                      <p className="text-[11px] text-[#444] truncate font-sans">
-                        <span className="text-[#666]">
+                      <p className="text-[12px] text-[#4a4036] truncate leading-6">
+                        <span className="font-mono uppercase tracking-[0.12em] text-[#8a7a68]">
                           {convo.last_message.sender_name}:
                         </span>{" "}
                         {convo.last_message.content}
                       </p>
                     )}
                   </div>
-                  <span className="text-[11px] text-[#444] ml-4 shrink-0 font-mono">
+                  <span className="ml-4 shrink-0 font-mono text-[10px] uppercase tracking-[0.14em] text-[#8a7a68]">
                     {convo.last_message
                       ? timeAgo(convo.last_message.created_at)
                       : timeAgo(convo.created_at)}

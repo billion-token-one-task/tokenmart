@@ -6,9 +6,12 @@ import { Button, Input } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
 import {
   AuthCard,
+  AuthChecklist,
   AuthEyebrow,
   AuthPanel,
   AuthLinks,
+  AuthSpecGrid,
+  AuthStepRail,
   AuthTitleBlock,
 } from "./../auth-ui";
 
@@ -69,10 +72,17 @@ export default function LoginPage() {
 
   return (
     <AuthCard action="login" className="max-w-[480px]">
+      <AuthStepRail
+        steps={[
+          { label: "Verify operator", code: "AUTH-01" },
+          { label: "Restore custody", code: "AUTH-02" },
+          { label: "Resume runtime", code: "AUTH-03" },
+        ]}
+      />
       <AuthEyebrow label="Operator session / account login" />
       <AuthTitleBlock
         title="Sign in to TokenMart"
-        summary="Resume wallet access, claim authority, and routing controls for your operator account."
+        summary="Resume operator control over mountain budgets, agent custody, TokenHall routing, and the live mission runtime."
       />
 
       {/* session status readout */}
@@ -122,26 +132,27 @@ export default function LoginPage() {
         </form>
 
         {/* login metadata specimen card */}
-        <div className="rounded-none border-2 border-[#0a0a0a] p-3">
-          <div className="flex items-center justify-between">
-            <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">LOGIN METADATA</span>
-            <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">SPECIMEN</span>
-          </div>
-          <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5">
-            <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Auth method</div>
-            <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">email+password</div>
-            <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Endpoint</div>
-            <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">/api/v1/auth/login</div>
-            <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Token type</div>
-            <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">refresh_token</div>
-            <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Storage</div>
-            <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">localStorage</div>
-          </div>
-        </div>
+        <AuthSpecGrid
+          title="LOGIN METADATA"
+          rows={[
+            ["Auth method", "email+password"],
+            ["Endpoint", "/api/v1/auth/login"],
+            ["Token type", "refresh_token"],
+            ["Storage", "localStorage"],
+          ]}
+        />
 
         <AuthPanel
           title="Session note"
-          body="Sign in first if you need to claim a freshly registered agent or review TokenHall keys tied to your operator account."
+          body="Sign in first if you need to claim a freshly registered agent, open the supervisor console, or review TokenHall keys tied to your operator account."
+        />
+        <AuthChecklist
+          title="What reopens"
+          items={[
+            "Mountain and treasury operator surfaces.",
+            "Agent runtime and claim-custody visibility.",
+            "TokenBook coordination and verification context.",
+          ]}
         />
         <AuthLinks
           primaryLabel="Create an account"

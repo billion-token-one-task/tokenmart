@@ -1,8 +1,13 @@
 import { NextRequest } from "next/server";
 import { jsonNoStore } from "@/lib/http/api-response";
 import { readJsonObject } from "@/lib/http/input";
-import { requireV2Identity } from "@/lib/v2/auth";
-import { getDeliverable, updateDeliverable } from "@/lib/v2/runtime";
+import {
+  applyV2MutationRateLimit,
+  requireV2Identity,
+  resolveOptionalV2Identity,
+} from "@/lib/v2/auth";
+import { runtimeErrorResponse } from "@/lib/v2/errors";
+import { getDeliverable, updateDeliverable, viewerFromIdentity } from "@/lib/v2/runtime";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,28 +20,19 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ deliverableId: string }> },
 ) {
-  const auth = await requireV2Identity(request);
+  const auth = await resolveOptionalV2Identity(request);
   if (!auth.ok) return auth.response;
 
-  const { deliverableId } = await params;
-  const deliverable = await getDeliverable(deliverableId);
-  if (!deliverable) {
-    return jsonNoStore({ error: { code: 404, message: "Deliverable not found" } }, { status: 404 });
+  try {
+    const { deliverableId } = await params;
+    const deliverable = await getDeliverable(deliverableId, viewerFromIdentity(auth.identity));
+    if (!deliverable) {
+      return jsonNoStore({ error: { code: 404, message: "Deliverable not found" } }, { status: 404 });
+    }
+    return jsonNoStore({ deliverable });
+  } catch (error) {
+    return runtimeErrorResponse(error);
   }
-
-  const canAccess =
-    auth.identity.accountRole === "admin" ||
-    auth.identity.accountRole === "super_admin" ||
-    ownsDeliverable(auth.identity.context.agent_id, deliverable.agent_id);
-
-  if (!canAccess) {
-    return jsonNoStore(
-      { error: { code: 403, message: "Deliverable visibility is limited to admins or the producing agent" } },
-      { status: 403 },
-    );
-  }
-
-  return jsonNoStore({ deliverable });
 }
 
 export async function PATCH(
@@ -45,9 +41,11 @@ export async function PATCH(
 ) {
   const auth = await requireV2Identity(request, { requireAgent: false });
   if (!auth.ok) return auth.response;
+  const rateLimit = await applyV2MutationRateLimit(auth.identity.context);
+  if (!rateLimit.ok) return rateLimit.response;
 
   const { deliverableId } = await params;
-  const existing = await getDeliverable(deliverableId);
+  const existing = await getDeliverable(deliverableId, viewerFromIdentity(auth.identity));
   if (!existing) {
     return jsonNoStore({ error: { code: 404, message: "Deliverable not found" } }, { status: 404 });
   }
@@ -79,10 +77,14 @@ export async function PATCH(
         metadata: json.data.metadata,
       };
 
-  const deliverable = await updateDeliverable(deliverableId, patch);
-  if (!deliverable) {
-    return jsonNoStore({ error: { code: 404, message: "Deliverable not found" } }, { status: 404 });
-  }
+  try {
+    const deliverable = await updateDeliverable(deliverableId, patch);
+    if (!deliverable) {
+      return jsonNoStore({ error: { code: 404, message: "Deliverable not found" } }, { status: 404 });
+    }
 
-  return jsonNoStore({ deliverable });
+    return jsonNoStore({ deliverable }, { headers: rateLimit.headers });
+  } catch (error) {
+    return runtimeErrorResponse(error);
+  }
 }

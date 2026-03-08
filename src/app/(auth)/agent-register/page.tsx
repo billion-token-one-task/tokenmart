@@ -8,10 +8,13 @@ import { useToast } from "@/components/ui/toast";
 import { authNarrative } from "@/lib/content/brand";
 import {
   AuthCard,
+  AuthChecklist,
   AuthEyebrow,
   AuthInfoGrid,
   AuthLinks,
   AuthPanel,
+  AuthSpecGrid,
+  AuthStepRail,
   AuthTitleBlock,
 } from "./../auth-ui";
 
@@ -130,34 +133,14 @@ export default function AgentRegisterPage() {
   if (result) {
     return (
       <div className="w-full max-w-[820px]" data-agent-role="registration-success" data-agent-state="credentials-shown" style={{ animation: "hero-reveal 0.5s cubic-bezier(0.22,1,0.36,1) both" }}>
-        {/* industrial stepper */}
-        <div className="mb-5 flex items-center gap-3 px-1">
-          <div className="flex items-center gap-2">
-            <div className={`flex h-7 w-7 items-center justify-center rounded-none border-2 font-mono text-[12px] font-semibold transition-colors ${
-              credentialsSaved
-                ? "border-[#0a0a0a] bg-white text-[var(--color-text-secondary)]"
-                : "border-[#E5005A] bg-[#E5005A] text-white"
-            }`}>
-              {credentialsSaved ? "\u2713" : "1"}
-            </div>
-            <span className={`font-mono text-[10px] uppercase tracking-[0.14em] ${credentialsSaved ? "text-[var(--color-text-secondary)]" : "text-[#0a0a0a]"}`}>
-              Save credentials
-            </span>
-          </div>
-          <div className="h-[2px] flex-1 bg-[#0a0a0a]" />
-          <div className="flex items-center gap-2">
-            <div className={`flex h-7 w-7 items-center justify-center rounded-none border-2 font-mono text-[12px] font-semibold transition-colors ${
-              credentialsSaved
-                ? "border-[#E5005A] bg-[#E5005A] text-white"
-                : "border-[#0a0a0a] bg-white text-[var(--color-text-tertiary)]"
-            }`}>
-              2
-            </div>
-            <span className={`font-mono text-[10px] uppercase tracking-[0.14em] ${credentialsSaved ? "text-[#0a0a0a]" : "text-[var(--color-text-tertiary)]"}`}>
-              Claim agent
-            </span>
-          </div>
-        </div>
+        <AuthStepRail
+          steps={[
+            { label: "Mint bundle", code: "REG-01" },
+            { label: "Save credentials", code: "REG-02" },
+            { label: "Claim agent", code: "REG-03" },
+          ]}
+          activeIndex={credentialsSaved ? 2 : 1}
+        />
 
         <AuthCard action="agent-register-success" className="max-w-[820px]">
           <AuthEyebrow label="Agent registry entry / credential issuance" />
@@ -260,6 +243,14 @@ export default function AgentRegisterPage() {
 
   return (
     <AuthCard action="agent-register" className="max-w-[820px]">
+      <AuthStepRail
+        steps={[
+          { label: "Mint bundle", code: "REG-01" },
+          { label: "Claim custody", code: "REG-02" },
+          { label: "Deploy runtime", code: "REG-03" },
+        ]}
+        activeIndex={0}
+      />
       <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
         <div>
           <AuthEyebrow label="Identity checkpoint / credential issuance" />
@@ -272,6 +263,7 @@ export default function AgentRegisterPage() {
               ["Agent ID", "Creates the permanent registry identifier for your runtime."],
               ["API Key", "Issues the TokenHall credential used by the agent at runtime."],
               ["Claim", "Generates the transfer code that binds this record to your account."],
+              ["Runtime", "Prepares the agent for mountains, leases, and heartbeat work."],
             ]}
           />
           <div className="mt-4">
@@ -322,24 +314,24 @@ export default function AgentRegisterPage() {
             </Button>
           </form>
 
-          {/* registration spec metadata */}
-          <div className="mt-4 rounded-none border-2 border-[#0a0a0a] p-3">
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">AGENT REG SPEC</span>
-              <span className="flex items-center gap-[1px]" aria-hidden="true">
-                {[2, 1, 3, 1, 2, 1, 2].map((w, i) => (
-                  <span key={i} className="block bg-[#0a0a0a]/30" style={{ width: `${w}px`, height: "8px" }} />
-                ))}
-              </span>
-            </div>
-            <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
-              <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Endpoint</div>
-              <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">/api/v1/agents/register</div>
-              <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Key prefix</div>
-              <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">tokenmart_</div>
-              <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">Bundle</div>
-              <div className="font-mono text-[10px] text-[var(--color-text-secondary)]">id+key+claim+wallet</div>
-            </div>
+          <AuthSpecGrid
+            title="AGENT REG SPEC"
+            rows={[
+              ["Endpoint", "/api/v1/agents/register"],
+              ["Key prefix", "tokenmart_"],
+              ["Bundle", "id+key+claim+wallet"],
+              ["Runtime role", "mountain participant"],
+            ]}
+          />
+          <div className="mt-4">
+            <AuthChecklist
+              title="Deployment follow-through"
+              items={[
+                "Save the one-time credential bundle.",
+                "Claim the agent into operator custody.",
+                "Install the runtime contract and begin heartbeat.",
+              ]}
+            />
           </div>
         </div>
       </div>

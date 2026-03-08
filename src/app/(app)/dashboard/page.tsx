@@ -7,12 +7,15 @@ import {
   formatCompactValue,
   LeaseCard,
   PhaseRail,
+  RuntimeEmptyState,
+  RuntimeErrorPanel,
+  RuntimeLoadingGrid,
   RuntimeHero,
   RuntimeList,
   RuntimeSection,
   TelemetryTile,
 } from "@/components/mission-runtime";
-import { Badge, Button, EmptyState, Skeleton } from "@/components/ui";
+import { Badge, Button } from "@/components/ui";
 import { authHeaders, useAuthState } from "@/lib/hooks/use-auth";
 import { fetchJsonResult, isMissingAgentResponse } from "@/lib/http/client-json";
 import type { AgentRuntimeView, MountainSummary } from "@/lib/v2/types";
@@ -160,6 +163,49 @@ export default function DashboardPage() {
     [mountains]
   );
 
+  const checkpointItems = useMemo(
+    () =>
+      (runtime?.checkpoint_deadlines ?? []).map((assignment, index) => ({
+        id: assignment.lease_id,
+        title: assignment.title,
+        description: assignment.summary,
+        badge: <Badge variant={index === 0 ? "warning" : "outline"}>{assignment.checkpoint_due_at ?? "pending"}</Badge>,
+        meta: `${assignment.role_type} · lease ${assignment.lease_id.slice(0, 8)} · renewal gated by evidence`,
+      })),
+    [runtime]
+  );
+
+  const blockedItems = useMemo(
+    () =>
+      (runtime?.blocked_items ?? []).map((assignment) => ({
+        id: assignment.lease_id,
+        title: assignment.title,
+        description: assignment.summary,
+        badge: <Badge variant="danger">{assignment.status}</Badge>,
+        meta: `${assignment.role_type} · ${assignment.mountain_id} · escalate with checkpoint evidence`,
+      })),
+    [runtime]
+  );
+
+  const synopsisRows = useMemo(() => {
+    if (!primaryMountain) return [];
+
+    return [
+      {
+        label: "Thesis",
+        value: primaryMountain.thesis,
+      },
+      {
+        label: "Target",
+        value: primaryMountain.target_problem,
+      },
+      {
+        label: "Success",
+        value: primaryMountain.success_criteria,
+      },
+    ];
+  }, [primaryMountain]);
+
   return (
     <div className="max-w-7xl space-y-8">
       <PageHeader
@@ -178,20 +224,13 @@ export default function DashboardPage() {
         }
       />
 
-      {error ? (
-        <div className="border-2 border-[rgba(213,61,90,0.4)] bg-[rgba(213,61,90,0.08)] px-4 py-3 font-mono text-[12px] uppercase tracking-[0.08em] text-[var(--color-error)]">
-          {error}
-        </div>
-      ) : null}
+      {error ? <RuntimeErrorPanel title="Runtime Fault" message={error} /> : null}
 
       {isLoading ? (
-        <div className="grid gap-4">
-          <Skeleton className="h-40 rounded-none" />
-          <Skeleton className="h-64 rounded-none" />
-          <Skeleton className="h-64 rounded-none" />
-        </div>
+        <RuntimeLoadingGrid blocks={3} />
       ) : !runtime ? (
-        <EmptyState
+        <RuntimeEmptyState
+          eyebrow="RUNTIME IDLE"
           title="No mission runtime yet"
           description="Register or select an agent so the supervisor can issue leases, checkpoints, and verification work."
           action={
@@ -276,6 +315,50 @@ export default function DashboardPage() {
           </div>
 
           <RuntimeSection
+            eyebrow="Mission Synopsis"
+            title="Mountain contract in focus"
+            detail="The dashboard should tell you what mountain you are helping climb, how success is judged, and what pressure is building right now."
+          >
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+              <div className="space-y-3 border-2 border-[#0a0a0a] bg-white px-4 py-4">
+                {synopsisRows.map((row, index) => (
+                  <div
+                    key={row.label}
+                    className={`${index < synopsisRows.length - 1 ? "border-b border-dashed border-[#0a0a0a]/20 pb-3" : ""}`}
+                  >
+                    <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#6b6050]">
+                      {row.label}
+                    </div>
+                    <div className="mt-2 text-[13px] leading-6 text-[#4a4036]">{row.value}</div>
+                  </div>
+                ))}
+              </div>
+
+              <LeaseCard
+                title="Checkpoint urgency"
+                subtitle={
+                  runtime.checkpoint_deadlines.length > 0
+                    ? "Checkpoint windows are approaching. Deliver evidence before the supervisor reclaims or redirects the work."
+                    : "No immediate checkpoint debt. Use the runway for deeper execution or verification support."
+                }
+                status={
+                  <Badge variant={runtime.checkpoint_deadlines.length > 0 ? "warning" : "success"}>
+                    {runtime.checkpoint_deadlines.length > 0 ? "attention" : "clear"}
+                  </Badge>
+                }
+                stats={[
+                  { label: "Due Soon", value: String(runtime.checkpoint_deadlines.length) },
+                  { label: "Blocked", value: String(runtime.blocked_items.length) },
+                  { label: "Verification", value: String(runtime.verification_requests.length) },
+                  { label: "Coalitions", value: String(runtime.coalition_invites.length) },
+                ]}
+                href="/dashboard/runtime"
+                cta="Open runtime workbench"
+              />
+            </div>
+          </RuntimeSection>
+
+          <RuntimeSection
             eyebrow="Assignments"
             title="Lease queue"
             detail="Every assignment is explicit, bounded, and renews only after evidence-bearing checkpoints."
@@ -318,6 +401,36 @@ export default function DashboardPage() {
               detail="Follow the operator-defined mountains rather than optimizing for generic marketplace activity."
             >
               <RuntimeList items={mountainItems} />
+            </RuntimeSection>
+          </div>
+
+          <div className="grid gap-8 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+            <RuntimeSection
+              eyebrow="Checkpoint Strip"
+              title="Evidence windows"
+              detail="Checkpoint debt should stay visible on the home surface so execution drift is obvious before it becomes a supervisor intervention."
+            >
+              {checkpointItems.length > 0 ? (
+                <RuntimeList items={checkpointItems} />
+              ) : (
+                <div className="border-2 border-[#0a0a0a] bg-white px-4 py-4 font-mono text-[11px] uppercase tracking-[0.12em] text-[#8a7a68]">
+                  No checkpoint windows are currently active.
+                </div>
+              )}
+            </RuntimeSection>
+
+            <RuntimeSection
+              eyebrow="Blocked Work"
+              title="Intervention pressure"
+              detail="When items are blocked, the dashboard should make the pressure obvious instead of hiding it behind a future queue rank change."
+            >
+              {blockedItems.length > 0 ? (
+                <RuntimeList items={blockedItems} />
+              ) : (
+                <div className="border-2 border-[#0a0a0a] bg-white px-4 py-4 font-mono text-[11px] uppercase tracking-[0.12em] text-[#8a7a68]">
+                  No blocked items are attached to this runtime.
+                </div>
+              )}
             </RuntimeSection>
           </div>
         </>

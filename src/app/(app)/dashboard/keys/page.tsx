@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { PageHeader } from "@/components/page-header";
+import { TelemetryTile } from "@/components/mission-runtime";
 import {
   Card,
   CardHeader,
   CardContent,
   Badge,
+  InlineNotice,
   Table,
   THead,
   TBody,
@@ -97,50 +99,51 @@ export default function KeysPage() {
   }, [fetchKeys]);
 
   return (
-    <div className="max-w-6xl">
+    <div className="max-w-6xl space-y-8">
       <PageHeader
-        title="API Keys"
-        description="Control the credentials that authenticate operator access, agent authority, and TokenHall routing sessions."
+        title="Control Keys"
+        description="Manage the credentials that authenticate operator access, agent authority, and TokenHall routing within the v2 mission runtime."
+        section="platform"
       />
 
-      {error && (
-        <div className="mb-6 bg-[rgba(238,68,68,0.06)] border border-[rgba(238,68,68,0.15)] rounded-xl px-4 py-3 text-[13px] text-[#EE4444] font-mono">
-          {error}
-        </div>
-      )}
+      <div className="grid gap-4 xl:grid-cols-4">
+        <TelemetryTile label="Total Keys" value={String(keys.length)} detail="Credentials visible to this operator shell" />
+        <TelemetryTile label="Active" value={String(keys.filter((key) => key.status === "active").length)} detail="Live credentials still routing authority" tone="success" />
+        <TelemetryTile label="Revoked" value={String(keys.filter((key) => key.status === "revoked").length)} detail="Retired keys preserved for audit" tone="neutral" />
+        <TelemetryTile label="Mgmt Keys" value={String(keys.filter((key) => key.type === "tokenhall_management").length)} detail="Treasury and exchange control keys" tone="warning" />
+      </div>
+
+      {error ? <InlineNotice title="Credential Fault" message={error} tone="error" className="mb-6" /> : null}
 
       {/* Key Types Info Card */}
-      <Card variant="glass" className="mb-6">
+      <Card variant="glass" className="mb-6 bg-white">
         <CardHeader>
-          <h2 className="text-[15px] font-medium text-[#ededed]">Key Types</h2>
+          <h2 className="text-[15px] font-medium text-[#0a0a0a]">Credential Classes</h2>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="rounded-lg border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4">
+            <div className="rounded-none border-2 border-[#0a0a0a] bg-white p-4">
               <div className="mb-2">
                 <Badge variant="info">tokenmart_</Badge>
               </div>
-              <p className="text-[13px] text-[#a1a1a1] leading-relaxed">
-                Platform API keys for authenticating with the TokenMart API.
-                Used for agent operations, bounties, and marketplace actions.
+              <p className="text-[13px] text-[#4a4036] leading-relaxed">
+                Platform control keys for general TokenMart actions across runtime, coordination, and settlement surfaces.
               </p>
             </div>
-            <div className="rounded-lg border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4">
+            <div className="rounded-none border-2 border-[#0a0a0a] bg-white p-4">
               <div className="mb-2">
                 <Badge variant="success">th_</Badge>
               </div>
-              <p className="text-[13px] text-[#a1a1a1] leading-relaxed">
-                TokenHall session keys for accessing the TokenHall service
-                layer. Scoped to individual agent sessions.
+              <p className="text-[13px] text-[#4a4036] leading-relaxed">
+                TokenHall session keys for exchange access and mission spend, typically scoped to a specific runtime identity.
               </p>
             </div>
-            <div className="rounded-lg border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4">
+            <div className="rounded-none border-2 border-[#0a0a0a] bg-white p-4">
               <div className="mb-2">
                 <Badge variant="warning">thm_</Badge>
               </div>
-              <p className="text-[13px] text-[#a1a1a1] leading-relaxed">
-                TokenHall management keys for administrative operations. Used
-                for key rotation, credit management, and service configuration.
+              <p className="text-[13px] text-[#4a4036] leading-relaxed">
+                TokenHall management keys for treasury operations like key rotation, spend limits, and exchange configuration.
               </p>
             </div>
           </div>
@@ -149,7 +152,7 @@ export default function KeysPage() {
 
       {/* Keys Table */}
       {loading ? (
-        <Card variant="glass">
+        <Card variant="glass" className="bg-white">
           <CardContent>
             <div className="flex flex-col gap-3">
               <Skeleton className="h-10 w-full" />
@@ -160,7 +163,7 @@ export default function KeysPage() {
           </CardContent>
         </Card>
       ) : keys.length === 0 ? (
-        <Card variant="glass">
+        <Card variant="glass" className="bg-white">
           <CardContent>
             <EmptyState
               title="No API keys found"
@@ -169,6 +172,7 @@ export default function KeysPage() {
           </CardContent>
         </Card>
       ) : (
+        <div className="border-2 border-[#0a0a0a] bg-white">
         <Table>
           <THead>
             <tr>
@@ -181,20 +185,20 @@ export default function KeysPage() {
           </THead>
           <TBody>
             {keys.map((key) => (
-              <tr key={key.id} className="hover:bg-[rgba(255,255,255,0.02)] transition-colors">
+              <tr key={key.id} className="hover:bg-[#fff4f8] transition-colors">
                 <Td>
-                  <code className="rounded-md bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] px-2.5 py-1 text-[12px] font-mono text-[#a1a1a1]">
+                  <code className="rounded-none border-2 border-[#0a0a0a] bg-[#fff8fb] px-2.5 py-1 text-[12px] font-mono text-[#4a4036]">
                     {maskKey(key.key)}
                   </code>
                 </Td>
                 <Td>{keyTypeBadge(key.type)}</Td>
                 <Td>
-                  <span className="text-[13px] text-[#a1a1a1]">
+                  <span className="text-[13px] text-[#4a4036]">
                     {formatDate(key.created_at)}
                   </span>
                 </Td>
                 <Td>
-                  <span className="text-[13px] text-[#a1a1a1]">
+                  <span className="text-[13px] text-[#4a4036]">
                     {formatDate(key.last_used_at)}
                   </span>
                 </Td>
@@ -203,6 +207,7 @@ export default function KeysPage() {
             ))}
           </TBody>
         </Table>
+        </div>
       )}
     </div>
   );

@@ -6,12 +6,15 @@ import { PageHeader } from "@/components/page-header";
 import {
   LeaseCard,
   PhaseRail,
+  RuntimeEmptyState,
+  RuntimeErrorPanel,
+  RuntimeLoadingGrid,
   RuntimeHero,
   RuntimeList,
   RuntimeSection,
   TelemetryTile,
 } from "@/components/mission-runtime";
-import { Badge, Button, EmptyState, Skeleton } from "@/components/ui";
+import { Badge, Button } from "@/components/ui";
 import { authHeaders, useAuthState } from "@/lib/hooks/use-auth";
 import { fetchJsonResult } from "@/lib/http/client-json";
 import type { SupervisorOverview } from "@/lib/v2/types";
@@ -145,6 +148,46 @@ export default function AdminPage() {
     [overview]
   );
 
+  const contradictionItems = useMemo(
+    () =>
+      (overview?.verification_runs ?? [])
+        .filter((run) => run.outcome === "contradiction" || run.contradiction_count > 0)
+        .map((run) => ({
+          id: run.id,
+          title: run.verification_type,
+          description:
+            run.findings[0]?.issue?.toString() ??
+            run.findings[0]?.statement?.toString() ??
+            "Replication surfaced conflicting evidence that needs adjudication.",
+          badge: <Badge variant="danger">{run.outcome}</Badge>,
+          meta: `${run.contradiction_count} contradictions · mountain ${run.mountain_id}`,
+        })),
+    [overview]
+  );
+
+  const budgetPressureItems = useMemo(
+    () =>
+      (overview?.mountains ?? []).map((mountain) => {
+        const distributedRatio =
+          mountain.total_budget_credits > 0
+            ? Math.round((mountain.reward_distributed_credits / mountain.total_budget_credits) * 100)
+            : 0;
+
+        return {
+          id: mountain.id,
+          title: mountain.title,
+          description: mountain.thesis,
+          badge: (
+            <Badge variant={distributedRatio >= 70 ? "warning" : mountain.status === "active" ? "success" : "outline"}>
+              {distributedRatio}% committed
+            </Badge>
+          ),
+          meta: `${mountain.active_lease_count} active leases · ${mountain.campaign_count} campaigns · ${mountain.verified_deliverable_count} verified`,
+        };
+      }),
+    [overview]
+  );
+
   return (
     <div className="max-w-7xl space-y-8">
       <PageHeader
@@ -163,20 +206,13 @@ export default function AdminPage() {
         }
       />
 
-      {error ? (
-        <div className="border-2 border-[rgba(213,61,90,0.4)] bg-[rgba(213,61,90,0.08)] px-4 py-3 font-mono text-[12px] uppercase tracking-[0.08em] text-[var(--color-error)]">
-          {error}
-        </div>
-      ) : null}
+      {error ? <RuntimeErrorPanel title="Supervisor Fault" message={error} /> : null}
 
       {isLoading ? (
-        <div className="grid gap-4">
-          <Skeleton className="h-40 rounded-none" />
-          <Skeleton className="h-72 rounded-none" />
-          <Skeleton className="h-72 rounded-none" />
-        </div>
+        <RuntimeLoadingGrid blocks={3} />
       ) : !overview ? (
-        <EmptyState
+        <RuntimeEmptyState
+          eyebrow="COMMAND SURFACE IDLE"
           title="No supervisor state"
           description="The v2 runtime has not emitted mountain or lease data yet."
         />
@@ -273,6 +309,30 @@ export default function AdminPage() {
               detail="Public progress should only be narrated from evidence-bearing deliverables, not from raw chatter or speculative claims."
             >
               <RuntimeList items={deliverableItems} />
+            </RuntimeSection>
+          </div>
+
+          <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <RuntimeSection
+              eyebrow="Contradiction Desk"
+              title="Replication pressure"
+              detail="Conflicting evidence should rise to the top as an explicit operator problem rather than hiding inside general verification volume."
+            >
+              {contradictionItems.length > 0 ? (
+                <RuntimeList items={contradictionItems} />
+              ) : (
+                <div className="border-2 border-[#0a0a0a] bg-white px-4 py-4 font-mono text-[11px] uppercase tracking-[0.12em] text-[#8a7a68]">
+                  No contradiction clusters are active right now.
+                </div>
+              )}
+            </RuntimeSection>
+
+            <RuntimeSection
+              eyebrow="Budget Pressure"
+              title="Commitment map"
+              detail="This surface should show which mountains are approaching commitment pressure so treasury action and intervention stay connected."
+            >
+              <RuntimeList items={budgetPressureItems} />
             </RuntimeSection>
           </div>
         </>

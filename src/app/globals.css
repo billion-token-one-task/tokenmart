@@ -223,6 +223,66 @@ kbd {
   color: var(--color-text-primary);
 }
 
+.shell-inner-frame {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.55),
+    inset 0 0 0 8px rgba(255, 255, 255, 0.08);
+}
+
+.shell-telemetry-banner {
+  box-shadow: 6px 6px 0 rgba(10, 10, 10, 0.08);
+}
+
+.shell-signal-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 0.25rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.shell-signal-chip:hover {
+  transform: translateY(-1px);
+}
+
+.shell-signal-value {
+  display: inline-flex;
+  min-width: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-left: 1px solid currentColor;
+  padding-left: 0.5rem;
+  font-weight: 700;
+}
+
+.shell-signal-brand {
+  background: rgba(229, 0, 90, 0.12);
+  color: #fff1f7;
+}
+
+.shell-signal-warning {
+  background: rgba(217, 119, 6, 0.18);
+  color: #ffe5b4;
+}
+
+.shell-signal-success {
+  background: rgba(5, 150, 105, 0.18);
+  color: #d1fae5;
+}
+
+.shell-signal-neutral {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.75);
+}
+
 /* ===================== EDITORIAL / BARCODE LABELS ===================== */
 .editorial-label,
 .barcode-label {
@@ -243,6 +303,117 @@ kbd {
   height: 1px;
   background: currentColor;
   opacity: 0.45;
+}
+
+.mission-status-marquee {
+  position: relative;
+  overflow: hidden;
+}
+
+.mission-marquee {
+  display: inline-flex;
+  min-width: max-content;
+  align-items: center;
+  gap: 1.25rem;
+  animation: marquee 30s linear infinite;
+}
+
+.mission-status-track {
+  display: inline-flex;
+  min-width: max-content;
+  align-items: center;
+  gap: 0.625rem;
+  animation: marquee 30s linear infinite;
+}
+
+.mission-scan-sweep {
+  background:
+    linear-gradient(
+      110deg,
+      transparent 0%,
+      transparent 35%,
+      rgba(229, 0, 90, 0.14) 48%,
+      rgba(255, 255, 255, 0.4) 50%,
+      rgba(229, 0, 90, 0.12) 52%,
+      transparent 65%,
+      transparent 100%
+    );
+  background-size: 220% 100%;
+  animation: data-scan 3.6s linear infinite;
+}
+
+.mission-status-chip,
+.mission-ribbon-chip,
+.header-telemetry-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.mission-status-chip {
+  border-right: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 0.7rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.mission-ribbon-chip {
+  border: 2px solid #0a0a0a;
+  background: rgba(255, 241, 247, 0.72);
+  padding: 0.5rem 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #4a4036;
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.mission-ribbon-chip strong {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  line-height: 1;
+  color: #0a0a0a;
+}
+
+.mission-ribbon-chip:hover {
+  transform: translateY(-1px);
+  background: #e5005a;
+  color: white;
+}
+
+.mission-ribbon-chip:hover strong {
+  color: white;
+}
+
+.header-telemetry-strip {
+  overflow: hidden;
+  border: 2px solid #0a0a0a;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.header-telemetry-track {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.45rem 0.55rem;
+}
+
+.header-telemetry-chip {
+  border: 1px solid rgba(10, 10, 10, 0.12);
+  background: rgba(255, 241, 247, 0.72);
+  padding: 0.25rem 0.45rem;
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6b6050;
 }
 
 /* ===================== DIVIDERS ===================== */

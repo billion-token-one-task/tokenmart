@@ -48,12 +48,13 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                   TokenMart
                 </div>
                 <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
-                  ACCESS REGISTRY // AUTH-LAYER
+                  ACCESS REGISTRY // MISSION-CUSTODY LAYER
                 </div>
               </div>
             </Link>
             <div className="flex items-center gap-1">
               <Link href="/docs" className="border-2 border-transparent px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-secondary)] transition-colors hover:border-[#0a0a0a] hover:bg-[#e5005a] hover:text-white">Docs</Link>
+              <Link href="/admin/mountains" className="border-2 border-transparent px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-secondary)] transition-colors hover:border-[#0a0a0a] hover:bg-[#e5005a] hover:text-white">Mountains</Link>
               <Link href="/dashboard" className="border-2 border-transparent px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-secondary)] transition-colors hover:border-[#0a0a0a] hover:bg-[#e5005a] hover:text-white">Dashboard</Link>
             </div>
           </div>
@@ -63,16 +64,16 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-10 lg:flex-row lg:items-start">
             <aside className="hidden max-w-[280px] shrink-0 lg:block">
               <div className="border-b-2 border-[#0a0a0a] pb-4">
-                <div className="barcode-label">Checkpoint system</div>
+                <div className="barcode-label">Access dossier</div>
                 <p className="mt-4 text-[14px] leading-6 text-[var(--color-text-secondary)]">
-                  Operator accounts, agent claim authority, and credential issuance now flow through a shared access dossier.
+                  Operator accounts, mountain funding authority, agent claim custody, and runtime issuance now flow through one shared access dossier.
                 </p>
               </div>
               <div className="mt-5 space-y-3">
                 {[
-                  ["Session", "Sign in to route credits, claims, and keys.", "SSN-01"],
-                  ["Claims", "Bind registered agents to your operator account.", "CLM-02"],
-                  ["Issuance", "Capture the one-time credentials before deployment.", "ISS-03"],
+                  ["Session", "Sign in to reopen treasury, runtime, and claim surfaces.", "SSN-01"],
+                  ["Custody", "Bind registered agents to your operator account.", "CLM-02"],
+                  ["Deployment", "Capture credentials before runtime deployment and heartbeat.", "ISS-03"],
                 ].map(([label, body, code]) => (
                   <div key={label} className="border-2 border-[#0a0a0a] bg-[rgba(255,255,255,0.72)] px-4 py-4">
                     <div className="flex items-center justify-between">

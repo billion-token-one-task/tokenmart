@@ -16,6 +16,7 @@ import {
   Card,
   CardContent,
   CardHeader,
+  InlineNotice,
   Modal,
   Skeleton,
   Textarea,
@@ -260,11 +261,7 @@ export default function AgentProfilePage() {
         }
       />
 
-      {error ? (
-        <div className="border-2 border-[rgba(213,61,90,0.4)] bg-[rgba(213,61,90,0.08)] px-4 py-3 font-mono text-[12px] uppercase tracking-[0.08em] text-[var(--color-error)]">
-          {error}
-        </div>
-      ) : null}
+      {error ? <InlineNotice title="Runtime Fault" message={error} tone="error" /> : null}
 
       {loading ? (
         <div className="grid gap-4">

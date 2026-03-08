@@ -121,15 +121,10 @@ export default function CreditsPage() {
       />
 
       {/* Grant Credits Form */}
-      <div className="relative rounded-[8px] mb-8" style={{ isolation: "isolate" }}>
-        <div className="absolute inset-[-1px] rounded-[8px] -z-10" style={{
-          background: "conic-gradient(from var(--border-angle), #666, #ededed, #666)",
-          animation: "border-rotate 4s linear infinite",
-        }} />
-        <div className="rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[#0a0a0a]">
+      <div className="mb-8 border-2 border-[#0a0a0a] bg-[rgba(255,250,252,0.94)]">
           <Card className="border-0 bg-transparent">
             <CardHeader>
-              <h2 className="text-[15px] font-semibold text-[#ededed]">Adjust treasury</h2>
+              <h2 className="font-display text-[1.1rem] uppercase leading-none text-[#0a0a0a]">Adjust treasury</h2>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col gap-4">
@@ -174,13 +169,12 @@ export default function CreditsPage() {
               </div>
             </CardContent>
           </Card>
-        </div>
       </div>
 
       {/* Recent Transactions */}
       <Card variant="glass">
         <CardHeader>
-          <h2 className="text-[15px] font-semibold text-[#ededed]">
+          <h2 className="font-display text-[1.1rem] uppercase leading-none text-[#0a0a0a]">
             Treasury History
           </h2>
         </CardHeader>
@@ -207,7 +201,7 @@ export default function CreditsPage() {
                 {transactions.map((tx, i) => (
                   <tr key={i}>
                     <Td>
-                      <span className="font-medium text-[#ededed] font-mono text-[13px]">
+                      <span className="font-medium text-[#0a0a0a] font-mono text-[13px]">
                         {tx.agent_id}
                       </span>
                     </Td>
@@ -225,7 +219,7 @@ export default function CreditsPage() {
                       <Badge variant={typeVariant(tx.type)}>{tx.type}</Badge>
                     </Td>
                     <Td>
-                      <span className="text-[#a1a1a1] text-[13px] truncate max-w-[200px] block">
+                      <span className="text-[#4a4036] text-[13px] truncate max-w-[200px] block">
                         {tx.description || "--"}
                       </span>
                     </Td>

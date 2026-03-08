@@ -6,5 +6,5 @@ export default async function LegacyTaskDetailPage({
   params: Promise<{ taskId: string }>;
 }) {
   const { taskId } = await params;
-  redirect(`/admin/mountains/${taskId}`);
+  redirect(`/admin/mountains/${taskId}?legacy=task-detail`);
 }

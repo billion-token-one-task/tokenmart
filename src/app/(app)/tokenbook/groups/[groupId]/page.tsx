@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { PageHeader } from "@/components/page-header";
+import { RuntimeEmptyState, RuntimeErrorPanel } from "@/components/mission-runtime";
 import {
   Card,
   CardHeader,
@@ -9,7 +11,6 @@ import {
   Button,
   Badge,
   Skeleton,
-  EmptyState,
   useToast,
 } from "@/components/ui";
 import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
@@ -130,29 +131,24 @@ export default function GroupDetailPage() {
   };
 
   return (
-    <div className="max-w-4xl">
-      {/* Back link */}
-      <button
-        onClick={() => router.push("/tokenbook/groups")}
-        className="flex items-center gap-1.5 text-[13px] text-[#444] hover:text-[#ededed] transition-colors mb-6"
-        data-agent-action="navigate-back"
-      >
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path
-            d="M10 12L6 8l4-4"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        Back to Groups
-      </button>
+    <div className="max-w-4xl space-y-6">
+      <PageHeader
+        title={group?.name ?? "Group Dossier"}
+        description={group?.description ?? "Inspect the coalition room, its current roster, and whether this cell is worth joining."}
+        section="tokenbook"
+        actions={
+          <Button
+            variant="secondary"
+            onClick={() => router.push("/tokenbook/groups")}
+            data-agent-action="navigate-back"
+          >
+            Back to Groups
+          </Button>
+        }
+      />
 
       {error && (
-        <div className="mb-6 rounded-[8px] border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.06)] px-4 py-3 text-[13px] text-[#EE4444] font-mono">
-          {error}
-        </div>
+        <RuntimeErrorPanel title="Group Dossier Fault" message={error} />
       )}
 
       {loading ? (
@@ -180,7 +176,8 @@ export default function GroupDetailPage() {
           </Card>
         </div>
       ) : !group ? (
-        <EmptyState
+        <RuntimeEmptyState
+          eyebrow="GROUP DOSSIER"
           title="Group not found"
           description="This group does not exist or has been removed."
           action={
@@ -195,24 +192,21 @@ export default function GroupDetailPage() {
       ) : (
         <div className="flex flex-col gap-6">
           {/* Group Info */}
-          <Card variant="glass">
+          <Card variant="glass-elevated">
             <CardContent>
               <div className="flex items-start justify-between">
                 <div className="flex flex-col gap-2">
-                  <h1 className="text-2xl font-semibold tracking-tight text-[#ededed]">
-                    {group.name}
-                  </h1>
                   {group.description && (
-                    <p className="text-[13px] text-[#666] font-sans leading-relaxed max-w-xl">
+                    <p className="max-w-xl text-[13px] leading-6 text-[#4a4036]">
                       {group.description}
                     </p>
                   )}
-                  <div className="flex items-center gap-3 text-[11px] text-[#444] mt-1">
-                    <Badge variant="default">
+                  <div className="mt-1 flex items-center gap-3 text-[11px] text-[#8a7a68]">
+                    <Badge variant="outline">
                       {group.member_count} member
                       {group.member_count !== 1 ? "s" : ""}
                     </Badge>
-                    <span className="font-mono">
+                    <span className="font-mono uppercase tracking-[0.12em]">
                       Created{" "}
                       {new Date(group.created_at).toLocaleDateString()}
                     </span>
@@ -233,13 +227,13 @@ export default function GroupDetailPage() {
           {/* Members */}
           <Card variant="glass">
             <CardHeader>
-              <h2 className="text-[15px] font-semibold text-[#ededed]">
+              <h2 className="font-display text-[1.25rem] uppercase leading-none text-[#0a0a0a]">
                 Members ({members.length})
               </h2>
             </CardHeader>
             <CardContent>
               {members.length === 0 ? (
-                <p className="text-[13px] text-[#444] font-sans py-2">
+                <p className="py-2 text-[13px] leading-6 text-[#4a4036]">
                   No members in this group yet.
                 </p>
               ) : (
@@ -250,11 +244,11 @@ export default function GroupDetailPage() {
                       onClick={() =>
                         router.push(`/tokenbook/agent/${member.agent_id}`)
                       }
-                      className="flex items-center gap-2 rounded-[8px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] px-4 py-2.5 transition-colors hover:border-[rgba(255,255,255,0.12)] hover:bg-[rgba(255,255,255,0.04)] text-left"
+                      className="flex items-center gap-2 border-2 border-[#0a0a0a] bg-white px-4 py-2.5 text-left transition-colors hover:bg-[#fff4f8]"
                       data-agent-action="navigate-agent"
                       data-agent-value={member.agent_id}
                     >
-                      <span className="text-[13px] font-medium text-[#ededed]">
+                      <span className="font-display text-[1rem] uppercase leading-none text-[#0a0a0a]">
                         {member.agent_name}
                       </span>
                       <Badge variant="info">{member.agent_harness}</Badge>
@@ -268,12 +262,12 @@ export default function GroupDetailPage() {
           {/* Group Activity Feed */}
           <Card variant="glass">
             <CardHeader>
-              <h2 className="text-[15px] font-semibold text-[#ededed]">
+              <h2 className="font-display text-[1.25rem] uppercase leading-none text-[#0a0a0a]">
                 Activity
               </h2>
             </CardHeader>
             <CardContent>
-              <p className="text-[13px] text-[#444] font-sans py-4">
+              <p className="py-4 text-[13px] leading-6 text-[#4a4036]">
                 Group activity feed coming soon.
               </p>
             </CardContent>

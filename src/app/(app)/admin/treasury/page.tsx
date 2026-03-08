@@ -48,7 +48,7 @@ export default function TreasuryPage() {
         fetchJsonResult<{ mountains?: MountainSummary[] }>("/api/v2/mountains", {
           headers: authHeaders(token),
         }),
-        fetchJsonResult<{ reward_splits?: RewardSplitRecord[] }>("/api/v2/rewards", {
+        fetchJsonResult<{ rewards?: RewardSplitRecord[]; reward_splits?: RewardSplitRecord[] }>("/api/v2/rewards", {
           headers: authHeaders(token),
         }),
       ]);
@@ -62,7 +62,7 @@ export default function TreasuryPage() {
       }
 
       if (rewardsResult.ok) {
-        setRewards(rewardsResult.data?.reward_splits ?? []);
+        setRewards(rewardsResult.data?.rewards ?? rewardsResult.data?.reward_splits ?? []);
       }
 
       setHasLoaded(true);
@@ -97,6 +97,23 @@ export default function TreasuryPage() {
     () => mountains.reduce((sum, mountain) => sum + mountain.reward_distributed_credits, 0),
     [mountains]
   );
+
+  const roleMixItems = useMemo(() => {
+    const buckets = new Map<string, number>();
+    for (const reward of rewards) {
+      buckets.set(reward.role, (buckets.get(reward.role) ?? 0) + reward.amount_credits);
+    }
+
+    return [...buckets.entries()]
+      .sort((left, right) => right[1] - left[1])
+      .map(([roleName, credits]) => ({
+        id: roleName,
+        title: `${roleName} / ${credits} credits`,
+        description: "Reward volume allocated to this contribution role.",
+        badge: <Badge variant="glass">{roleName}</Badge>,
+        meta: `${rewards.filter((reward) => reward.role === roleName).length} reward records`,
+      }));
+  }, [rewards]);
 
   const handleIssueReward = async () => {
     if (!token || !mountainId || !role || !rationale.trim()) return;
@@ -234,6 +251,47 @@ export default function TreasuryPage() {
               }))}
             />
           </RuntimeSection>
+
+          <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <RuntimeSection
+              eyebrow="Role Mix"
+              title="Settlement composition"
+              detail="Mission-weighted settlement should make it obvious which forms of contribution are currently being paid for."
+            >
+              <RuntimeList items={roleMixItems} />
+            </RuntimeSection>
+
+            <RuntimeSection
+              eyebrow="Funding Posture"
+              title="Treasury readout"
+              detail="This keeps TokenHall legible as the incentive rail beneath mountains rather than a disconnected exchange dashboard."
+            >
+              <div className="grid gap-3 sm:grid-cols-2">
+                <LeaseCard
+                  title="Budget posture"
+                  subtitle="Compare committed mountain budget against distributed rewards."
+                  status={<Badge variant={totalDistributed > totalBudget * 0.7 ? "warning" : "success"}>{totalBudget > 0 ? `${Math.round((totalDistributed / totalBudget) * 100)}%` : "0%"}</Badge>}
+                  stats={[
+                    { label: "Committed", value: String(totalBudget) },
+                    { label: "Distributed", value: String(totalDistributed) },
+                    { label: "Pending", value: String(pendingRewards.length) },
+                    { label: "Mountains", value: String(mountains.length) },
+                  ]}
+                />
+                <LeaseCard
+                  title="Reserve pressure"
+                  subtitle="Use this readout to decide whether treasury or mountain-level intervention should move first."
+                  status={<Badge variant={pendingRewards.length > mountains.length ? "warning" : "glass"}>{pendingRewards.length > mountains.length ? "tight" : "stable"}</Badge>}
+                  stats={[
+                    { label: "Active", value: String(mountains.filter((mountain) => mountain.status === "active").length) },
+                    { label: "Pending Rewards", value: String(pendingRewards.length) },
+                    { label: "Average Budget", value: String(mountains.length > 0 ? Math.round(totalBudget / mountains.length) : 0) },
+                    { label: "Average Distribution", value: String(mountains.length > 0 ? Math.round(totalDistributed / mountains.length) : 0) },
+                  ]}
+                />
+              </div>
+            </RuntimeSection>
+          </div>
         </>
       )}
     </div>

@@ -58,6 +58,13 @@ export type SettlementPolicyMode =
   | "coalition_formula"
   | "replication_bonus"
   | "contradiction_resolution";
+export type MountainMembershipRole =
+  | "operator"
+  | "participant"
+  | "reviewer"
+  | "verifier"
+  | "official_bot";
+export type MountainMembershipStatus = "active" | "invited" | "suspended";
 
 export interface MountainBudgetEnvelopes {
   decomposition: number;
@@ -89,6 +96,32 @@ export interface MountainRecord {
   metadata: Record<string, unknown>;
   launched_at: string | null;
   completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MountainMembershipRecord {
+  id: string;
+  mountain_id: string;
+  account_id: string | null;
+  agent_id: string | null;
+  role: MountainMembershipRole;
+  status: MountainMembershipStatus;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MountainExternalTargetRecord {
+  id: string;
+  mountain_id: string;
+  provider: string;
+  target_slug: string;
+  official_agent_id: string | null;
+  rules_snapshot: Record<string, unknown>;
+  submission_policy: Record<string, unknown>;
+  disclosure_policy: Record<string, unknown>;
+  metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }
@@ -157,6 +190,7 @@ export interface WorkLeaseRecord {
   renewal_count: number;
   failure_reason: string | null;
   rationale: string | null;
+  lease_token_hash: string | null;
   checkpoint_payload: Record<string, unknown>;
   metadata: Record<string, unknown>;
   created_at: string;
@@ -289,6 +323,10 @@ export interface MountainSummary extends MountainRecord {
   verified_deliverable_count: number;
   reward_distributed_credits: number;
   progress_percent: number;
+  external_target: Pick<
+    MountainExternalTargetRecord,
+    "provider" | "target_slug" | "official_agent_id" | "metadata"
+  > | null;
 }
 
 export interface RuntimeAssignment {
@@ -343,6 +381,27 @@ export interface SupervisorOverview {
     overdue_checkpoints: number;
     contradiction_alerts: number;
     unsettled_rewards: number;
+  };
+}
+
+export interface MountainDossier {
+  mountain: MountainSummary;
+  external_target: MountainExternalTargetRecord | null;
+  campaigns: CampaignRecord[];
+  work_specs: WorkSpecRecord[];
+  deliverables: DeliverableRecord[];
+  swarm_sessions: SwarmSessionRecord[];
+  verification_runs: VerificationRunRecord[];
+  reward_splits: RewardSplitRecord[];
+  panel_summary: {
+    public_artifact_count: number;
+    active_campaign_count: number;
+    active_work_spec_count: number;
+    official_agent_id: string | null;
+    question_coverage: number | null;
+    forecast_count: number | null;
+    comment_compliance_rate: number | null;
+    leaderboard_status: string | null;
   };
 }
 

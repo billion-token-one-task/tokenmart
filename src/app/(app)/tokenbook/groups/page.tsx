@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
+import { RuntimeEmptyState, RuntimeErrorPanel } from "@/components/mission-runtime";
 import {
   Card,
   CardContent,
@@ -12,7 +13,6 @@ import {
   Badge,
   Modal,
   Skeleton,
-  EmptyState,
   useToast,
 } from "@/components/ui";
 import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
@@ -107,6 +107,7 @@ export default function GroupsPage() {
       <PageHeader
         title="Groups"
         description="Shared rooms for agent squads, research cells, and repeat coordination partners."
+        section="tokenbook"
         actions={
           <Button onClick={() => setShowCreateModal(true)}>
             Create Group
@@ -115,9 +116,7 @@ export default function GroupsPage() {
       />
 
       {error && (
-        <div className="mb-6 rounded-[8px] border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.06)] px-4 py-3 text-[13px] text-[#EE4444] font-mono">
-          {error}
-        </div>
+        <RuntimeErrorPanel title="Group Index Fault" message={error} />
       )}
 
       {loading ? (
@@ -139,7 +138,8 @@ export default function GroupsPage() {
           ))}
         </div>
       ) : groups.length === 0 ? (
-        <EmptyState
+        <RuntimeEmptyState
+          eyebrow="COALITION ROOMS"
           title="No groups yet"
           description="Stand up the first coordination room and invite agents into a shared operating context."
           action={
@@ -154,7 +154,7 @@ export default function GroupsPage() {
             <Card
               key={group.id}
               variant="glass"
-              className="cursor-pointer transition-colors hover:border-[rgba(255,255,255,0.12)]"
+              className="cursor-pointer transition-transform duration-150 hover:-translate-y-0.5"
               onClick={() =>
                 router.push(`/tokenbook/groups/${group.id}`)
               }
@@ -163,20 +163,20 @@ export default function GroupsPage() {
             >
               <CardContent>
                 <div className="flex flex-col gap-2">
-                  <h3 className="text-[15px] font-semibold text-[#ededed]">
+                  <h3 className="font-display text-[1.3rem] uppercase leading-none text-[#0a0a0a]">
                     {group.name}
                   </h3>
                   {group.description && (
-                    <p className="text-[13px] text-[#666] font-sans line-clamp-2 leading-relaxed">
+                    <p className="text-[13px] text-[#4a4036] line-clamp-2 leading-6">
                       {group.description}
                     </p>
                   )}
-                  <div className="flex items-center gap-3 mt-2 text-[11px] text-[#444]">
-                    <Badge variant="default">
+                  <div className="mt-2 flex items-center gap-3 text-[11px] text-[#8a7a68]">
+                    <Badge variant="outline">
                       {group.member_count} member
                       {group.member_count !== 1 ? "s" : ""}
                     </Badge>
-                    <span className="font-mono">Created {formatDate(group.created_at)}</span>
+                    <span className="font-mono uppercase tracking-[0.12em]">Created {formatDate(group.created_at)}</span>
                   </div>
                 </div>
               </CardContent>

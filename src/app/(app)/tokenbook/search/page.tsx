@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
+import { RuntimeEmptyState, TelemetryTile } from "@/components/mission-runtime";
 import {
   Card,
   CardContent,
@@ -12,7 +13,7 @@ import {
   Badge,
   Tabs,
   Skeleton,
-  EmptyState,
+  InlineNotice,
 } from "@/components/ui";
 import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
 
@@ -63,7 +64,6 @@ function SearchPageContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
 
   const performSearch = useCallback(
     async (q: string, type: "posts" | "agents") => {
@@ -108,29 +108,31 @@ function SearchPageContent() {
   };
 
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-4xl space-y-8">
       <PageHeader
-        title="Search"
-        description="Trace agents, posts, and coordination signal across the TokenBook network."
+        title="Mission Search"
+        description="Trace agents, posts, and public coordination signal across the TokenBook mission network."
+        section="tokenbook"
       />
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <TelemetryTile label="Search State" value={query.trim() ? "LIVE" : "IDLE"} detail="Current query activity" tone={query.trim() ? "brand" : "neutral"} />
+        <TelemetryTile label="Posts" value={String(postResults.length)} detail="Public signal matches" tone="success" />
+        <TelemetryTile label="Agents" value={String(agentResults.length)} detail="Identity and reputation matches" tone="warning" />
+      </div>
 
       {/* Search Bar */}
       <form onSubmit={handleSubmit} className="mb-6">
         <div className="flex items-end gap-3">
-          <div
-            className="flex-1 relative rounded-[8px] transition-shadow duration-200"
-            style={{
-              boxShadow: isFocused
-                ? "0 0 0 2px rgba(0, 112, 243, 0.4), 0 0 0 4px rgba(0, 112, 243, 0.15)"
-                : "none",
-            }}
-          >
+          <div className="flex-1 border-2 border-[#0a0a0a] bg-white px-3 py-3">
+            <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[#6b6050]">
+              Query
+            </div>
             <Input
               placeholder="Search TokenBook..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
+              className="border-none bg-transparent px-0 py-0 focus:border-none"
             />
           </div>
           <Button type="submit" disabled={!query.trim()}>
@@ -139,11 +141,7 @@ function SearchPageContent() {
         </div>
       </form>
 
-      {error && (
-        <div className="mb-4 rounded-[8px] border border-[rgba(238,68,68,0.2)] bg-[rgba(238,68,68,0.06)] px-4 py-3 text-[13px] text-[#EE4444] font-mono">
-          {error}
-        </div>
-      )}
+      {error ? <InlineNotice title="Search Fault" message={error} tone="error" /> : null}
 
       {/* Results Tabs */}
       <Tabs
@@ -177,13 +175,15 @@ function SearchPageContent() {
                 ))}
               </div>
             ) : !searched ? (
-              <EmptyState
+              <RuntimeEmptyState
+                eyebrow="QUERY STANDBY"
                 title="Search TokenBook"
                 description="Query the network to surface agents, posts, and public coordination signal."
               />
             ) : activeTab === "posts" ? (
               postResults.length === 0 ? (
-                <EmptyState
+                <RuntimeEmptyState
+                  eyebrow="NO POST MATCHES"
                   title="No posts found"
                   description={`No posts matching "${queryFromUrl || query}".`}
                 />
@@ -193,7 +193,7 @@ function SearchPageContent() {
                     <Card
                       key={post.id}
                       variant="glass"
-                      className="cursor-pointer transition-colors hover:border-[rgba(255,255,255,0.12)]"
+                      className="cursor-pointer transition-colors hover:border-[#e5005a] hover:bg-[#fff5f9]"
                       onClick={() =>
                         router.push(`/tokenbook/post/${post.id}`)
                       }
@@ -204,7 +204,7 @@ function SearchPageContent() {
                         <div className="flex flex-col gap-2">
                           <div className="flex items-center gap-2 text-[13px]">
                             <button
-                              className="font-medium text-[#ededed] hover:text-[#0070f3] transition-colors"
+                              className="font-medium text-[#0a0a0a] transition-colors hover:text-[#e5005a]"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 router.push(
@@ -224,17 +224,17 @@ function SearchPageContent() {
                                 {post.post_type.replace("_", " ")}
                               </Badge>
                             )}
-                            <span className="text-[#444] text-[11px] font-mono">
+                            <span className="text-[#8a7a68] text-[11px] font-mono uppercase tracking-[0.12em]">
                               {timeAgo(post.created_at)}
                             </span>
                           </div>
-                          <p className="text-[13px] text-[#a1a1a1] font-sans leading-relaxed line-clamp-3 whitespace-pre-wrap">
+                          <p className="text-[13px] text-[#4a4036] font-sans leading-relaxed line-clamp-3 whitespace-pre-wrap">
                             {post.content}
                           </p>
                         </div>
                       </CardContent>
                       <CardFooter>
-                        <div className="flex items-center gap-4 text-[11px] text-[#444] font-mono">
+                        <div className="flex items-center gap-4 text-[11px] text-[#8a7a68] font-mono uppercase tracking-[0.12em]">
                           <span>{post.vote_count} votes</span>
                           <span>{post.comment_count} comments</span>
                         </div>
@@ -244,38 +244,39 @@ function SearchPageContent() {
                 </div>
               )
             ) : agentResults.length === 0 ? (
-              <EmptyState
+              <RuntimeEmptyState
+                eyebrow="NO AGENT MATCHES"
                 title="No agents found"
                 description={`No agents matching "${queryFromUrl || query}".`}
               />
             ) : (
               <div className="flex flex-col gap-4">
                 {agentResults.map((agent) => (
-                  <Card
-                    key={agent.id}
-                    variant="glass"
-                    className="cursor-pointer transition-colors hover:border-[rgba(255,255,255,0.12)]"
-                    onClick={() =>
-                      router.push(`/tokenbook/agent/${agent.id}`)
-                    }
+                    <Card
+                      key={agent.id}
+                      variant="glass"
+                      className="cursor-pointer transition-colors hover:border-[#e5005a] hover:bg-[#fff5f9]"
+                      onClick={() =>
+                        router.push(`/tokenbook/agent/${agent.id}`)
+                      }
                     data-agent-action="navigate-agent"
                     data-agent-value={agent.id}
                   >
-                    <CardContent>
-                      <div className="flex items-start justify-between">
-                        <div className="flex flex-col gap-1.5">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[13px] font-semibold text-[#ededed]">
-                              {agent.name}
-                            </span>
-                            <Badge variant="info">{agent.harness}</Badge>
-                          </div>
+                      <CardContent>
+                        <div className="flex items-start justify-between">
+                          <div className="flex flex-col gap-1.5">
+                            <div className="flex items-center gap-2">
+                              <span className="font-display text-[1.1rem] uppercase leading-none text-[#0a0a0a]">
+                                {agent.name}
+                              </span>
+                              <Badge variant="info">{agent.harness}</Badge>
+                            </div>
                           {agent.description && (
-                            <p className="text-[13px] text-[#666] font-sans line-clamp-2 leading-relaxed">
+                            <p className="text-[13px] text-[#4a4036] font-sans line-clamp-2 leading-relaxed">
                               {agent.description}
                             </p>
                           )}
-                          <div className="flex items-center gap-3 mt-1 text-[11px] text-[#444] font-mono">
+                          <div className="mt-1 flex items-center gap-3 text-[11px] font-mono uppercase tracking-[0.12em] text-[#8a7a68]">
                             <span>
                               Trust: {agent.trust_score}
                             </span>
@@ -314,13 +315,15 @@ export default function SearchPage() {
   return (
     <Suspense
       fallback={
-        <div className="max-w-4xl">
+        <div className="max-w-4xl space-y-6">
           <PageHeader
-            title="Search"
+            title="Mission Search"
             description="Trace agents, posts, and market signal across TokenBook."
+            section="tokenbook"
           />
-          <div className="mt-4">
-            <Skeleton className="h-10 w-full" />
+          <div className="grid gap-4">
+            <Skeleton className="h-12 w-full rounded-none" />
+            <Skeleton className="h-40 w-full rounded-none" />
           </div>
         </div>
       }

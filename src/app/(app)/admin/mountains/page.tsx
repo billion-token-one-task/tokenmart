@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import {
+  SignalPair,
   MountainCard,
+  RuntimeErrorPanel,
+  RuntimeLoadingGrid,
   RuntimeHero,
   RuntimeSection,
 } from "@/components/mission-runtime";
@@ -12,7 +15,6 @@ import {
   Button,
   Input,
   Select,
-  Skeleton,
   Textarea,
   useToast,
 } from "@/components/ui";
@@ -43,6 +45,10 @@ export default function MountainsPage() {
   const [horizon, setHorizon] = useState("12 months");
   const [visibility, setVisibility] = useState("scoped");
   const [budget, setBudget] = useState("100000");
+  const [legacyMode] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return new URLSearchParams(window.location.search).get("legacy");
+  });
   const isLoading = !authReady || (Boolean(token) && (!hasLoaded || loading));
 
   useEffect(() => {
@@ -88,6 +94,17 @@ export default function MountainsPage() {
   const activeCount = useMemo(
     () => mountains.filter((mountain) => mountain.status === "active").length,
     [mountains]
+  );
+  const parsedBudget = Number(budget) || 0;
+  const budgetEnvelopePreview = useMemo(
+    () => [
+      { label: "Decomposition", value: Math.round(parsedBudget * 0.1) },
+      { label: "Execution", value: Math.round(parsedBudget * 0.58) },
+      { label: "Replication", value: Math.round(parsedBudget * 0.16) },
+      { label: "Synthesis", value: Math.round(parsedBudget * 0.1) },
+      { label: "Emergency", value: Math.round(parsedBudget * 0.06) },
+    ],
+    [parsedBudget]
   );
 
   const handleCreate = async () => {
@@ -149,11 +166,21 @@ export default function MountainsPage() {
         }
       />
 
-      {error ? (
-        <div className="border-2 border-[rgba(213,61,90,0.4)] bg-[rgba(213,61,90,0.08)] px-4 py-3 font-mono text-[12px] uppercase tracking-[0.08em] text-[var(--color-error)]">
-          {error}
+      {legacyMode ? (
+        <div className="border-2 border-[#0a0a0a] bg-[rgba(255,255,255,0.86)] px-4 py-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <Badge variant="glass">legacy routing</Badge>
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#6b6050]">
+              TASKS::ARCHIVED_TO_MOUNTAINS
+            </span>
+          </div>
+          <p className="mt-3 text-[13px] leading-6 text-[#4a4036]">
+            Legacy admin task routes now resolve into mountains and campaigns. Use this builder and the mission dossiers below as the canonical operator surface for funded objectives, budget envelopes, and supervisor control.
+          </p>
         </div>
       ) : null}
+
+      {error ? <RuntimeErrorPanel title="Mountain Builder Fault" message={error} /> : null}
 
       <RuntimeHero
         eyebrow="Operator Builder"
@@ -211,6 +238,19 @@ export default function MountainsPage() {
                 onChange={(event) => setBudget(event.target.value)}
               />
             </div>
+            <div className="border-2 border-[#0a0a0a] bg-[rgba(255,255,255,0.86)] px-4 py-4">
+              <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#6b6050]">
+                Envelope preview
+              </div>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                {budgetEnvelopePreview.map((slice) => (
+                  <SignalPair key={slice.label} label={slice.label} value={`${slice.value} credits`} />
+                ))}
+              </div>
+              <p className="mt-3 text-[12px] leading-6 text-[#4a4036]">
+                The mountain builder now previews the treasury split so the operator can feel how decomposition, execution, replication, synthesis, and reserve posture change before launch.
+              </p>
+            </div>
             <div className="flex justify-end">
               <Button onClick={() => void handleCreate()} loading={creating} disabled={!title || !thesis || !targetProblem || !successCriteria || !domain}>
                 Create mountain
@@ -225,10 +265,7 @@ export default function MountainsPage() {
           detail="Each mountain should read clearly as a mission contract, not just a task bucket."
         >
           {isLoading ? (
-            <div className="grid gap-4 xl:grid-cols-2">
-              <Skeleton className="h-72 rounded-none" />
-              <Skeleton className="h-72 rounded-none" />
-            </div>
+            <RuntimeLoadingGrid blocks={2} />
           ) : (
             <div className="grid gap-4 xl:grid-cols-2">
               {mountains.map((mountain) => (

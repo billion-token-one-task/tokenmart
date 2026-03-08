@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import {
   Badge,
@@ -11,6 +11,7 @@ import {
   fetchJsonResult,
   isMissingAgentResponse,
 } from "@/lib/http/client-json";
+import type { MountainSummary, RewardSplitRecord } from "@/lib/v2/types";
 
 interface CreditsData {
   balance: number | string;
@@ -79,6 +80,8 @@ export default function TokenHallPage() {
   const [credits, setCredits] = useState<CreditsData | null>(null);
   const [models, setModels] = useState<ModelItem[]>([]);
   const [keys, setKeys] = useState<KeyItem[]>([]);
+  const [mountains, setMountains] = useState<MountainSummary[]>([]);
+  const [rewards, setRewards] = useState<RewardSplitRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
@@ -103,7 +106,7 @@ export default function TokenHallPage() {
       setWarning(null);
       setMissingAgentCredits(false);
       try {
-        const [creditsResult, modelsResult, keysResult] = await Promise.all([
+        const [creditsResult, modelsResult, keysResult, mountainsResult, rewardsResult] = await Promise.all([
           fetchJsonResult<CreditsData>("/api/v1/tokenhall/credits", {
             headers: authHeaders(token),
           }),
@@ -111,6 +114,12 @@ export default function TokenHallPage() {
             headers: authHeaders(token),
           }),
           fetchJsonResult<{ keys?: KeyItem[] }>("/api/v1/tokenhall/keys", {
+            headers: authHeaders(token),
+          }),
+          fetchJsonResult<{ mountains?: MountainSummary[] }>("/api/v2/mountains", {
+            headers: authHeaders(token),
+          }),
+          fetchJsonResult<{ rewards?: RewardSplitRecord[] }>("/api/v2/rewards", {
             headers: authHeaders(token),
           }),
         ]);
@@ -129,6 +138,20 @@ export default function TokenHallPage() {
         } else {
           setKeys([]);
           warnings.push(keysResult.errorMessage ?? "Failed to load keys");
+        }
+
+        if (mountainsResult.ok) {
+          setMountains(mountainsResult.data?.mountains ?? []);
+        } else {
+          setMountains([]);
+          warnings.push(mountainsResult.errorMessage ?? "Failed to load mountain treasury state");
+        }
+
+        if (rewardsResult.ok) {
+          setRewards(rewardsResult.data?.rewards ?? []);
+        } else {
+          setRewards([]);
+          warnings.push(rewardsResult.errorMessage ?? "Failed to load reward settlement state");
         }
 
         if (creditsResult.ok && creditsResult.data) {
@@ -225,6 +248,51 @@ export default function TokenHallPage() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const totalMissionBudget = mountains.reduce((sum, mountain) => sum + mountain.total_budget_credits, 0);
+
+  const totalDistributed = mountains.reduce((sum, mountain) => sum + mountain.reward_distributed_credits, 0);
+
+  const unsettledRewards = rewards.filter((reward) => reward.settlement_status !== "settled");
+
+  const activeMountains = mountains.filter((mountain) => mountain.status === "active");
+
+  const budgetPosture = totalMissionBudget > 0 ? Math.round((totalDistributed / totalMissionBudget) * 100) : 0;
+
+  const mountainBudgetRows = [...mountains]
+    .sort((left, right) => right.total_budget_credits - left.total_budget_credits)
+    .slice(0, 4)
+    .map((mountain) => {
+      const distributedRatio =
+        mountain.total_budget_credits > 0
+          ? Math.round((mountain.reward_distributed_credits / mountain.total_budget_credits) * 100)
+          : 0;
+
+      return {
+        id: mountain.id,
+        title: mountain.title,
+        status: mountain.status.toUpperCase(),
+        budget: mountain.total_budget_credits.toLocaleString(),
+        distributed: mountain.reward_distributed_credits.toLocaleString(),
+        distributedRatio,
+        thesis: mountain.thesis,
+      };
+    });
+
+  const rewardMixRows = (() => {
+    const buckets = new Map<string, number>();
+    for (const reward of rewards) {
+      buckets.set(reward.role, (buckets.get(reward.role) ?? 0) + reward.amount_credits);
+    }
+
+    return [...buckets.entries()]
+      .sort((left, right) => right[1] - left[1])
+      .slice(0, 4)
+      .map(([role, amount]) => ({
+        role,
+        amount,
+      }));
+  })();
 
   /* placeholder model data for the preview grid */
   const previewModels = [
@@ -377,6 +445,143 @@ export default function TokenHallPage() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      <div className="mb-6 border-2 border-[#0a0a0a] rounded-none bg-white relative overflow-hidden animate-slide-in-up delay-150">
+        <VF />
+        <div className="border-b-2 border-[#0a0a0a] px-4 py-2.5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h2 className="font-display text-[1.1rem] uppercase tracking-[0.03em] text-[#0a0a0a]">
+              Mission Treasury Rail
+            </h2>
+            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#0a0a0a]/40">
+              TOKENHALL::INCENTIVE_LAYER
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <BarcodeStrip />
+            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#0a0a0a]/40">
+              {activeMountains.length} ACTIVE
+            </span>
+          </div>
+        </div>
+
+        <div className="grid border-b-2 border-[#0a0a0a] md:grid-cols-4">
+          {[
+            { label: "MISSION BUDGET", value: totalMissionBudget.toLocaleString(), code: "MTN-BUD" },
+            { label: "DISTRIBUTED", value: totalDistributed.toLocaleString(), code: "MTN-DST" },
+            { label: "UNSETTLED", value: String(unsettledRewards.length), code: "MTN-STL" },
+            { label: "POSTURE", value: `${budgetPosture}%`, code: "MTN-PST" },
+          ].map((stat, index) => (
+            <div
+              key={stat.label}
+              className={`group relative px-4 py-4 transition-colors hover:bg-[#E5005A] hover:text-white ${index < 3 ? "border-b-2 border-[#0a0a0a] md:border-b-0 md:border-r-2" : ""}`}
+            >
+              <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#0a0a0a]/45 group-hover:text-white/70">
+                {stat.label}
+              </div>
+              <div className="mt-2 font-display text-[1.85rem] leading-none text-[#0a0a0a] group-hover:text-white">
+                {stat.value}
+              </div>
+              <div className="mt-2 font-mono text-[9px] uppercase tracking-[0.14em] text-[#0a0a0a]/28 group-hover:text-white/50">
+                READOUT::{stat.code}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid md:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+          <div className="border-b-2 border-[#0a0a0a] md:border-b-0 md:border-r-2">
+            <div className="border-b border-[#0a0a0a]/10 px-4 py-2 flex items-center justify-between">
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#0a0a0a]/45">
+                Mountain Budget Lanes
+              </span>
+              <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[#0a0a0a]/25">
+                COMMITMENT::VISIBLE
+              </span>
+            </div>
+            <div className="divide-y divide-[#0a0a0a]/10">
+              {mountainBudgetRows.length > 0 ? (
+                mountainBudgetRows.map((mountain) => (
+                  <div key={mountain.id} className="px-4 py-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="font-display text-[1rem] uppercase tracking-[0.02em] text-[#0a0a0a]">
+                          {mountain.title}
+                        </div>
+                        <div className="mt-1 text-[12px] leading-6 text-[#4a4036]">
+                          {mountain.thesis}
+                        </div>
+                      </div>
+                      <Badge variant={mountain.status === "ACTIVE" ? "success" : "outline"}>{mountain.status}</Badge>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.14em] text-[#0a0a0a]/45">
+                      <span>Budget {mountain.budget} CR</span>
+                      <span>Distributed {mountain.distributed} CR</span>
+                    </div>
+                    <div className="mt-2 h-3 border border-[#0a0a0a] bg-[linear-gradient(90deg,rgba(229,0,90,0.15),rgba(229,0,90,0.03))]">
+                      <div
+                        className="h-full bg-[#E5005A] transition-all duration-700"
+                        style={{ width: `${Math.min(100, mountain.distributedRatio)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="px-4 py-6 font-mono text-[10px] uppercase tracking-[0.14em] text-[#0a0a0a]/40">
+                  No funded mountains available yet. Treasury rail will populate after the admin funds the first mission.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <div className="border-b border-[#0a0a0a]/10 px-4 py-2 flex items-center justify-between">
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#0a0a0a]/45">
+                Settlement Mix
+              </span>
+              <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[#0a0a0a]/25">
+                ROLE::WEIGHTING
+              </span>
+            </div>
+            <div className="space-y-4 px-4 py-4">
+              {rewardMixRows.length > 0 ? (
+                rewardMixRows.map((row, index) => (
+                  <div key={row.role} className="border-2 border-[#0a0a0a] bg-[rgba(255,255,255,0.82)] px-3 py-3 transition-transform duration-300 hover:-translate-y-0.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#0a0a0a]/45">
+                        Role::{String(index + 1).padStart(2, "0")}
+                      </span>
+                      <Badge variant="glass">{row.role}</Badge>
+                    </div>
+                    <div className="mt-2 font-display text-[1.3rem] uppercase tracking-[0.03em] text-[#0a0a0a]">
+                      {row.amount.toLocaleString()} credits
+                    </div>
+                    <div className="mt-2 font-mono text-[9px] uppercase tracking-[0.14em] text-[#0a0a0a]/30">
+                      Treasury settlement volume by contribution role
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="border-2 border-[#0a0a0a] px-3 py-5 font-mono text-[10px] uppercase tracking-[0.14em] text-[#0a0a0a]/40">
+                  Reward mix will appear once mission settlement begins.
+                </div>
+              )}
+
+              <div className="border-2 border-[#0a0a0a] bg-[#0a0a0a] px-3 py-3 text-white">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-white/55">
+                    Treasury Thesis
+                  </span>
+                  <BarcodeStrip className="opacity-60" />
+                </div>
+                <p className="mt-3 text-[12px] leading-6 text-white/78">
+                  TokenHall stays intentionally subordinate here: it routes the credits, keys, and model access that let mountains move, while the mission runtime decides what deserves spend.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

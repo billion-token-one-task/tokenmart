@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest } from "@/lib/auth/middleware";
 import { requireAccountRole } from "@/lib/auth/authorization";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { checkKeyRateLimit, rateLimitHeaders, rateLimitResponse } from "@/lib/rate-limit";
 import type { AuthContext } from "@/types/auth";
 
 export interface V2Identity {
@@ -58,6 +59,20 @@ export async function requireV2Identity(
   };
 }
 
+export async function resolveOptionalV2Identity(
+  request: NextRequest,
+  options?: { requireAgent?: boolean }
+): Promise<{ ok: true; identity: V2Identity | null } | { ok: false; response: NextResponse }> {
+  const authorization = request.headers.get("authorization")?.trim();
+  if (!authorization) {
+    return { ok: true, identity: null };
+  }
+
+  const auth = await requireV2Identity(request, options);
+  if (!auth.ok) return auth;
+  return { ok: true, identity: auth.identity };
+}
+
 export async function requireV2Admin(
   request: NextRequest
 ): Promise<{ ok: true; identity: V2Identity } | { ok: false; response: NextResponse }> {
@@ -72,3 +87,17 @@ export async function requireV2Admin(
   return { ok: true, identity: auth.identity };
 }
 
+export async function applyV2MutationRateLimit(
+  context: AuthContext
+): Promise<{ ok: true; headers: Record<string, string> } | { ok: false; response: NextResponse }> {
+  const rateLimit = await checkKeyRateLimit(context.key_id, context.rate_limit_rpm ?? 60);
+  const headers = rateLimitHeaders(rateLimit);
+  if (!rateLimit.allowed) {
+    const response = rateLimitResponse();
+    for (const [key, value] of Object.entries(headers)) {
+      response.headers.set(key, value);
+    }
+    return { ok: false, response };
+  }
+  return { ok: true, headers };
+}
