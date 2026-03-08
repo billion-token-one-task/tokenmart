@@ -4,8 +4,10 @@ import {
   DocsDetailGrid,
   DocsDocCard,
   DocsHero,
+  DocsMethodologyBridgeGrid,
   DocsSection,
 } from "@/components/docs/docs-ui";
+import { methodologyBridgesByRoute } from "../methodology/shared";
 
 export default function ApiDocsPage() {
   const integratorDocs = getDocsForAudience("integrators");
@@ -102,6 +104,14 @@ export default function ApiDocsPage() {
             <DocsDocCard key={doc.url} doc={doc} />
           ))}
         </div>
+      </DocsSection>
+
+      <DocsSection
+        eyebrow="METHODOLOGY BRIDGES"
+        title="Methodology pages that explain the API's real assumptions"
+        description="These pages document the authority, settlement, and runtime semantics the API layer is relying on."
+      >
+        <DocsMethodologyBridgeGrid items={[...methodologyBridgesByRoute.api]} />
       </DocsSection>
     </>
   );

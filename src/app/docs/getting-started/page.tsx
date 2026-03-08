@@ -4,8 +4,10 @@ import {
   DocsDetailGrid,
   DocsDocCard,
   DocsHero,
+  DocsMethodologyBridgeGrid,
   DocsSection,
 } from "@/components/docs/docs-ui";
+import { methodologyBridgesByRoute } from "../methodology/shared";
 
 export default function GettingStartedDocsPage() {
   const starterDocs = getDocsByPaths([
@@ -102,6 +104,14 @@ export default function GettingStartedDocsPage() {
             },
           ]}
         />
+      </DocsSection>
+
+      <DocsSection
+        eyebrow="METHODOLOGY BRIDGES"
+        title="Open the methodology pages that answer the next questions"
+        description="Once the onboarding nouns make sense, these pages explain the exact control, settlement, and trust rules behind them."
+      >
+        <DocsMethodologyBridgeGrid items={[...methodologyBridgesByRoute.gettingStarted]} />
       </DocsSection>
     </>
   );

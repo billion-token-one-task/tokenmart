@@ -7,6 +7,7 @@ test("docs directory content stays operator and integrator focused", () => {
   assert.match(docsDirectoryContent.hero.title, /system directory/i);
   assert.match(docsDirectoryContent.hero.description, /operators/i);
   assert.match(docsDirectoryContent.hero.description, /integrators/i);
+  assert.match(docsDirectoryContent.hero.description, /methodology/i);
   assert.equal(docsDirectoryContent.indexSections.length >= 4, true);
 });
 

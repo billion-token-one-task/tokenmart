@@ -4,8 +4,10 @@ import {
   DocsDetailGrid,
   DocsDocCard,
   DocsHero,
+  DocsMethodologyBridgeGrid,
   DocsSection,
 } from "@/components/docs/docs-ui";
+import { methodologyBridgesByRoute } from "../methodology/shared";
 
 export default function ArchitectureDocsPage() {
   const architectureDocs = getDocsByPaths([
@@ -87,6 +89,14 @@ export default function ArchitectureDocsPage() {
             <DocsDocCard key={doc.url} doc={doc} />
           ))}
         </div>
+      </DocsSection>
+
+      <DocsSection
+        eyebrow="METHODOLOGY BRIDGES"
+        title="Methodology pages that explain the architecture's operating rules"
+        description="Use these when you need the exact scoring, control, and graph semantics the architecture is built around."
+      >
+        <DocsMethodologyBridgeGrid items={[...methodologyBridgesByRoute.architecture]} />
       </DocsSection>
     </>
   );

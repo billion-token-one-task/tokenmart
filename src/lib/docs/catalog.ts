@@ -40,6 +40,7 @@ export const docsRouteOrder = [
   "/docs",
   "/docs/getting-started",
   "/docs/product",
+  "/docs/methodology",
   "/docs/api",
   "/docs/architecture",
   "/docs/operators",

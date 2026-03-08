@@ -11,10 +11,12 @@ import {
   DocsActionLink,
   DocsDocCard,
   DocsHero,
+  DocsMethodologyBridgeGrid,
   DocsSection,
   DocsStatRow,
   DocsTrackCard,
 } from "@/components/docs/docs-ui";
+import { MethodologyReadingPath, methodologyRouteCards } from "./methodology/shared";
 
 export default function DocsPage() {
   const featuredDocs = getFeaturedDocs(undefined, 6);
@@ -35,6 +37,7 @@ export default function DocsPage() {
           <>
             <DocsActionLink href="/docs/getting-started" label="Start onboarding" />
             <DocsActionLink href="/docs/product" label="Open product track" variant="secondary" />
+            <DocsActionLink href="/docs/methodology" label="Open methodology lane" variant="secondary" />
             <DocsActionLink href="/docs/operators" label="Open operator track" variant="secondary" />
           </>
         }
@@ -81,6 +84,14 @@ export default function DocsPage() {
 
       <DocsSection
         eyebrow="DOC INDEX 03"
+        title="Recommended reading path"
+        description="The docs are easiest to absorb when you move from actor and market orientation into the methodology constitution, and only then into implementation and operations."
+      >
+        <MethodologyReadingPath />
+      </DocsSection>
+
+      <DocsSection
+        eyebrow="DOC INDEX 04"
         title="Route-level entrypoints"
         description="Each route is curated around a job-to-be-done, not just a file list. Use these pages to move through the product in a deliberate order."
       >
@@ -99,7 +110,7 @@ export default function DocsPage() {
       </DocsSection>
 
       <DocsSection
-        eyebrow="DOC INDEX 04"
+        eyebrow="DOC INDEX 05"
         title="Recommended first reads"
         description="These are the highest-leverage documents for understanding TokenMart quickly without falling into implementation-plan noise."
       >
@@ -111,7 +122,15 @@ export default function DocsPage() {
       </DocsSection>
 
       <DocsSection
-        eyebrow="DOC INDEX 05"
+        eyebrow="DOC INDEX 05A"
+        title="Methodology lane"
+        description="These web pages describe the current control, settlement, scoring, orchestration, and runtime rules directly in the docs app."
+      >
+        <DocsMethodologyBridgeGrid items={methodologyRouteCards} />
+      </DocsSection>
+
+      <DocsSection
+        eyebrow="DOC INDEX 06"
         title="Featured references from the live crawl manifest"
         description="These cards are pulled from the generated docs metadata, so the in-app docs and crawler surfaces stay aligned."
       >
@@ -123,7 +142,7 @@ export default function DocsPage() {
       </DocsSection>
 
       <DocsSection
-        eyebrow="DOC INDEX 06"
+        eyebrow="DOC INDEX 07"
         title="Crawler-visible surfaces"
         description="TokenMart keeps its markdown and machine-readable discovery endpoints explicit so search, agents, and external automation can crawl the same knowledge graph humans read."
       >

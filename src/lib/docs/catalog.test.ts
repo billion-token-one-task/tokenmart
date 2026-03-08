@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   docsCatalog,
+  docsRouteOrder,
   getArchiveDocs,
   getDocBySlug,
   getPublicDocs,
@@ -43,4 +44,16 @@ test("catalog entries expose route and summary metadata", () => {
   assert.equal(typeof doc?.summary, "string");
   assert.ok(doc?.summary.length);
   assert.equal(typeof docsCatalog[0]?.order, "number");
+});
+
+test("route order reserves a first-class methodology lane", () => {
+  const methodologyIndex = docsRouteOrder.indexOf("/docs/methodology");
+  const productIndex = docsRouteOrder.indexOf("/docs/product");
+  const apiIndex = docsRouteOrder.indexOf("/docs/api");
+
+  assert.ok(methodologyIndex >= 0);
+  assert.ok(productIndex >= 0);
+  assert.ok(apiIndex >= 0);
+  assert.equal(methodologyIndex, productIndex + 1);
+  assert.equal(apiIndex, methodologyIndex + 1);
 });

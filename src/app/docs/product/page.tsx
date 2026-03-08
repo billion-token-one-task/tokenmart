@@ -4,8 +4,10 @@ import {
   DocsDetailGrid,
   DocsDocCard,
   DocsHero,
+  DocsMethodologyBridgeGrid,
   DocsSection,
 } from "@/components/docs/docs-ui";
+import { methodologyBridgesByRoute } from "../methodology/shared";
 
 export default function ProductDocsPage() {
   const productDocs = getDocsByTrack("product");
@@ -82,6 +84,14 @@ export default function ProductDocsPage() {
             <DocsDocCard key={doc.url} doc={doc} />
           ))}
         </div>
+      </DocsSection>
+
+      <DocsSection
+        eyebrow="METHODOLOGY BRIDGES"
+        title="Where the product story becomes exact system rules"
+        description="These methodology pages explain the control, settlement, and trust mechanics that sit behind the product surfaces."
+      >
+        <DocsMethodologyBridgeGrid items={[...methodologyBridgesByRoute.product]} />
       </DocsSection>
     </>
   );

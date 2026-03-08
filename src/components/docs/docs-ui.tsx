@@ -56,8 +56,8 @@ export function DocsHero({
         {/* technical readout */}
         <div className="mt-3 flex items-center gap-4 border-t border-[#0a0a0a]/10 pt-2">
           <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">SYSTEM::DOCS</span>
-          <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">FORMAT::MARKDOWN</span>
-          <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">CRAWL::ENABLED</span>
+          <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">SURFACE::WEB</span>
+          <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">NAV::CURATED</span>
           <span className="ml-auto flex items-center gap-[1px]" aria-hidden="true">
             {[2, 1, 3, 1, 2, 1, 2, 3, 1].map((w, i) => (
               <span key={i} className="block bg-[#0a0a0a]/30" style={{ width: `${w}px`, height: "8px" }} />
@@ -221,6 +221,216 @@ export function DocsDetailGrid({
           <div className="mt-2 text-[15px] font-medium text-[#0a0a0a] group-hover:text-white">{item.title}</div>
           <p className="mt-2 text-[12px] leading-5 text-[var(--color-text-secondary)] group-hover:text-white/80">{item.description}</p>
         </div>
+      ))}
+    </div>
+  );
+}
+
+export function DocsMethodologyShell({
+  hero,
+  anchorTitle = "On this page",
+  anchors,
+  rail,
+  children,
+}: {
+  hero: React.ReactNode;
+  anchorTitle?: string;
+  anchors: Array<{ id: string; label: string; eyebrow?: string }>;
+  rail?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-6">
+      {hero}
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="min-w-0 space-y-6">{children}</div>
+        <div className="space-y-4 xl:sticky xl:top-6 xl:self-start">
+          <DocsAnchorNav title={anchorTitle} items={anchors} />
+          {rail}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function DocsAnchorNav({
+  title,
+  items,
+}: {
+  title: string;
+  items: Array<{ id: string; label: string; eyebrow?: string }>;
+}) {
+  return (
+    <nav
+      aria-label={title}
+      className="rounded-none border-2 border-[#0a0a0a] bg-white p-3 shadow-[4px_4px_0_#0a0a0a]"
+    >
+      <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
+        {title}
+      </div>
+      <div className="mt-3 space-y-0">
+        {items.map((item, index) => (
+          <a
+            key={item.id}
+            href={`#${item.id}`}
+            className={`group block rounded-none border-2 px-3 py-2 transition-colors -mt-[2px] ${
+              index === 0
+                ? "border-[#0a0a0a]"
+                : "border-transparent hover:border-[#0a0a0a]"
+            } bg-[rgba(255,249,252,0.94)] hover:bg-[#E5005A] hover:text-white`}
+          >
+            <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)] group-hover:text-white/70">
+              {item.eyebrow ?? "SECTION"}
+            </div>
+            <div className="mt-1 text-[12px] font-medium leading-5 text-[#0a0a0a] group-hover:text-white">
+              {item.label}
+            </div>
+          </a>
+        ))}
+      </div>
+    </nav>
+  );
+}
+
+export function DocsMethodologyCallout({
+  eyebrow,
+  title,
+  body,
+}: {
+  eyebrow: string;
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="relative overflow-hidden rounded-none border-2 border-[#0a0a0a] bg-[#0a0a0a] px-4 py-4 text-white">
+      <div
+        className="pointer-events-none absolute inset-y-0 right-0 w-28 crosshatch-wide opacity-20"
+        aria-hidden="true"
+      />
+      <div className="relative z-10">
+        <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-white/60">{eyebrow}</div>
+        <div className="mt-2 font-display text-[1.4rem] uppercase leading-tight tracking-[0.02em]">
+          {title}
+        </div>
+        <p className="mt-2 text-[12px] leading-6 text-white/80">{body}</p>
+      </div>
+    </div>
+  );
+}
+
+export function DocsMethodologyMatrix({
+  caption,
+  columns,
+  rows,
+}: {
+  caption?: string;
+  columns: Array<{ key: string; label: string }>;
+  rows: Array<Record<string, React.ReactNode>>;
+}) {
+  return (
+    <div className="rounded-none border-2 border-[#0a0a0a] bg-white">
+      {caption ? (
+        <div className="border-b-2 border-[#0a0a0a] bg-[rgba(255,249,252,0.94)] px-4 py-2 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
+          {caption}
+        </div>
+      ) : null}
+      <div className="overflow-x-auto">
+        <table className="min-w-full border-collapse">
+          <thead>
+            <tr className="bg-[#0a0a0a] text-left">
+              {columns.map((column) => (
+                <th
+                  key={column.key}
+                  className="border-r border-white/15 px-4 py-3 font-mono text-[10px] uppercase tracking-[0.14em] text-white/70 last:border-r-0"
+                >
+                  {column.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, index) => (
+              <tr
+                key={index}
+                className={index % 2 === 0 ? "bg-white" : "bg-[rgba(255,249,252,0.8)]"}
+              >
+                {columns.map((column) => (
+                  <td
+                    key={column.key}
+                    className="align-top border-r border-t border-[#0a0a0a] px-4 py-3 text-[12px] leading-6 text-[var(--color-text-secondary)] last:border-r-0"
+                  >
+                    <div className="text-[12px] leading-6 text-[var(--color-text-secondary)]">
+                      {row[column.key]}
+                    </div>
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+export function DocsMethodologyFlow({
+  items,
+}: {
+  items: Array<{ eyebrow: string; title: string; description: string }>;
+}) {
+  return (
+    <div className="grid gap-3">
+      {items.map((item, index) => (
+        <div
+          key={`${item.eyebrow}-${item.title}`}
+          className="relative rounded-none border-2 border-[#0a0a0a] bg-white px-4 py-4"
+        >
+          <div className="absolute left-0 top-0 h-full w-[4px] bg-[#E5005A]" aria-hidden="true" />
+          <div className="ml-3">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-none border-2 border-[#0a0a0a] bg-[rgba(255,249,252,0.94)] font-mono text-[10px] font-bold text-[#0a0a0a]">
+                {index + 1}
+              </span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
+                {item.eyebrow}
+              </span>
+            </div>
+            <div className="mt-3 text-[15px] font-medium text-[#0a0a0a]">{item.title}</div>
+            <p className="mt-2 text-[12px] leading-6 text-[var(--color-text-secondary)]">
+              {item.description}
+            </p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function DocsLongformBody({ paragraphs }: { paragraphs: string[] }) {
+  return (
+    <div className="space-y-4 text-[13px] leading-7 text-[var(--color-text-secondary)]">
+      {paragraphs.map((paragraph) => (
+        <p key={paragraph.slice(0, 48)}>{paragraph}</p>
+      ))}
+    </div>
+  );
+}
+
+export function DocsMethodologyBridgeGrid({
+  items,
+}: {
+  items: Array<{ href: string; eyebrow: string; title: string; description: string }>;
+}) {
+  return (
+    <div className="grid gap-3 xl:grid-cols-2">
+      {items.map((item) => (
+        <DocsTrackCard
+          key={`${item.href}-${item.title}`}
+          href={item.href}
+          eyebrow={item.eyebrow}
+          title={item.title}
+          description={item.description}
+        />
       ))}
     </div>
   );

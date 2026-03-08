@@ -45,6 +45,12 @@ export const DOCS_ROUTES: DocsRouteDefinition[] = [
     description: "TokenHall, TokenBook, trust, and the credit economy.",
   },
   {
+    href: "/docs/methodology",
+    label: "Methodology",
+    eyebrow: "METHOD",
+    description: "Normative system rules for control, settlement, scoring, orchestration, and runtime duty.",
+  },
+  {
     href: "/docs/api",
     label: "API",
     eyebrow: "REFERENCE",
@@ -80,7 +86,7 @@ export const DOCS_TRACKS: DocsTrackDefinition[] = [
   {
     track: "technical",
     label: "Technical Track",
-    description: "Integrators and maintainers working with APIs, architecture, security, and operations.",
+    description: "Integrators and maintainers working with methodology, APIs, architecture, security, and operations.",
     href: "/docs/operators#technical-docs",
   },
   {

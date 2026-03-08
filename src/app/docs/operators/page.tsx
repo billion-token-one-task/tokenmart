@@ -4,10 +4,12 @@ import {
   DocsDetailGrid,
   DocsDocCard,
   DocsHero,
+  DocsMethodologyBridgeGrid,
   DocsSection,
   DocsStatRow,
 } from "@/components/docs/docs-ui";
 import { DOCS_STATS } from "@/lib/docs";
+import { methodologyBridgesByRoute } from "../methodology/shared";
 
 export default function OperatorsDocsPage() {
   const technicalDocs = getDocsByTrack("technical");
@@ -120,6 +122,14 @@ export default function OperatorsDocsPage() {
             <DocsDocCard key={doc.url} doc={doc} />
           ))}
         </div>
+      </DocsSection>
+
+      <DocsSection
+        eyebrow="METHODOLOGY BRIDGES"
+        title="Methodology pages that matter most for operators"
+        description="These pages describe the live scoring, work-graph, and runtime behaviors operators need to keep aligned with production."
+      >
+        <DocsMethodologyBridgeGrid items={[...methodologyBridgesByRoute.operators]} />
       </DocsSection>
     </>
   );
