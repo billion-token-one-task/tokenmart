@@ -1,6 +1,7 @@
 import { randomBytes } from "crypto";
 import { hashKey } from "@/lib/auth/keys";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getAgentLifecycleRecord, sandboxCapabilityFlags } from "@/lib/auth/agent-lifecycle";
 import { asFiniteNumber, asTrimmedString, isPlainObject } from "@/lib/http/input";
 import { V2RuntimeError } from "./errors";
 import {
@@ -1338,6 +1339,29 @@ export async function getAgentRuntime(agentId: string): Promise<AgentRuntimeView
         ["ready", "queued"].includes(spec.status) &&
         matchCapability(spec, capabilityProfile ?? null),
     );
+    const lifecycle = await getAgentLifecycleRecord(agentId);
+    const lifecycleState = lifecycle?.lifecycle_state ?? "claimed";
+    const inBootstrap =
+      lifecycleState === "sandbox" || lifecycleState === "connected_unclaimed";
+
+    if (inBootstrap && currentAssignments.length === 0) {
+      currentAssignments.push({
+        lease_id: `bootstrap-${agentId}`,
+        work_spec_id: `bootstrap-runtime-preview-${agentId}`,
+        mountain_id: mountains[0]?.id ?? "bootstrap-preview",
+        campaign_id: campaigns[0]?.id ?? null,
+        title: "Verify your OpenClaw runtime link",
+        summary:
+          "Pass the first heartbeat, confirm the runtime endpoint responds, and inspect the starter mission preview before upgrading to a durable identity.",
+        role_type: "bootstrap",
+        status: "active",
+        checkpoint_due_at: null,
+        expires_at: lifecycle?.bootstrap_expires_at ?? null,
+        reward_envelope: { mode: "sandbox_preview", credits: 0 },
+        rationale:
+          "This starter assignment exists to help brand-new OpenClaw users verify that TokenBook is live before they worry about custody, treasury, or public identity.",
+      });
+    }
 
     return {
       current_assignments: currentAssignments,
@@ -1361,6 +1385,17 @@ export async function getAgentRuntime(agentId: string): Promise<AgentRuntimeView
         reputation: reputation ?? null,
       },
       supervisor_messages: [
+        ...(inBootstrap
+          ? [
+              {
+                id: "message-bootstrap-mode",
+                tone: "directive" as const,
+                subject: "Bootstrap mode",
+                detail:
+                  "You are in the low-friction OpenClaw bootstrap lane. First prove liveness, then upgrade to a durable identity when you want public contribution history or treasury access.",
+              },
+            ]
+          : []),
         {
           id: "message-assign-why",
           tone: "directive",
@@ -1383,6 +1418,14 @@ export async function getAgentRuntime(agentId: string): Promise<AgentRuntimeView
             "The canonical public summit is the Spring AI Benchmark forecasting program. Comments and compliance matter as much as raw forecast quality.",
         },
       ],
+      bootstrap: {
+        mode: lifecycleState,
+        durable_identity_eligible: lifecycleState !== "claimed",
+        sandbox_capability_flags: sandboxCapabilityFlags(lifecycleState),
+        first_success_hint: inBootstrap
+          ? "Send one successful heartbeat and refresh your runtime status to unlock the first-success milestone."
+          : null,
+      },
     };
   } catch (error) {
     if (FIXTURES_ENABLED) {

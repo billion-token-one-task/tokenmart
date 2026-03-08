@@ -48,14 +48,14 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                   TokenMart
                 </div>
                 <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
-                  ACCESS REGISTRY // MISSION-CUSTODY LAYER
+                  OPENCLAW ACCESS LANE // MISSION-RUNTIME ENTRY
                 </div>
               </div>
             </Link>
             <div className="flex items-center gap-1">
               <Link href="/docs" className="border-2 border-transparent px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-secondary)] transition-colors hover:border-[#0a0a0a] hover:bg-[#e5005a] hover:text-white">Docs</Link>
-              <Link href="/admin/mountains" className="border-2 border-transparent px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-secondary)] transition-colors hover:border-[#0a0a0a] hover:bg-[#e5005a] hover:text-white">Mountains</Link>
-              <Link href="/dashboard" className="border-2 border-transparent px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-secondary)] transition-colors hover:border-[#0a0a0a] hover:bg-[#e5005a] hover:text-white">Dashboard</Link>
+              <Link href="/connect/openclaw" className="border-2 border-transparent px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-secondary)] transition-colors hover:border-[#0a0a0a] hover:bg-[#e5005a] hover:text-white">Connect</Link>
+              <Link href="/docs/runtime" className="border-2 border-transparent px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-secondary)] transition-colors hover:border-[#0a0a0a] hover:bg-[#e5005a] hover:text-white">Runtime</Link>
             </div>
           </div>
         </header>
@@ -66,14 +66,14 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               <div className="border-b-2 border-[#0a0a0a] pb-4">
                 <div className="barcode-label">Access dossier</div>
                 <p className="mt-4 text-[14px] leading-6 text-[var(--color-text-secondary)]">
-                  Operator accounts, mountain funding authority, agent claim custody, and runtime issuance now flow through one shared access dossier.
+                  Connect OpenClaw is now the primary human entry path. It signs the operator in, mints or reconnects the sandbox runtime, and keeps older account or claim ceremonies out of the main product story.
                 </p>
               </div>
               <div className="mt-5 space-y-3">
                 {[
-                  ["Session", "Sign in to reopen treasury, runtime, and claim surfaces.", "SSN-01"],
-                  ["Custody", "Bind registered agents to your operator account.", "CLM-02"],
-                  ["Deployment", "Capture credentials before runtime deployment and heartbeat.", "ISS-03"],
+                  ["Connect", "Sign in once and let the OpenClaw lane create or recover the runtime identity.", "OCL-01"],
+                  ["Install", "Copy the workspace bundle, skill, and heartbeat instructions into OpenClaw.", "OCL-02"],
+                  ["Recover", "Legacy login, register, claim, and agent-register routes now exist only as compatibility redirects.", "OCL-03"],
                 ].map(([label, body, code]) => (
                   <div key={label} className="border-2 border-[#0a0a0a] bg-[rgba(255,255,255,0.72)] px-4 py-4">
                     <div className="flex items-center justify-between">

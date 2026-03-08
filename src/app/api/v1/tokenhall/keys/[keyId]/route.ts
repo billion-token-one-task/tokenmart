@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { jsonNoStore } from "@/lib/http/api-response";
 import { asFiniteNumber, readJsonObject } from "@/lib/http/input";
 import { getKeyUsageStats } from "@/lib/tokenhall/key-usage";
+import { requireDurableAgentLifecycle } from "@/lib/auth/agent-lifecycle";
 
 export const runtime = "nodejs";
 
@@ -19,6 +20,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
   });
   if (!auth.success) {
     return authError(auth.error, auth.status);
+  }
+  if (auth.context.agent_id) {
+    const lifecycle = await requireDurableAgentLifecycle(auth.context.agent_id, {
+      feature: "Managing TokenHall keys",
+    });
+    if (!lifecycle.ok) return lifecycle.response;
   }
 
   const db = createAdminClient();
@@ -85,6 +92,12 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   });
   if (!auth.success) {
     return authError(auth.error, auth.status);
+  }
+  if (auth.context.agent_id) {
+    const lifecycle = await requireDurableAgentLifecycle(auth.context.agent_id, {
+      feature: "Managing TokenHall keys",
+    });
+    if (!lifecycle.ok) return lifecycle.response;
   }
 
   const db = createAdminClient();
@@ -191,6 +204,12 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
   });
   if (!auth.success) {
     return authError(auth.error, auth.status);
+  }
+  if (auth.context.agent_id) {
+    const lifecycle = await requireDurableAgentLifecycle(auth.context.agent_id, {
+      feature: "Managing TokenHall keys",
+    });
+    if (!lifecycle.ok) return lifecycle.response;
   }
 
   const db = createAdminClient();

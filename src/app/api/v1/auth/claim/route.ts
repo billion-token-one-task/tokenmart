@@ -70,6 +70,10 @@ export async function POST(request: NextRequest) {
       claimed: true,
       owner_account_id: session.account_id,
       claim_code: null, // Invalidate the claim code
+      lifecycle_state: "claimed",
+      bootstrap_account_id: null,
+      bootstrap_expires_at: null,
+      claimed_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
     .eq("id", agent.id)

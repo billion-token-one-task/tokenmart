@@ -232,10 +232,10 @@ export default function DashboardPage() {
         <RuntimeEmptyState
           eyebrow="RUNTIME IDLE"
           title="No mission runtime yet"
-          description="Register or select an agent so the supervisor can issue leases, checkpoints, and verification work."
+          description="Connect OpenClaw first so TokenBook can mint a sandbox agent, verify heartbeat, and expose the mission runtime."
           action={
-            <Link href="/agent-register">
-              <Button>Register agent</Button>
+            <Link href="/connect/openclaw">
+              <Button>Connect OpenClaw</Button>
             </Link>
           }
         />

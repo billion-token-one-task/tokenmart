@@ -4,6 +4,10 @@ import { jsonNoStore } from "@/lib/http/api-response";
 import { hashKey, detectKeyType } from "./keys";
 import { extractBearerToken } from "./verify";
 import type { AuthContext, KeyType } from "@/types/auth";
+import {
+  ensureAccountForSupabaseUser,
+  resolveAccessibleAgentForAccount,
+} from "./supabase-bridge";
 
 export interface AuthResult {
   success: true;
@@ -18,7 +22,7 @@ export interface AuthError {
 
 /**
  * Authenticate a request using the Authorization header.
- * Supports tokenmart_, th_, thm_ key types AND session tokens (from human login).
+ * Supports tokenmart_, th_, thm_ key types, legacy custom sessions, and Supabase Auth access tokens.
  */
 export async function authenticateRequest(
   request: NextRequest,
@@ -34,7 +38,7 @@ export async function authenticateRequest(
 
   const keyType = detectKeyType(token);
 
-  // No recognized prefix → try session-based auth (human login refresh token)
+  // No recognized prefix → try session-based auth (legacy refresh token or Supabase access token)
   if (!keyType) {
     return authenticateSession(token, options, request);
   }
@@ -192,8 +196,7 @@ export async function authenticateRequest(
 }
 
 /**
- * Authenticate using a session refresh token (from human login).
- * Looks up the session, resolves the account, and finds the primary agent.
+ * Authenticate using a legacy custom session refresh token or a Supabase access token.
  */
 async function authenticateSession(
   token: string,
@@ -220,7 +223,7 @@ async function authenticateSession(
   const tokenHash = hashKey(token);
   const db = createAdminClient();
 
-  // Look up session by refresh_token_hash
+  // Look up legacy session by refresh_token_hash first.
   const { data: session } = await db
     .from("sessions")
     .select("id, account_id, expires_at")
@@ -228,7 +231,7 @@ async function authenticateSession(
     .single();
 
   if (!session) {
-    return { success: false, error: "Invalid or expired session", status: 401 };
+    return authenticateSupabaseSession(token, options, request);
   }
 
   if (new Date(session.expires_at) < new Date()) {
@@ -275,6 +278,54 @@ async function authenticateSession(
       agent_id: resolvedAgentId,
       account_id: session.account_id,
       key_id: session.id,
+      permissions: ["*"],
+      rate_limit_rpm: null,
+    },
+  };
+}
+
+async function authenticateSupabaseSession(
+  token: string,
+  options?: {
+    requiredType?: KeyType | KeyType[];
+    requiredPermissions?: string[];
+  },
+  request?: NextRequest,
+): Promise<AuthResult | AuthError> {
+  if (options?.requiredType) {
+    const allowed = Array.isArray(options.requiredType)
+      ? options.requiredType
+      : [options.requiredType];
+    if (!allowed.includes("tokenmart") && !allowed.includes("session") && !allowed.includes("supabase_session")) {
+      return {
+        success: false,
+        error: `This endpoint requires a ${allowed.join(" or ")} key`,
+        status: 403,
+      };
+    }
+  }
+
+  const db = createAdminClient();
+  const {
+    data: { user },
+    error,
+  } = await db.auth.getUser(token);
+
+  if (error || !user) {
+    return { success: false, error: "Invalid or expired session", status: 401 };
+  }
+
+  const account = await ensureAccountForSupabaseUser(user, db);
+  const requestedAgentId = request?.headers.get("x-agent-id")?.trim() || null;
+  const resolvedAgentId = await resolveAccessibleAgentForAccount(account.id, requestedAgentId, db);
+
+  return {
+    success: true,
+    context: {
+      type: "session",
+      agent_id: resolvedAgentId,
+      account_id: account.id,
+      key_id: user.id,
       permissions: ["*"],
       rate_limit_rpm: null,
     },

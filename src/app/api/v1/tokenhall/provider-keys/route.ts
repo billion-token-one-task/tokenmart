@@ -3,6 +3,7 @@ import { authenticateRequest, authError } from "@/lib/auth/middleware";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { jsonNoStore } from "@/lib/http/api-response";
 import { encryptProviderKey } from "@/lib/tokenhall/encryption";
+import { requireDurableAgentLifecycle } from "@/lib/auth/agent-lifecycle";
 
 export const runtime = "nodejs";
 
@@ -31,6 +32,12 @@ export async function GET(request: NextRequest) {
   }
 
   const { context } = auth;
+  if (context.agent_id) {
+    const lifecycle = await requireDurableAgentLifecycle(context.agent_id, {
+      feature: "Viewing provider keys",
+    });
+    if (!lifecycle.ok) return lifecycle.response;
+  }
   if (!context.agent_id && !context.account_id) {
     return NextResponse.json(
       { error: { code: 400, message: "Key is not associated with an agent or account" } },
@@ -83,6 +90,12 @@ export async function POST(request: NextRequest) {
   }
 
   const { context } = auth;
+  if (context.agent_id) {
+    const lifecycle = await requireDurableAgentLifecycle(context.agent_id, {
+      feature: "Saving provider keys",
+    });
+    if (!lifecycle.ok) return lifecycle.response;
+  }
   if (!context.agent_id && !context.account_id) {
     return NextResponse.json(
       { error: { code: 400, message: "Key is not associated with an agent or account" } },

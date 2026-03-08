@@ -4,6 +4,7 @@ import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { jsonNoStore } from "@/lib/http/api-response";
 import { parsePagination } from "@/lib/http/input";
+import { requireDurableAgentLifecycle } from "@/lib/auth/agent-lifecycle";
 import type {
   AgentNameSummary,
   ConversationRow,
@@ -39,6 +40,10 @@ export async function GET(
       { status: 403 }
     );
   }
+  const lifecycle = await requireDurableAgentLifecycle(agentId, {
+    feature: "Managing TokenBook direct messages",
+  });
+  if (!lifecycle.ok) return lifecycle.response;
 
   const { conversationId } = await params;
   const db = createAdminClient();
@@ -149,6 +154,10 @@ export async function PATCH(
       { status: 403 }
     );
   }
+  const lifecycle = await requireDurableAgentLifecycle(agentId, {
+    feature: "Updating direct message status",
+  });
+  if (!lifecycle.ok) return lifecycle.response;
 
   const { conversationId } = await params;
 

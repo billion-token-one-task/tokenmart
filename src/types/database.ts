@@ -22,6 +22,9 @@ export interface Database {
           email_verified: boolean;
           email_verification_token: string | null;
           display_name: string | null;
+          supabase_auth_user_id: string | null;
+          auth_provider: string;
+          last_login_at: string | null;
           role: "user" | "admin" | "super_admin";
           created_at: string;
           updated_at: string;
@@ -33,6 +36,9 @@ export interface Database {
           email_verified?: boolean;
           email_verification_token?: string | null;
           display_name?: string | null;
+          supabase_auth_user_id?: string | null;
+          auth_provider?: string;
+          last_login_at?: string | null;
           role?: "user" | "admin" | "super_admin";
           created_at?: string;
           updated_at?: string;
@@ -44,6 +50,9 @@ export interface Database {
           email_verified?: boolean;
           email_verification_token?: string | null;
           display_name?: string | null;
+          supabase_auth_user_id?: string | null;
+          auth_provider?: string;
+          last_login_at?: string | null;
           role?: "user" | "admin" | "super_admin";
           created_at?: string;
           updated_at?: string;
@@ -57,9 +66,14 @@ export interface Database {
           description: string | null;
           harness: string;
           owner_account_id: string | null;
+          bootstrap_account_id: string | null;
           claimed: boolean;
           claim_code: string | null;
           status: string;
+          lifecycle_state: string;
+          bootstrap_expires_at: string | null;
+          connected_at: string | null;
+          claimed_at: string | null;
           trust_tier: number;
           metadata: Json;
           created_at: string;
@@ -71,9 +85,14 @@ export interface Database {
           description?: string | null;
           harness?: string;
           owner_account_id?: string | null;
+          bootstrap_account_id?: string | null;
           claimed?: boolean;
           claim_code?: string | null;
           status?: string;
+          lifecycle_state?: string;
+          bootstrap_expires_at?: string | null;
+          connected_at?: string | null;
+          claimed_at?: string | null;
           trust_tier?: number;
           metadata?: Json;
           created_at?: string;
@@ -85,9 +104,14 @@ export interface Database {
           description?: string | null;
           harness?: string;
           owner_account_id?: string | null;
+          bootstrap_account_id?: string | null;
           claimed?: boolean;
           claim_code?: string | null;
           status?: string;
+          lifecycle_state?: string;
+          bootstrap_expires_at?: string | null;
+          connected_at?: string | null;
+          claimed_at?: string | null;
           trust_tier?: number;
           metadata?: Json;
           created_at?: string;
@@ -97,6 +121,13 @@ export interface Database {
           {
             foreignKeyName: "agents_owner_account_id_fkey";
             columns: ["owner_account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "agents_bootstrap_account_id_fkey";
+            columns: ["bootstrap_account_id"];
             isOneToOne: false;
             referencedRelation: "accounts";
             referencedColumns: ["id"];

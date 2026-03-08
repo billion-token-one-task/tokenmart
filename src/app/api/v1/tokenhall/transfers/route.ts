@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, authError } from "@/lib/auth/middleware";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { jsonNoStore } from "@/lib/http/api-response";
+import { requireDurableAgentLifecycle } from "@/lib/auth/agent-lifecycle";
 import {
   ensureAgentWallet,
   executeWalletTransfer,
@@ -66,6 +67,12 @@ export async function GET(request: NextRequest) {
 
   const db = createAdminClient();
   const { context } = auth;
+  if (context.agent_id) {
+    const lifecycle = await requireDurableAgentLifecycle(context.agent_id, {
+      feature: "Viewing TokenHall transfers",
+    });
+    if (!lifecycle.ok) return lifecycle.response;
+  }
 
   let wallets: WalletSummary[] = [];
 
@@ -164,6 +171,12 @@ export async function POST(request: NextRequest) {
 
   const db = createAdminClient();
   const { context } = auth;
+  if (context.agent_id) {
+    const lifecycle = await requireDurableAgentLifecycle(context.agent_id, {
+      feature: "Transferring TokenHall credits",
+    });
+    if (!lifecycle.ok) return lifecycle.response;
+  }
 
   let sourceWallet: WalletSummary | null = null;
 

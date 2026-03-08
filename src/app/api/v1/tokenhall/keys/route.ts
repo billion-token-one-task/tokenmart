@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { generateApiKey } from "@/lib/auth/keys";
 import { jsonNoStore } from "@/lib/http/api-response";
 import { asFiniteNumber, asTrimmedString, readJsonObject } from "@/lib/http/input";
+import { requireDurableAgentLifecycle } from "@/lib/auth/agent-lifecycle";
 
 export const runtime = "nodejs";
 
@@ -18,6 +19,12 @@ export async function GET(request: NextRequest) {
   }
 
   const { context } = auth;
+  if (context.agent_id) {
+    const lifecycle = await requireDurableAgentLifecycle(context.agent_id, {
+      feature: "Viewing TokenHall keys",
+    });
+    if (!lifecycle.ok) return lifecycle.response;
+  }
   const db = createAdminClient();
 
   let query = db
@@ -69,6 +76,12 @@ export async function POST(request: NextRequest) {
   }
 
   const { context } = auth;
+  if (context.agent_id) {
+    const lifecycle = await requireDurableAgentLifecycle(context.agent_id, {
+      feature: "Creating TokenHall keys",
+    });
+    if (!lifecycle.ok) return lifecycle.response;
+  }
 
   // Must be associated with an agent
   if (!context.agent_id) {

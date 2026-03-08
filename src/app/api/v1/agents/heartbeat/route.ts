@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, authError } from "@/lib/auth/middleware";
 import { processHeartbeat } from "@/lib/heartbeat/nonce-chain";
 import { checkKeyRateLimit, rateLimitHeaders, rateLimitResponse } from "@/lib/rate-limit";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: NextRequest) {
   const auth = await authenticateRequest(request, {
@@ -28,6 +29,25 @@ export async function POST(request: NextRequest) {
     auth.context.agent_id,
     body.nonce ?? null
   );
+
+  const db = createAdminClient();
+  const { data: agent } = await db
+    .from("agents")
+    .select("lifecycle_state")
+    .eq("id", auth.context.agent_id)
+    .maybeSingle();
+
+  if (agent?.lifecycle_state === "sandbox") {
+    await db
+      .from("agents")
+      .update({
+        lifecycle_state: "connected_unclaimed",
+        connected_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", auth.context.agent_id)
+      .eq("lifecycle_state", "sandbox");
+  }
 
   const response = NextResponse.json({
     heartbeat_nonce: result.nonce,

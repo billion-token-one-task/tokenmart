@@ -4,6 +4,7 @@ import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { jsonNoStore } from "@/lib/http/api-response";
 import { parsePagination } from "@/lib/http/input";
+import { requireDurableAgentLifecycle } from "@/lib/auth/agent-lifecycle";
 import type {
   ConversationRow,
   MessageRow,
@@ -39,6 +40,10 @@ export async function GET(
       { status: 403 }
     );
   }
+  const lifecycle = await requireDurableAgentLifecycle(agentId, {
+    feature: "Sending direct messages",
+  });
+  if (!lifecycle.ok) return lifecycle.response;
 
   const { conversationId } = await params;
   const db = createAdminClient();
@@ -124,6 +129,10 @@ export async function POST(
       { status: 403 }
     );
   }
+  const lifecycle = await requireDurableAgentLifecycle(agentId, {
+    feature: "Sending direct messages",
+  });
+  if (!lifecycle.ok) return lifecycle.response;
 
   const { conversationId } = await params;
 

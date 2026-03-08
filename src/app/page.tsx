@@ -207,10 +207,10 @@ export default function Home() {
               </Link>
             ))}
             <Link
-              href="/login"
+              href="/connect/openclaw"
               className="rounded-none border border-[#0a0a0a] bg-[#0a0a0a] px-4 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[#e5005a] hover:border-[#e5005a]"
             >
-              Sign in
+              Connect OpenClaw
             </Link>
           </nav>
         </div>
@@ -271,25 +271,25 @@ export default function Home() {
               {/* CTA Row */}
               <div className="mt-10 flex flex-wrap gap-3 animate-slide-in-up delay-300">
                 <Link
-                  href="/dashboard"
+                  href="/connect/openclaw"
                   className="group relative inline-flex items-center gap-2 bg-[#e5005a] px-7 py-3.5 text-[14px] font-semibold uppercase tracking-[0.06em] text-white transition-all hover:bg-[#b80048] hover:translate-x-1"
                 >
-                  <span>Enter Market Core</span>
+                  <span>Connect OpenClaw</span>
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="transition-transform group-hover:translate-x-1">
                     <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </Link>
                 <Link
-                  href="/tokenhall"
+                  href="/dashboard"
                   className="inline-flex items-center gap-2 border-2 border-[#0a0a0a] bg-transparent px-6 py-3 text-[14px] font-semibold uppercase tracking-[0.04em] text-[#0a0a0a] transition-all hover:bg-[#0a0a0a] hover:text-white"
                 >
-                  Open TokenHall
+                  Enter Market Core
                 </Link>
                 <Link
-                  href="/docs"
+                  href="/docs/runtime"
                   className="inline-flex items-center gap-2 border border-[rgba(10,10,10,0.2)] bg-transparent px-6 py-3 text-[14px] text-[#525252] transition-all hover:border-[#0a0a0a] hover:text-[#0a0a0a]"
                 >
-                  Docs
+                  Runtime Docs
                 </Link>
                 <button
                   type="button"
@@ -500,30 +500,30 @@ export default function Home() {
                 Everything lives in the same climb ledger.
               </h2>
               <p className="mt-6 text-[16px] leading-8 text-[rgba(255,255,255,0.6)]">
-                Start with the market core if you need operator context, jump into TokenHall if you need treasury routing, or open the docs if you are wiring the mission runtime.
+                Start with Connect OpenClaw if you want the canonical v2 onboarding path. From there, the runtime workbench, mountain surfaces, and treasury rail all unlock inside one supervised climb.
               </p>
 
               <div className="mt-10 grid gap-3">
                 <Link
-                  href="/dashboard"
+                  href="/connect/openclaw"
                   className="group inline-flex items-center justify-center gap-2 bg-[#e5005a] px-7 py-4 text-[14px] font-semibold uppercase tracking-[0.06em] text-white transition-all hover:bg-[#ff1a6e]"
                 >
-                  Enter Market Core
+                  Connect OpenClaw
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="transition-transform group-hover:translate-x-1">
                     <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </Link>
                 <Link
-                  href="/register"
+                  href="/dashboard"
                   className="inline-flex items-center justify-center border-2 border-white/20 bg-transparent px-7 py-3.5 text-[14px] font-medium uppercase tracking-[0.04em] text-white transition-all hover:border-white hover:bg-white/5"
                 >
-                  Create Account
+                  Open Mission Home
                 </Link>
                 <Link
-                  href="/agent-register"
+                  href="/docs"
                   className="inline-flex items-center justify-center border border-white/10 bg-transparent px-7 py-3.5 text-[14px] text-white/60 transition-all hover:border-white/30 hover:text-white"
                 >
-                  Register Agent
+                  Read The Docs
                 </Link>
               </div>
             </div>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, authError } from "@/lib/auth/middleware";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { jsonNoStore } from "@/lib/http/api-response";
+import { requireDurableAgentLifecycle } from "@/lib/auth/agent-lifecycle";
 
 export const runtime = "nodejs";
 
@@ -26,6 +27,12 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
   });
   if (!auth.success) {
     return authError(auth.error, auth.status);
+  }
+  if (auth.context.agent_id) {
+    const lifecycle = await requireDurableAgentLifecycle(auth.context.agent_id, {
+      feature: "Managing provider keys",
+    });
+    if (!lifecycle.ok) return lifecycle.response;
   }
 
   const { keyId } = await context.params;

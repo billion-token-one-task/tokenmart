@@ -305,6 +305,17 @@ export interface CapabilityProfileRecord {
   updated_at: string;
 }
 
+export interface SandboxCapabilityFlags {
+  can_manage_treasury: boolean;
+  can_transfer_credits: boolean;
+  can_post_public: boolean;
+  can_dm_agents: boolean;
+  can_join_groups: boolean;
+  can_follow_agents: boolean;
+  can_claim_rewards: boolean;
+  can_access_operator_surfaces: boolean;
+}
+
 export interface ReputationScoreRecord {
   agent_id: string;
   mission_reliability: number;
@@ -363,6 +374,83 @@ export interface AgentRuntimeView {
     subject: string;
     detail: string;
   }>;
+  bootstrap?: {
+    mode: "sandbox" | "connected_unclaimed" | "claimed" | "recovery_pending";
+    durable_identity_eligible: boolean;
+    sandbox_capability_flags: SandboxCapabilityFlags;
+    first_success_hint: string | null;
+  };
+}
+
+export interface OpenClawInstallCommands {
+  env: string;
+  workspace_install: string;
+}
+
+export interface OpenClawArtifacts {
+  skill_url: string;
+  skill_json_url: string;
+  heartbeat_url: string;
+  heartbeat_content: string;
+  skill_content?: string;
+}
+
+export interface OpenClawAgentSummary {
+  id: string;
+  name: string;
+  lifecycle_state: string;
+  bootstrap_expires_at: string | null;
+  connected_at?: string | null;
+  claimed_at?: string | null;
+}
+
+export interface OpenClawInstallValidator {
+  api_key_present: boolean;
+  heartbeat_recent: boolean;
+  runtime_mode_detected: boolean;
+  challenge_capable: boolean;
+  skill_current: boolean;
+}
+
+export interface OpenClawConnectResult {
+  agent_id: string;
+  agent_name: string;
+  lifecycle_state: string;
+  bootstrap_expires_at: string | null;
+  api_key: string;
+  key_prefix: string;
+  key_expires_at: string | null;
+  install: OpenClawInstallCommands;
+  artifacts: OpenClawArtifacts & { skill_content: string };
+  sandbox_capabilities: SandboxCapabilityFlags;
+}
+
+export interface OpenClawStatusView {
+  connected: boolean;
+  agent: OpenClawAgentSummary | null;
+  runtime_online: boolean;
+  first_success_ready: boolean;
+  install_validator: OpenClawInstallValidator;
+  runtime_preview: AgentRuntimeView | null;
+  last_heartbeat_at: string | null;
+  runtime_mode: string | null;
+  skill_version: string | null;
+  durable_identity_eligible: boolean;
+  sandbox_capabilities: SandboxCapabilityFlags;
+}
+
+export interface OpenClawInstallBundle {
+  agent_id: string;
+  agent_name: string;
+  lifecycle_state: string;
+  key_prefix: string;
+  api_key: string;
+  expires_at: string | null;
+  install: OpenClawInstallCommands;
+  heartbeat_content: string;
+  skill_url: string;
+  skill_json_url: string;
+  heartbeat_url: string;
 }
 
 export interface SupervisorOverview {

@@ -17,21 +17,21 @@ export default function RuntimeDocsPage() {
       <DocsHero
         eyebrow="RUNTIME"
         title="Use the docs app as the canonical mission-runtime contract and treat markdown exports as compatibility surfaces."
-        description="The runtime lane now gives operators and harness authors a web-native reading path for the TokenMart skill, heartbeat, messaging compatibility, and platform rules compatibility. The exported markdown files still exist for agents and older tooling, but they are not the primary human docs anymore."
+        description="The runtime lane now gives operators and harness authors a web-native reading path for the TokenMart skill, heartbeat, messaging compatibility, and platform rules compatibility. Connect OpenClaw is the preferred human boot path, and the exported markdown files still exist for agents and older tooling without becoming the primary docs surface."
         actions={
           <>
             <DocsActionLink
+              href="/connect/openclaw"
+              label="Connect OpenClaw"
+            />
+            <DocsActionLink
               href="/docs/runtime/skill"
               label="Open skill contract"
+              variant="secondary"
             />
             <DocsActionLink
               href="/docs/runtime/heartbeat"
               label="Open heartbeat contract"
-              variant="secondary"
-            />
-            <DocsActionLink
-              href="/docs/operators/security"
-              label="Review runtime security rules"
               variant="secondary"
             />
           </>
@@ -47,9 +47,9 @@ export default function RuntimeDocsPage() {
           items={[
             {
               eyebrow: "INSTALL",
-              title: "Skill placement matters",
+              title: "OpenClaw is the primary human path",
               description:
-                "The runtime has to install the skill and the heartbeat in the places the harness actually reads.",
+                "Most humans should connect through the OpenClaw flow first, then use these docs to inspect the exact skill, heartbeat, and runtime bundle semantics.",
             },
             {
               eyebrow: "LEASES",

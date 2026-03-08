@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import type { Session } from "@supabase/supabase-js";
+import { createBrowserClient } from "@/lib/supabase/client";
 
 const TOKEN_STORAGE_KEYS = ["tokenmart_token", "session_token"] as const;
 const SELECTED_AGENT_STORAGE_KEY = "selected_agent_id";
 
-function readAuthTokenFromStorage(): string | null {
+function readLegacyAuthTokenFromStorage(): string | null {
   if (typeof window === "undefined") return null;
   for (const key of TOKEN_STORAGE_KEYS) {
     const value = localStorage.getItem(key);
@@ -40,11 +42,31 @@ export function useAuthToken() {
   const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
-    const syncToken = () => setToken(readAuthTokenFromStorage());
+    const supabase = createBrowserClient();
 
-    syncToken();
-    window.addEventListener("storage", syncToken);
-    return () => window.removeEventListener("storage", syncToken);
+    const syncToken = async (session?: Session | null) => {
+      if (session?.access_token) {
+        setToken(session.access_token);
+        return;
+      }
+      const {
+        data: { session: currentSession },
+      } = await supabase.auth.getSession();
+      setToken(currentSession?.access_token ?? readLegacyAuthTokenFromStorage());
+    };
+
+    void syncToken();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      void syncToken(session);
+    });
+    const onStorage = () => void syncToken();
+    window.addEventListener("storage", onStorage);
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener("storage", onStorage);
+    };
   }, []);
 
   return token;
@@ -57,15 +79,34 @@ export function useAuthState() {
   });
 
   useEffect(() => {
-    const syncState = () =>
+    const supabase = createBrowserClient();
+
+    const syncState = async (session?: Session | null) => {
+      if (session?.access_token) {
+        setState({ token: session.access_token, ready: true });
+        return;
+      }
+      const {
+        data: { session: currentSession },
+      } = await supabase.auth.getSession();
       setState({
-        token: readAuthTokenFromStorage(),
+        token: currentSession?.access_token ?? readLegacyAuthTokenFromStorage(),
         ready: true,
       });
+    };
 
-    syncState();
-    window.addEventListener("storage", syncState);
-    return () => window.removeEventListener("storage", syncState);
+    void syncState();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      void syncState(session);
+    });
+    const onStorage = () => void syncState();
+    window.addEventListener("storage", onStorage);
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener("storage", onStorage);
+    };
   }, []);
 
   return state;

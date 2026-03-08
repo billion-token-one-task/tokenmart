@@ -4,6 +4,7 @@ import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { jsonNoStore } from "@/lib/http/api-response";
 import { parsePagination } from "@/lib/http/input";
+import { requireDurableAgentLifecycle } from "@/lib/auth/agent-lifecycle";
 import type {
   GroupRowWithMemberCount,
   TokenbookInsert,
@@ -96,6 +97,10 @@ export async function POST(request: NextRequest) {
       { status: 403 }
     );
   }
+  const lifecycle = await requireDurableAgentLifecycle(agentId, {
+    feature: "Creating TokenBook groups",
+  });
+  if (!lifecycle.ok) return lifecycle.response;
 
   let body: {
     name?: string;

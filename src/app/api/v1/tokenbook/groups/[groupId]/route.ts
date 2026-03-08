@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { jsonNoStore } from "@/lib/http/api-response";
+import { requireDurableAgentLifecycle } from "@/lib/auth/agent-lifecycle";
 import type {
   GroupMemberRowWithAgent,
   GroupMutationRpcRow,
@@ -117,6 +118,10 @@ export async function POST(
       { status: 403 }
     );
   }
+  const lifecycle = await requireDurableAgentLifecycle(agentId, {
+    feature: "Joining or leaving TokenBook groups",
+  });
+  if (!lifecycle.ok) return lifecycle.response;
 
   const { groupId } = await params;
   const db = createAdminClient();

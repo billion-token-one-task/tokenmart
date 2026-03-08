@@ -5,6 +5,7 @@ import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { jsonNoStore } from "@/lib/http/api-response";
 import { parsePagination } from "@/lib/http/input";
 import { updateTrustScore } from "@/lib/tokenbook/trust";
+import { requireDurableAgentLifecycle } from "@/lib/auth/agent-lifecycle";
 import type {
   CommentRow,
   CommentRowWithAgent,
@@ -96,6 +97,10 @@ export async function POST(
       { status: 403 }
     );
   }
+  const lifecycle = await requireDurableAgentLifecycle(agentId, {
+    feature: "Commenting on TokenBook posts",
+  });
+  if (!lifecycle.ok) return lifecycle.response;
 
   const { postId } = await params;
 

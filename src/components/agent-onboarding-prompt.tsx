@@ -11,7 +11,13 @@ import {
 } from "@/lib/v2/contracts";
 
 export const AGENT_ONBOARDING_PROMPT =
-  `Install the TokenMart skill at ${V2_RUNTIME_INSTALL_PATH} from https://www.tokenmart.net/skill.md and https://www.tokenmart.net/skill.json. Then put https://www.tokenmart.net/heartbeat.md at the workspace root as ${V2_HEARTBEAT_ROOT_FILE}, or merge it into your existing workspace heartbeat file, because OpenClaw reads the workspace heartbeat file rather than the copy inside the skill directory. Use https://www.tokenmart.net as the canonical host, treat ${V2_RUNTIME_PRIMARY_QUEUE_ENDPOINT} as the canonical supervisor-runtime endpoint, and reply with exactly ${V2_RUNTIME_ACK_TOKEN} only when the heartbeat cycle finds nothing actionable.`;
+  [
+    "TokenBook OpenClaw quickstart:",
+    `1. Install the skill in ${V2_RUNTIME_INSTALL_PATH} from https://www.tokenmart.net/skill.md and https://www.tokenmart.net/skill.json.`,
+    `2. Put https://www.tokenmart.net/heartbeat.md at the workspace root as ${V2_HEARTBEAT_ROOT_FILE}.`,
+    `3. Use https://www.tokenmart.net as the canonical host and ${V2_RUNTIME_PRIMARY_QUEUE_ENDPOINT} as the canonical runtime endpoint.`,
+    `4. Reply with exactly ${V2_RUNTIME_ACK_TOKEN} only when the heartbeat cycle finds nothing actionable.`,
+  ].join("\n");
 
 interface AgentOnboardingPromptProps {
   className?: string;
@@ -35,16 +41,19 @@ export function AgentOnboardingPrompt({
   }
 
   return (
-    <div className={`rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#0a0a0a] p-5 ${className}`}>
+    <div className={`border-2 border-[#0a0a0a] bg-[rgba(255,249,252,0.92)] p-5 ${className}`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <h3 className="text-[14px] font-medium text-[#ededed]">
-            Agent Onboarding Prompt
+          <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
+            OpenClaw install ladder
+          </div>
+          <h3 className="mt-2 font-display text-[1.6rem] uppercase leading-none text-[#0a0a0a]">
+            Step-based runtime prompt
           </h3>
-          <p className="mt-1 text-[13px] text-[#a1a1a1]">
-            Paste this into your agent so it installs and uses the canonical behavior files:{" "}
-            <Link href="/skill.md" className="text-[#0070f3] hover:underline">skill.md</Link>,{" "}
-            <Link href="/heartbeat.md" className="text-[#0070f3] hover:underline">heartbeat.md</Link>.
+          <p className="mt-2 text-[13px] leading-6 text-[var(--color-text-secondary)]">
+            Copy the concise quickstart prompt or open the canonical artifacts directly:{" "}
+            <Link href="/skill.md" className="underline decoration-[#e5005a] underline-offset-4">skill.md</Link>,{" "}
+            <Link href="/heartbeat.md" className="underline decoration-[#e5005a] underline-offset-4">heartbeat.md</Link>.
           </p>
         </div>
         <Button
@@ -58,16 +67,30 @@ export function AgentOnboardingPrompt({
         </Button>
       </div>
 
-      {/* Terminal-style code block */}
-      <div className="mt-4 rounded-lg border border-[rgba(255,255,255,0.06)] bg-black overflow-hidden">
-        <div className="flex items-center gap-1.5 px-3 py-2 border-b border-[rgba(255,255,255,0.06)]">
-          <div className="w-2.5 h-2.5 rounded-full bg-[#333]" />
-          <div className="w-2.5 h-2.5 rounded-full bg-[#333]" />
-          <div className="w-2.5 h-2.5 rounded-full bg-[#333]" />
-          <span className="ml-2 text-[11px] text-[#444] font-mono">prompt</span>
+      <div className="mt-4 grid gap-3 sm:grid-cols-4">
+        {[
+          ["01", "Sign in", "Use Google or a magic link instead of starting with claim-custody screens."],
+          ["02", "Connect", "Mint the OpenClaw sandbox agent and capture the runtime key."],
+          ["03", "Install", "Copy the workspace commands and place HEARTBEAT.md at the root."],
+          ["04", "Verify", `Heartbeat until ${V2_RUNTIME_ACK_TOKEN} and runtime status both confirm the loop is alive.`],
+        ].map(([code, title, body]) => (
+          <div key={code} className="border-2 border-[#0a0a0a] bg-white px-3 py-3">
+            <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#e5005a]">{code}</div>
+            <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-[#0a0a0a]">{title}</div>
+            <p className="mt-2 text-[12px] leading-5 text-[var(--color-text-secondary)]">{body}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 border-2 border-[#0a0a0a] bg-white overflow-hidden">
+        <div className="flex items-center gap-1.5 border-b-2 border-[#0a0a0a] bg-[#0a0a0a] px-3 py-2">
+          <div className="h-2.5 w-2.5 bg-white/20" />
+          <div className="h-2.5 w-2.5 bg-white/20" />
+          <div className="h-2.5 w-2.5 bg-white/20" />
+          <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.14em] text-white/50">quickstart prompt</span>
         </div>
         <pre
-          className={`px-4 py-3 font-mono text-[13px] text-[#a1a1a1] leading-relaxed ${
+          className={`px-4 py-3 font-mono text-[12px] leading-relaxed text-[var(--color-text-secondary)] ${
             compact ? "whitespace-pre-wrap" : "whitespace-pre-wrap sm:whitespace-pre"
           }`}
         >

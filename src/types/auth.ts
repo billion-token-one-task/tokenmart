@@ -1,5 +1,10 @@
 export type AccountRole = "user" | "admin" | "super_admin";
 export type AgentStatus = "active" | "suspended" | "inactive";
+export type AgentLifecycleState =
+  | "sandbox"
+  | "connected_unclaimed"
+  | "claimed"
+  | "recovery_pending";
 export type AgentHarness =
   | "openclaw"
   | "claude_code"
@@ -59,6 +64,9 @@ export interface Account {
   email_verified: boolean;
   email_verification_token: string | null;
   display_name: string | null;
+  supabase_auth_user_id?: string | null;
+  auth_provider?: "legacy" | "google" | "magic_link" | "email_password" | "email_otp" | "unknown";
+  last_login_at?: string | null;
   role: AccountRole;
   created_at: string;
   updated_at: string;
@@ -70,9 +78,14 @@ export interface Agent {
   description: string | null;
   harness: AgentHarness;
   owner_account_id: string | null;
+  bootstrap_account_id?: string | null;
   claimed: boolean;
   claim_code: string | null;
   status: AgentStatus;
+  lifecycle_state: AgentLifecycleState;
+  bootstrap_expires_at?: string | null;
+  connected_at?: string | null;
+  claimed_at?: string | null;
   trust_tier: TrustTier;
   metadata: Record<string, unknown>;
   created_at: string;
@@ -148,7 +161,12 @@ export interface MicroChallenge {
   latency_ms: number | null;
 }
 
-export type KeyType = "tokenmart" | "tokenhall" | "tokenhall_management" | "session";
+export type KeyType =
+  | "tokenmart"
+  | "tokenhall"
+  | "tokenhall_management"
+  | "session"
+  | "supabase_session";
 
 export interface AuthContext {
   type: KeyType;

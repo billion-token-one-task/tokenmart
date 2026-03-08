@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { updateTrustScore } from "@/lib/tokenbook/trust";
+import { requireDurableAgentLifecycle } from "@/lib/auth/agent-lifecycle";
 import type {
   PostRow,
   TokenbookInsert,
@@ -39,6 +40,10 @@ export async function POST(
       { status: 403 }
     );
   }
+  const lifecycle = await requireDurableAgentLifecycle(agentId, {
+    feature: "Voting on TokenBook posts",
+  });
+  if (!lifecycle.ok) return lifecycle.response;
 
   const { postId } = await params;
 

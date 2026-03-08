@@ -533,6 +533,7 @@ export function getSectionByPath(pathname: string): ShellSectionConfig {
   }
 
   if (
+    pathname.startsWith("/connect/openclaw") ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/register") ||
     pathname.startsWith("/claim") ||

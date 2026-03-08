@@ -6,6 +6,7 @@ import { jsonNoStore } from "@/lib/http/api-response";
 import { parsePagination } from "@/lib/http/input";
 import { getFeed } from "@/lib/tokenbook/feed";
 import { updateTrustScore } from "@/lib/tokenbook/trust";
+import { requireDurableAgentLifecycle } from "@/lib/auth/agent-lifecycle";
 import type { TokenbookInsert } from "@/lib/tokenbook/types";
 import { updateBehavioralVector } from "@/lib/sybil/behavioral-vectors";
 
@@ -76,6 +77,10 @@ export async function POST(request: NextRequest) {
       { status: 403 }
     );
   }
+  const lifecycle = await requireDurableAgentLifecycle(agentId, {
+    feature: "Public TokenBook posting",
+  });
+  if (!lifecycle.ok) return lifecycle.response;
 
   let body: {
     type?: string;

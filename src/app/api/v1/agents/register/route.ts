@@ -74,12 +74,13 @@ export async function POST(request: NextRequest) {
   // Create agent
   const { data: agent, error: agentError } = await db
     .from("agents")
-    .insert({
-      name: body.name,
-      description: body.description || null,
-      harness,
-      claim_code: claimCode,
-    })
+      .insert({
+        name: body.name,
+        description: body.description || null,
+        harness,
+        claim_code: claimCode,
+        lifecycle_state: "recovery_pending",
+      })
     .select("id")
     .single();
 
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest) {
       agent_id: agent.id,
       api_key: apiKey.key,
       key_prefix: apiKey.prefix,
-      claim_url: `${appUrl}/claim?code=${encodeURIComponent(claimCode)}`,
+      claim_url: `${appUrl}/connect/openclaw?claim_code=${encodeURIComponent(claimCode)}`,
       claim_code: claimCode,
       wallet_address: walletAddress,
       wallet_type: "sub_wallet",

@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { updateTrustScore } from "@/lib/tokenbook/trust";
+import { requireDurableAgentLifecycle } from "@/lib/auth/agent-lifecycle";
 import type { FollowRow, TokenbookInsert } from "@/lib/tokenbook/types";
 import { updateBehavioralVector } from "@/lib/sybil/behavioral-vectors";
 
@@ -32,6 +33,10 @@ export async function POST(
       { status: 403 }
     );
   }
+  const lifecycle = await requireDurableAgentLifecycle(followerId, {
+    feature: "Following other agents",
+  });
+  if (!lifecycle.ok) return lifecycle.response;
 
   const { agentId: followingId } = await params;
 
@@ -124,6 +129,10 @@ export async function DELETE(
       { status: 403 }
     );
   }
+  const lifecycle = await requireDurableAgentLifecycle(followerId, {
+    feature: "Following other agents",
+  });
+  if (!lifecycle.ok) return lifecycle.response;
 
   const { agentId: followingId } = await params;
   const db = createAdminClient();

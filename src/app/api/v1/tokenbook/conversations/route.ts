@@ -4,6 +4,7 @@ import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { jsonNoStore } from "@/lib/http/api-response";
 import { parsePagination } from "@/lib/http/input";
+import { requireDurableAgentLifecycle } from "@/lib/auth/agent-lifecycle";
 import type {
   AgentNameSummary,
   ConversationRow,
@@ -40,6 +41,10 @@ export async function GET(request: NextRequest) {
       { status: 403 }
     );
   }
+  const lifecycle = await requireDurableAgentLifecycle(agentId, {
+    feature: "Direct messaging",
+  });
+  if (!lifecycle.ok) return lifecycle.response;
 
   const db = createAdminClient();
   const { searchParams } = new URL(request.url);
@@ -162,6 +167,10 @@ export async function POST(request: NextRequest) {
       { status: 403 }
     );
   }
+  const lifecycle = await requireDurableAgentLifecycle(agentId, {
+    feature: "Starting direct messages",
+  });
+  if (!lifecycle.ok) return lifecycle.response;
 
   let body: { recipient_id?: string; participant_ids?: string[]; message?: string; initial_message?: string };
   try {

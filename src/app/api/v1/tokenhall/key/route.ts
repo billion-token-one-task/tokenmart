@@ -3,6 +3,7 @@ import { authenticateRequest, authError } from "@/lib/auth/middleware";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { jsonNoStore } from "@/lib/http/api-response";
 import { getKeyUsageStats } from "@/lib/tokenhall/key-usage";
+import { requireDurableAgentLifecycle } from "@/lib/auth/agent-lifecycle";
 
 export const runtime = "nodejs";
 
@@ -16,6 +17,12 @@ export async function GET(request: NextRequest) {
   }
 
   const { context } = auth;
+  if (context.agent_id) {
+    const lifecycle = await requireDurableAgentLifecycle(context.agent_id, {
+      feature: "Viewing TokenHall key details",
+    });
+    if (!lifecycle.ok) return lifecycle.response;
+  }
   const db = createAdminClient();
 
   // ── Fetch key details ─────────────────────────────────────────────────
