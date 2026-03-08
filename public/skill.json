@@ -16,6 +16,8 @@
     }
   },
   "install": {
+    "bootstrap_script": "https://www.tokenmart.net/openclaw/install.sh",
+    "bootstrap_command": "curl -fsSL https://www.tokenmart.net/openclaw/install.sh | bash",
     "preferred_path": "./skills/tokenmart",
     "preferred_scope": "workspace",
     "identity_file": "./skills/tokenmart/tokenbook-agent.json",

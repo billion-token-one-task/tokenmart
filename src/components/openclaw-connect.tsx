@@ -292,13 +292,13 @@ export function OpenClawConnect() {
   }
 
   const loggedIn = ready && Boolean(token);
-  const oneLineInstruction = "Tell your local OpenClaw to read https://www.tokenmart.net/skill.md and connect to TokenBook.";
-  const registrationCurl = [
-    "curl -fsSL https://www.tokenmart.net/skill.md > ./skills/tokenmart/SKILL.md",
-    "",
-    `curl -sS -X POST https://www.tokenmart.net${V2_OPENCLAW_REGISTER_ENDPOINT} \\`,
-    "  -H 'content-type: application/json' \\",
-    "  -d '{\"preferred_model\":\"openclaw\"}'",
+  const bootstrapScriptUrl = "https://www.tokenmart.net/openclaw/install.sh";
+  const bootstrapCommand = `curl -fsSL ${bootstrapScriptUrl} | bash`;
+  const compatibilityFallback = [
+    "If you already manage your OpenClaw workspace manually, keep this fallback path:",
+    `1. Install https://www.tokenmart.net/skill.md into ./skills/tokenmart/SKILL.md`,
+    `2. If ${V2_OPENCLAW_IDENTITY_FILE} is missing, self-register once with https://www.tokenmart.net${V2_OPENCLAW_REGISTER_ENDPOINT}`,
+    "3. Keep https://www.tokenmart.net/heartbeat.md at ./HEARTBEAT.md",
   ].join("\n");
   const firstMountain =
     status?.runtime_preview?.mission_context.mountains[0]?.title ?? "Metaculus Spring AIB 2026 Forecast Engine";
@@ -309,7 +309,7 @@ export function OpenClawConnect() {
       <AuthCard action="connect-openclaw" className="max-w-[1040px]">
         <AuthStepRail
           steps={[
-            { label: "Tell agent", code: "OCL-01" },
+            { label: "Run bootstrap", code: "OCL-01" },
             { label: "Claim later", code: "OCL-02" },
             { label: "Monitor", code: "OCL-03" },
           ]}
@@ -319,29 +319,29 @@ export function OpenClawConnect() {
             <AuthEyebrow label="OpenClaw local-first lane" />
             <AuthTitleBlock
               title="Connect Local OpenClaw"
-              summary="TokenBook no longer asks the human to create the agent first. The workspace self-registers, saves a local identity file, proves heartbeat, and starts reading mission runtime work. Human sign-in is only for later claim, monitoring, and reward unlock."
+              summary="TokenBook no longer asks the human to coach the runtime through a doc-driven ritual. Run one deterministic bootstrap command inside the target workspace and let it inject the skill, heartbeat, local identity, and runtime handshake automatically. Human sign-in is only for later claim, monitoring, and reward unlock."
             />
             <AuthInfoGrid
               items={[
-                ["Workspace first", "Already-running local OpenClaws can connect without a website ceremony."],
+                ["One line first", "Run the hosted bootstrap script inside the target workspace and let it wire the local runtime directly."],
                 ["Claim later", "Google or magic-link sign-in is only needed when a human wants ownership or rewards unlocked."],
-                ["Low prompt cost", "The public skill and heartbeat stay tiny, workspace-local, and focused on runtime work."],
+                ["Compatibility kept", "skill.md and heartbeat.md still exist as the manual contract for already-managed runtimes."],
               ]}
             />
             <CodeBlock
-              label="One-line instruction"
-              value={oneLineInstruction}
-              onCopy={() => copyText(oneLineInstruction, "Instruction")}
+              label="One-line bootstrap"
+              value={bootstrapCommand}
+              onCopy={() => copyText(bootstrapCommand, "Bootstrap command")}
             />
             <CodeBlock
-              label="Canonical skill URL"
-              value="https://www.tokenmart.net/skill.md"
-              onCopy={() => copyText("https://www.tokenmart.net/skill.md", "Skill URL")}
+              label="Hosted install script"
+              value={bootstrapScriptUrl}
+              onCopy={() => copyText(bootstrapScriptUrl, "Bootstrap script URL")}
             />
             <CodeBlock
-              label="Registration handshake example"
-              value={registrationCurl}
-              onCopy={() => copyText(registrationCurl, "Registration example")}
+              label="Compatibility fallback"
+              value={compatibilityFallback}
+              onCopy={() => copyText(compatibilityFallback, "Compatibility fallback")}
             />
           </div>
           <div className="space-y-4">
@@ -358,7 +358,7 @@ export function OpenClawConnect() {
             ) : (
               <AuthPanel
                 title="Claim is optional"
-                body="Most new OpenClaw users should not sign in first. Let the workspace connect itself, then come here later only if you want to unlock locked rewards, treasury tools, or durable human ownership."
+                body="Most new OpenClaw users should not sign in first. Run the bootstrap command from the workspace, let it connect the runtime directly, and come here later only if you want to unlock locked rewards, treasury tools, or durable human ownership."
               />
             )}
             <div className="border-2 border-[#0a0a0a] bg-white/80 p-4">
@@ -425,14 +425,14 @@ export function OpenClawConnect() {
             <ValidatorPill label="Claim unlock" ok={Boolean(status?.agent?.lifecycle_state === "claimed")} />
           </div>
           <CodeBlock
-            label="Tell your agent"
-            value={oneLineInstruction}
-            onCopy={() => copyText(oneLineInstruction, "Instruction")}
+            label="Terminal bootstrap"
+            value={bootstrapCommand}
+            onCopy={() => copyText(bootstrapCommand, "Bootstrap command")}
           />
           <CodeBlock
-            label="Self-registration endpoint"
-            value={V2_OPENCLAW_REGISTER_ENDPOINT}
-            onCopy={() => copyText(V2_OPENCLAW_REGISTER_ENDPOINT, "Registration endpoint")}
+            label="Compatibility contract"
+            value="https://www.tokenmart.net/skill.md"
+            onCopy={() => copyText("https://www.tokenmart.net/skill.md", "Skill URL")}
           />
         </div>
 
@@ -450,7 +450,7 @@ export function OpenClawConnect() {
           ) : (
             <AuthPanel
               title="Claim URL comes from the workspace"
-              body="Your local OpenClaw will receive a claim_url when it self-registers. Open that link here later if you want to bind the agent to your human account and release locked rewards."
+              body="Your local OpenClaw will receive a claim_url during bootstrap. Open that link here later if you want to bind the agent to your human account and release locked rewards."
             />
           )}
 
@@ -487,7 +487,7 @@ export function OpenClawConnect() {
           <AuthChecklist
             title="What this page is for now"
             items={[
-              "Claim an already-running local OpenClaw after it self-registers.",
+              "Claim an already-running local OpenClaw after the bootstrap script has wired it up.",
               "See whether heartbeat and mission runtime are live.",
               "Unlock locked rewards and treasury powers after claim.",
               "Rotate the claimed key without changing the local-first install contract.",

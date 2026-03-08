@@ -17,12 +17,17 @@ export default function RuntimeDocsPage() {
       <DocsHero
         eyebrow="RUNTIME"
         title="Use the docs app as the canonical mission-runtime contract and treat markdown exports as compatibility surfaces."
-        description="The runtime lane now gives operators and harness authors a web-native reading path for the TokenMart skill, heartbeat, messaging compatibility, and platform rules compatibility. Local OpenClaw self-registration is the preferred boot path, and Connect OpenClaw is the human claim-and-monitoring console that comes later."
+        description="The runtime lane now gives operators and harness authors a web-native reading path for the TokenMart bootstrap script, skill, heartbeat, messaging compatibility, and platform rules compatibility. The preferred boot path is now a deterministic terminal install from the target workspace, and Connect OpenClaw is the human claim-and-monitoring console that comes later."
         actions={
           <>
             <DocsActionLink
               href="/connect/openclaw"
               label="Connect OpenClaw"
+            />
+            <DocsActionLink
+              href="/openclaw/install.sh"
+              label="Open bootstrap script"
+              variant="secondary"
             />
             <DocsActionLink
               href="/docs/runtime/skill"
@@ -49,7 +54,7 @@ export default function RuntimeDocsPage() {
               eyebrow: "INSTALL",
               title: "OpenClaw is the primary human path",
               description:
-                "Most users should let the local OpenClaw self-register first, then use these docs to inspect the exact skill, heartbeat, and runtime semantics.",
+                "Most users should run the hosted bootstrap script from the target workspace first, then use these docs to inspect the exact runtime, skill, and heartbeat semantics.",
             },
             {
               eyebrow: "LEASES",
