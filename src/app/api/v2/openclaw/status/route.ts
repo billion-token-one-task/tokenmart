@@ -1,27 +1,54 @@
 import { NextRequest } from "next/server";
 import { jsonNoStore } from "@/lib/http/api-response";
-import { requireV2Identity } from "@/lib/v2/auth";
+import { authenticateRequest, authError } from "@/lib/auth/middleware";
+import { resolveAccessibleAgentForAccount } from "@/lib/auth/supabase-bridge";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getOpenClawStatus } from "@/lib/openclaw/connect";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  const auth = await requireV2Identity(request);
-  if (!auth.ok) return auth.response;
+  const auth = await authenticateRequest(request, {
+    requiredType: ["tokenmart", "session"],
+  });
+  if (!auth.success) return authError(auth.error, auth.status);
 
-  if (!auth.identity.context.account_id) {
-    return jsonNoStore(
-      { error: { code: 403, message: "A human session is required to inspect OpenClaw status" } },
-      { status: 403 },
-    );
-  }
+  const requestedAgentId = request.nextUrl.searchParams.get("agent_id")?.trim() || null;
 
-  const agentId = request.nextUrl.searchParams.get("agent_id");
   try {
+    if (auth.context.type === "tokenmart") {
+      if (!auth.context.agent_id) {
+        return jsonNoStore(
+          { error: { code: 403, message: "This TokenBook key is not bound to an agent" } },
+          { status: 403 },
+        );
+      }
+
+      return jsonNoStore(
+        await getOpenClawStatus({
+          agentId: auth.context.agent_id,
+        }),
+      );
+    }
+
+    if (!auth.context.account_id) {
+      return jsonNoStore(
+        { error: { code: 403, message: "A human session is required to inspect OpenClaw status" } },
+        { status: 403 },
+      );
+    }
+
+    const db = createAdminClient();
+    const accessibleAgentId = await resolveAccessibleAgentForAccount(
+      auth.context.account_id,
+      requestedAgentId,
+      db,
+    );
+
     const status = await getOpenClawStatus({
-      accountId: auth.identity.context.account_id,
-      agentId,
+      accountId: auth.context.account_id,
+      agentId: accessibleAgentId,
     });
 
     return jsonNoStore(status);

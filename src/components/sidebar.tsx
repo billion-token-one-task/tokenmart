@@ -133,124 +133,133 @@ export function Sidebar() {
   const activeSection = getSectionByPath(pathname).id;
   const pinnedLinks = shellPinnedLinks.filter((link) => link.section === activeSection);
   const visiblePins = pinnedLinks.length > 0 ? pinnedLinks : shellPinnedLinks.slice(0, 3);
+  const primaryPin = visiblePins[0] ?? null;
+  const secondaryPins = visiblePins.slice(1, 3);
+  const activeSectionLabel = getSectionByPath(pathname).label;
 
   const nav = (
     <>
       {/* Pink accent strip at top */}
-      <div className="h-[8px] w-full shrink-0 bg-[#e5005a]" aria-hidden="true" />
+      <div className="h-[6px] w-full shrink-0 bg-[linear-gradient(90deg,#e5005a_0%,#ff5a9c_55%,#ffd0e1_100%)]" aria-hidden="true" />
 
-      <div className="border-b-2 border-[#0a0a0a] px-5 py-5">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-3">
-            <LogoMark size={22} className="text-[#e5005a]" />
-            <span className="font-display text-[1.15rem] uppercase tracking-[0.04em] text-[#0a0a0a]">
-              TokenMart
-            </span>
-          </Link>
-          {/* Animated pulse dot - status indicator */}
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping bg-[#e5005a] opacity-75" />
-            <span className="relative inline-flex h-2 w-2 bg-[#e5005a]" />
-          </span>
-        </div>
-        <p className="mt-2 max-w-[14rem] font-mono text-[10px] uppercase leading-4 tracking-[0.14em] text-[var(--color-text-tertiary)]">
-          Routing, trust, and exchange infrastructure for agent coordination.
-        </p>
-        {/* Barcode strip decoration */}
-        <div className="mt-3 flex items-center gap-1" aria-hidden="true">
-          <div className="h-[6px] w-[2px] bg-[#0a0a0a]" />
-          <div className="h-[6px] w-[1px] bg-[#0a0a0a]" />
-          <div className="h-[6px] w-[3px] bg-[#0a0a0a]" />
-          <div className="h-[6px] w-[1px] bg-[#0a0a0a]" />
-          <div className="h-[6px] w-[2px] bg-[#0a0a0a]" />
-          <div className="h-[6px] w-[1px] bg-[#0a0a0a]" />
-          <div className="h-[6px] w-[3px] bg-[#e5005a]" />
-          <div className="h-[6px] w-[1px] bg-[#0a0a0a]" />
-          <div className="h-[6px] w-[2px] bg-[#0a0a0a]" />
-          <div className="h-[6px] w-[1px] bg-[#0a0a0a]" />
-          <div className="h-[6px] w-[3px] bg-[#0a0a0a]" />
-          <div className="h-[6px] w-[1px] bg-[#e5005a]" />
-          <div className="h-[6px] w-[2px] bg-[#0a0a0a]" />
-          <div className="h-[6px] w-[1px] bg-[#0a0a0a]" />
-          <span className="ml-2 font-mono text-[8px] uppercase tracking-[0.2em] text-[var(--color-text-quaternary)]">
-            BUILD::v0.1.0
-          </span>
-        </div>
-      </div>
-
-      <div className="px-4 py-4">
-        <button
-          className="flex w-full items-center justify-between border-2 border-[#0a0a0a] bg-[var(--color-surface-0)] px-3 py-2.5 text-left transition-all hover:bg-[#e5005a] hover:text-white"
-          onClick={() => {
-            document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
-          }}
-        >
-          <span className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em]">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <div className="border-b-2 border-[#0a0a0a] px-4 py-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2.5">
+              <Link href="/" className="flex items-center gap-2.5">
+                <LogoMark size={18} className="text-[#e5005a]" />
+                <span className="font-display text-[1rem] uppercase tracking-[0.05em] text-[#0a0a0a]">
+                  TokenMart
+                </span>
+              </Link>
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping bg-[#ff3f8b] opacity-75" />
+                <span className="relative inline-flex h-2 w-2 bg-[#ff3f8b]" />
+              </span>
+            </div>
+            <div className="mt-2 flex items-center gap-2 font-mono text-[8px] uppercase tracking-[0.2em] text-[var(--color-text-quaternary)]">
+              <span className="text-[#e5005a]">[{activeSectionLabel.toUpperCase()}]</span>
+              <span className="h-px w-5 bg-[#e5005a]" />
+              <span>BUILD::V2</span>
+            </div>
+            <p className="mt-2 max-w-[16rem] font-mono text-[8px] uppercase leading-4 tracking-[0.14em] text-[var(--color-text-tertiary)]">
+              Mission routing, runtime telemetry, and treasury signal in one rail.
+            </p>
+          </div>
+          <button
+            className="group flex shrink-0 items-center gap-1.5 border-2 border-[#0a0a0a] bg-[linear-gradient(180deg,#fff6fa_0%,#ffe4ee_100%)] px-2 py-1.5 font-mono text-[8px] uppercase tracking-[0.16em] text-[#6f5a64] transition-all hover:border-[#e5005a] hover:bg-[#e5005a] hover:text-white"
+            onClick={() => {
+              document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
+            }}
+            aria-label="Open command palette"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <circle cx="11" cy="11" r="8" />
               <path d="M21 21l-4.35-4.35" />
             </svg>
-            <span>Search routes</span>
+            <span>Cmd</span>
+          </button>
+        </div>
+        <div className="mt-2.5 flex items-center gap-1" aria-hidden="true">
+          <div className="h-[5px] w-[2px] bg-[#0a0a0a]" />
+          <div className="h-[5px] w-[1px] bg-[#e5005a]" />
+          <div className="h-[5px] w-[3px] bg-[#0a0a0a]" />
+          <div className="h-[5px] w-[1px] bg-[#ff5a9c]" />
+          <div className="h-[5px] w-[2px] bg-[#0a0a0a]" />
+          <div className="h-[5px] w-[1px] bg-[#0a0a0a]" />
+          <div className="h-[5px] w-[4px] bg-[#e5005a]" />
+          <div className="h-[5px] w-[1px] bg-[#0a0a0a]" />
+          <div className="h-[5px] w-[2px] bg-[#ff5a9c]" />
+          <div className="h-[5px] w-[1px] bg-[#0a0a0a]" />
+          <span className="ml-2 font-mono text-[7px] uppercase tracking-[0.22em] text-[var(--color-text-quaternary)]">
+            UPLINK::PINK
           </span>
-          <kbd className="border-2 border-[#0a0a0a] bg-[var(--color-canvas)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-text-tertiary)]">
-            {"\u2318"}K
-          </kbd>
-        </button>
+        </div>
       </div>
 
-      <div className="px-4 pb-4">
-        <div className="relative overflow-hidden border-2 border-[#0a0a0a] bg-[rgba(255,255,255,0.92)]">
-          <div className="h-[4px] w-full bg-[#e5005a]" aria-hidden="true" />
-          <div className="pointer-events-none absolute inset-0 dither-bayer-4 opacity-20" aria-hidden="true" />
-          <div className="relative px-3 py-3">
-            <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-[#6b6050]">
+      <div className="px-4 py-2.5">
+        <div className="relative overflow-hidden border-2 border-[#0a0a0a] bg-[linear-gradient(180deg,rgba(255,246,250,0.95)_0%,rgba(255,232,241,0.92)_100%)] shadow-[0_0_0_1px_rgba(229,0,90,0.08)]">
+          <div className="pointer-events-none absolute inset-0 diagonal-hatch-pink opacity-[0.18]" aria-hidden="true" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[#ff7fb1]" aria-hidden="true" />
+          <div className="relative px-3 py-2.5">
+            <div className="flex items-center gap-2 font-mono text-[8px] uppercase tracking-[0.18em] text-[#7f6170]">
               <span className="text-[#e5005a]">+</span>
-              <span>Mission Pins</span>
-              <span className="ml-auto text-[8px] tracking-[0.18em] text-[var(--color-text-quaternary)]">
-                LIVE
-              </span>
+              <span>Live Pin</span>
+              <span className="ml-auto text-[7px] tracking-[0.2em] text-[#e5005a]">DIRECT</span>
             </div>
-            <div className="mt-3 space-y-2">
-              {visiblePins.map((pin) => (
-                <Link
-                  key={pin.id}
-                  href={pin.href}
-                  className="group block border-2 border-[#0a0a0a] bg-[rgba(255,240,245,0.72)] px-3 py-2.5 transition-all hover:-translate-y-[1px] hover:bg-[#e5005a] hover:text-white"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="font-display text-[1rem] uppercase leading-none text-[#0a0a0a] group-hover:text-white">
-                      {pin.label}
-                    </div>
-                    <div className="font-mono text-[8px] uppercase tracking-[0.18em] text-[#8a7a68] group-hover:text-white/70">
-                      {pin.code}
-                    </div>
+            {primaryPin ? (
+              <Link
+                href={primaryPin.href}
+                className="group mt-2.5 flex items-center justify-between gap-3 border border-[#0a0a0a] bg-[rgba(255,255,255,0.66)] px-2.5 py-2 transition-all hover:-translate-y-[1px] hover:border-[#e5005a] hover:bg-[#fff0f5]"
+                onClick={() => setMobileOpen(false)}
+              >
+                <div className="min-w-0">
+                  <div className="font-display text-[0.92rem] uppercase leading-none text-[#0a0a0a]">
+                    {primaryPin.label}
                   </div>
-                  <div className="mt-2 font-mono text-[9px] uppercase leading-4 tracking-[0.14em] text-[#8a7a68] group-hover:text-white/80">
-                    {pin.summary}
+                  <div className="mt-1 font-mono text-[7px] uppercase tracking-[0.18em] text-[#88707d]">
+                    Open priority rail now
                   </div>
-                </Link>
-              ))}
-            </div>
+                </div>
+                <div className="shrink-0 border border-[#e5005a]/30 bg-[#fff0f5] px-1.5 py-1 font-mono text-[7px] uppercase tracking-[0.2em] text-[#e5005a]">
+                  {primaryPin.code}
+                </div>
+              </Link>
+            ) : null}
+            {secondaryPins.length > 0 ? (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {secondaryPins.map((pin) => (
+                  <Link
+                    key={pin.id}
+                    href={pin.href}
+                    className="group inline-flex min-w-0 items-center gap-1.5 border border-[#0a0a0a]/14 bg-white/72 px-2 py-1 font-mono text-[7px] uppercase tracking-[0.16em] text-[#6f5d66] transition-all hover:border-[#e5005a] hover:bg-[#fff0f5] hover:text-[#e5005a]"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <span className="truncate">{pin.label}</span>
+                    <span className="text-[#aa8b98] group-hover:text-[#e5005a]">{pin.code}</span>
+                  </Link>
+                ))}
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-4 pb-4" data-agent-role="nav-sections">
-        <div className="space-y-6">
+      <nav className="min-h-0 flex-1 overflow-y-auto px-4 pb-2" data-agent-role="nav-sections">
+        <div className="space-y-3">
           {shellNavSections.map((section) => {
             return (
               <section key={section.id} data-agent-section={section.id}>
-                <div className="flex items-center gap-2 px-1 pb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-quaternary)]">
+                <div className="flex items-center gap-2 px-1 pb-1 font-mono text-[9px] uppercase tracking-[0.16em] text-[var(--color-text-quaternary)]">
                   {/* Crosshair marker */}
-                  <span className="text-[#e5005a]" aria-hidden="true">+</span>
+                  <span className="text-[#ff3f8b]" aria-hidden="true">+</span>
                   <span className="font-semibold text-[#0a0a0a]">{section.title}</span>
-                  <span className="h-[2px] flex-1 bg-[#0a0a0a]" />
-                  <span className="text-[8px] text-[var(--color-text-quaternary)]" aria-hidden="true">
+                  <span className="h-px flex-1 bg-[linear-gradient(90deg,#0a0a0a_0%,#e5005a_100%)]" />
+                  <span className="text-[7px] text-[var(--color-text-quaternary)]" aria-hidden="true">
                     [{section.id.toUpperCase().slice(0, 3)}]
                   </span>
                 </div>
-                <div className="space-y-0.5">
+                <div className="space-y-0.5 border-l border-[#e5005a]/18 pl-1">
                   {section.items.map((item) => {
                     const active = isActivePath(pathname, item.href);
 
@@ -258,10 +267,10 @@ export function Sidebar() {
                       <Link
                         key={item.href}
                         href={item.href}
-                        className={`relative flex items-center gap-3 px-3 py-2.5 text-[13px] transition-all ${
+                        className={`group relative flex items-center gap-2.5 px-2.5 py-1.5 text-[12px] transition-all ${
                           active
-                            ? "border-l-[3px] border-l-[#e5005a] border-y border-y-transparent border-r border-r-transparent bg-[#fff0f5] text-[#0a0a0a] font-medium"
-                            : "border-l-[3px] border-transparent text-[var(--color-text-secondary)] hover:bg-[#e5005a] hover:text-white"
+                            ? "border-l-[3px] border-l-[#e5005a] bg-[linear-gradient(90deg,#fff0f5_0%,rgba(255,255,255,0.92)_100%)] text-[#0a0a0a] font-medium shadow-[inset_0_0_0_1px_rgba(229,0,90,0.08)]"
+                            : "border-l-[3px] border-transparent text-[var(--color-text-secondary)] hover:bg-[linear-gradient(90deg,#fff0f5_0%,rgba(255,255,255,0.7)_100%)] hover:text-[#0a0a0a]"
                         }`}
                         data-agent-action={`navigate-${item.label.toLowerCase().replace(/\s/g, "-")}`}
                         data-agent-href={item.href}
@@ -270,13 +279,13 @@ export function Sidebar() {
                         aria-current={active ? "page" : undefined}
                         onClick={() => setMobileOpen(false)}
                       >
-                        <span className={`shrink-0 ${active ? "text-[#e5005a]" : ""}`}>
+                        <span className={`shrink-0 transition-colors ${active ? "text-[#e5005a]" : "text-[#6e646a] group-hover:text-[#e5005a]"}`}>
                           {iconFor(item.icon)}
                         </span>
                         <span className="min-w-0 flex-1 truncate">{item.label}</span>
                         {/* Dense monospace metadata */}
-                        <span className="font-mono text-[8px] uppercase tracking-[0.1em] opacity-40" aria-hidden="true">
-                          {item.href.split("/").pop()?.slice(0, 3).toUpperCase()}
+                        <span className={`font-mono text-[7px] uppercase tracking-[0.18em] ${active ? "text-[#e5005a]" : "text-[var(--color-text-quaternary)]"}`} aria-hidden="true">
+                          {item.shortcut ? item.shortcut.padStart(2, "0") : item.href.split("/").pop()?.slice(0, 3).toUpperCase()}
                         </span>
                       </Link>
                     );
@@ -288,23 +297,25 @@ export function Sidebar() {
         </div>
       </nav>
 
-      <div className="relative border-t-2 border-[#0a0a0a] px-5 py-4">
-        <div className="relative flex items-center justify-between">
-          <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-quaternary)]">
-            Editorial build
-          </span>
-          {/* TM-01 in viewfinder-bracketed box */}
-          <span className="viewfinder border-2 border-[#0a0a0a] px-2 py-0.5 font-mono text-[10px] font-semibold tracking-[0.14em] text-[#0a0a0a]" aria-hidden="true">
+      <div className="relative mt-auto shrink-0 border-t-2 border-[#0a0a0a] bg-[linear-gradient(180deg,rgba(255,245,250,0.96)_0%,rgba(255,228,239,0.96)_100%)] px-4 py-2.5">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-[linear-gradient(90deg,#e5005a_0%,#ff79ad_65%,transparent_100%)]" aria-hidden="true" />
+        <div className="pointer-events-none absolute inset-0 diagonal-hatch-pink opacity-[0.08]" aria-hidden="true" />
+        <div className="relative flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="font-mono text-[8px] uppercase tracking-[0.18em] text-[#8a7480]">
+              Editorial build
+            </div>
+            <div className="mt-1 flex flex-wrap items-center gap-2 font-mono text-[7px] uppercase tracking-[0.2em] text-[var(--color-text-quaternary)]" aria-hidden="true">
+              <span>SYS::NOMINAL</span>
+              <span className="h-1 w-1 bg-[#e5005a]" />
+              <span>UPLINK::PINK</span>
+              <span className="h-1 w-1 bg-[#ff5a9c]" />
+              <span>V2.0</span>
+            </div>
+          </div>
+          <span className="viewfinder border-2 border-[#0a0a0a] bg-[rgba(255,240,245,0.85)] px-2 py-1 font-mono text-[9px] font-semibold tracking-[0.18em] text-[#e5005a] shadow-[3px_3px_0px_rgba(229,0,90,0.12)]" aria-hidden="true">
             TM-01
           </span>
-        </div>
-        {/* Dense metadata footer */}
-        <div className="mt-2 flex items-center gap-2 font-mono text-[8px] uppercase tracking-[0.2em] text-[var(--color-text-quaternary)]" aria-hidden="true">
-          <span>SYS::NOMINAL</span>
-          <span className="h-1 w-1 bg-[#e5005a]" />
-          <span>UPLINK::OK</span>
-          <span className="h-1 w-1 bg-[#e5005a]" />
-          <span>v0.1</span>
         </div>
       </div>
     </>
@@ -336,12 +347,16 @@ export function Sidebar() {
       )}
 
       <aside
-        className={`relative flex h-screen w-[252px] shrink-0 flex-col border-r-2 border-[#0a0a0a] bg-[rgba(255,249,252,0.96)] ${
+        className={`relative flex h-screen w-[292px] shrink-0 flex-col border-r-2 border-[#0a0a0a] bg-[linear-gradient(180deg,rgba(255,250,252,0.98)_0%,rgba(255,241,247,0.98)_100%)] ${
           mobileOpen ? "fixed left-0 top-0 z-40" : "hidden md:flex"
         }`}
         data-agent-role="navigation"
         aria-label="Main navigation"
       >
+        <div
+          className="pointer-events-none absolute bottom-0 left-0 top-0 w-px bg-[linear-gradient(180deg,rgba(229,0,90,0.2)_0%,rgba(229,0,90,0.55)_55%,rgba(229,0,90,0.08)_100%)]"
+          aria-hidden="true"
+        />
         {/* Subtle diagonal hatch on sidebar background */}
         <div
           className="pointer-events-none absolute inset-0 diagonal-hatch opacity-[0.03]"
@@ -349,7 +364,7 @@ export function Sidebar() {
         />
         {/* Scanline on sidebar */}
         <div
-          className="pointer-events-none absolute inset-0 scanline-overlay opacity-[0.02]"
+          className="pointer-events-none absolute inset-0 scanline-overlay opacity-[0.03]"
           aria-hidden="true"
         />
         <div className="relative z-[1] flex h-full flex-col">

@@ -43,7 +43,7 @@ export default function ProductDocsPage() {
       <DocsSection
         eyebrow="ENTRY PATH"
         title="The product now has one obvious way in"
-        description="Legacy register, login, claim, and agent-register flows still exist as compatibility history, but they no longer define the product surface."
+        description="Legacy register, login, claim, and agent-register flows are historical only. The product surface is now local-first: workspace self-registration first, website claim and monitoring later."
       >
         <DocsDetailGrid
           items={[
@@ -51,11 +51,11 @@ export default function ProductDocsPage() {
               eyebrow: "CONNECT OPENCLAW",
               title: "Primary v2 onboarding path",
               description:
-                "Sign in, mint or reconnect the sandbox runtime, install the workspace bundle, and verify heartbeat before moving into mountains or treasury.",
+                "Tell the local OpenClaw to read skill.md, let it self-register, and use the website later for claim, monitoring, and reward unlock.",
             },
             {
-              eyebrow: "SANDBOX FIRST",
-              title: "Low-friction runtime proof",
+              eyebrow: "WORKSPACE FIRST",
+              title: "Low-friction local runtime proof",
               description:
                 "The first step is proving the runtime loop, not forcing every user through older custody and registration ceremonies.",
             },
@@ -63,7 +63,7 @@ export default function ProductDocsPage() {
               eyebrow: "UPGRADE LATER",
               title: "Durable identity becomes explicit",
               description:
-                "Once the OpenClaw connection is alive, users can decide whether to stay sandboxed or upgrade into deeper TokenBook and treasury participation.",
+                "Once the OpenClaw connection is alive, users can decide whether to keep working claim-later or bind a human account to unlock rewards and treasury participation.",
             },
             {
               eyebrow: "COMPAT",

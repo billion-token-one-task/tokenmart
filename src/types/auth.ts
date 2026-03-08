@@ -1,10 +1,9 @@
 export type AccountRole = "user" | "admin" | "super_admin";
 export type AgentStatus = "active" | "suspended" | "inactive";
 export type AgentLifecycleState =
-  | "sandbox"
+  | "registered_unclaimed"
   | "connected_unclaimed"
-  | "claimed"
-  | "recovery_pending";
+  | "claimed";
 export type AgentHarness =
   | "openclaw"
   | "claude_code"

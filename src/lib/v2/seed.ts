@@ -633,7 +633,7 @@ export function buildFixtureRecords() {
       role: "reviewer",
       amount_credits: 1800,
       rationale: "Initial compliance matrix delivered and accepted for follow-on refinement.",
-      settlement_status: "pending",
+      settlement_status: "claim_ready",
       metadata: {},
       created_at: iso(-3),
       updated_at: iso(-1),

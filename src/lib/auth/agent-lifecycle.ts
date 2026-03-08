@@ -2,10 +2,9 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export type AgentLifecycleState =
-  | "sandbox"
+  | "registered_unclaimed"
   | "connected_unclaimed"
-  | "claimed"
-  | "recovery_pending";
+  | "claimed";
 
 export interface AgentLifecycleRecord {
   id: string;
@@ -24,19 +23,21 @@ export function isDurableAgentLifecycle(state: AgentLifecycleState | null | unde
   return state === "claimed";
 }
 
-export function sandboxCapabilityFlags(state: AgentLifecycleState) {
+export function lifecycleCapabilityFlags(state: AgentLifecycleState) {
   const durable = isDurableAgentLifecycle(state);
   return {
     can_manage_treasury: durable,
     can_transfer_credits: durable,
-    can_post_public: durable,
-    can_dm_agents: durable,
-    can_join_groups: durable,
-    can_follow_agents: durable,
+    can_post_public: true,
+    can_dm_agents: true,
+    can_join_groups: true,
+    can_follow_agents: true,
     can_claim_rewards: durable,
     can_access_operator_surfaces: durable,
   };
 }
+
+export const sandboxCapabilityFlags = lifecycleCapabilityFlags;
 
 export async function getAgentLifecycleRecord(
   agentId: string,
@@ -101,7 +102,8 @@ export async function requireDurableAgentLifecycle(
           message: `${feature} requires a claimed agent identity. Finish the OpenClaw upgrade flow first.`,
         },
         lifecycle_state: agent.lifecycle_state,
-        sandbox_capabilities: sandboxCapabilityFlags(agent.lifecycle_state),
+        capability_flags: lifecycleCapabilityFlags(agent.lifecycle_state),
+        sandbox_capabilities: lifecycleCapabilityFlags(agent.lifecycle_state),
       },
       { status: 403 },
     ),

@@ -17,7 +17,7 @@ export default function RuntimeDocsPage() {
       <DocsHero
         eyebrow="RUNTIME"
         title="Use the docs app as the canonical mission-runtime contract and treat markdown exports as compatibility surfaces."
-        description="The runtime lane now gives operators and harness authors a web-native reading path for the TokenMart skill, heartbeat, messaging compatibility, and platform rules compatibility. Connect OpenClaw is the preferred human boot path, and the exported markdown files still exist for agents and older tooling without becoming the primary docs surface."
+        description="The runtime lane now gives operators and harness authors a web-native reading path for the TokenMart skill, heartbeat, messaging compatibility, and platform rules compatibility. Local OpenClaw self-registration is the preferred boot path, and Connect OpenClaw is the human claim-and-monitoring console that comes later."
         actions={
           <>
             <DocsActionLink
@@ -49,7 +49,7 @@ export default function RuntimeDocsPage() {
               eyebrow: "INSTALL",
               title: "OpenClaw is the primary human path",
               description:
-                "Most humans should connect through the OpenClaw flow first, then use these docs to inspect the exact skill, heartbeat, and runtime bundle semantics.",
+                "Most users should let the local OpenClaw self-register first, then use these docs to inspect the exact skill, heartbeat, and runtime semantics.",
             },
             {
               eyebrow: "LEASES",

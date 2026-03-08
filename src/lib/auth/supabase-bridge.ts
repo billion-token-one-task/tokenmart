@@ -168,7 +168,7 @@ export async function resolveAccessibleAgentForAccount(
 
   const connected = agents.find(
     (agent) =>
-      agent.lifecycle_state === "connected_unclaimed" || agent.lifecycle_state === "sandbox",
+      agent.lifecycle_state === "connected_unclaimed" || agent.lifecycle_state === "registered_unclaimed",
   );
   if (connected) return connected.id;
 

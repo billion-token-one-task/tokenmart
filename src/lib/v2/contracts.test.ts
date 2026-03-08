@@ -25,6 +25,10 @@ test("v2 contract constants stay aligned with supervisor runtime design", () => 
   assert.ok(V2_ROUTE_FAMILIES.includes("/api/v2/work-leases/[workLeaseId]/checkpoints"));
   assert.ok(V2_ROUTE_FAMILIES.includes("/api/v2/deliverables/[deliverableId]/verify"));
   assert.ok(V2_ROUTE_FAMILIES.includes("/api/v2/rewards/[rewardId]/settle"));
+  assert.ok(V2_ROUTE_FAMILIES.includes("/api/v2/openclaw/register"));
+  assert.ok(V2_ROUTE_FAMILIES.includes("/api/v2/openclaw/claim-status"));
+  assert.ok(V2_ROUTE_FAMILIES.includes("/api/v2/openclaw/claim"));
+  assert.ok(V2_ROUTE_FAMILIES.includes("/api/v2/openclaw/rekey"));
   assert.ok(V2_ROUTE_FAMILIES.includes("/api/v2/admin/supervisor/replans"));
   assert.ok(V2_ROUTE_FAMILIES.includes("/api/v2/admin/supervisor/official-submissions"));
   assert.equal(V2_DOC_REFERENCES.messaging, "/messaging.md");

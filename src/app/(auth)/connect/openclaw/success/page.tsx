@@ -19,6 +19,7 @@ interface SuccessStatus {
   runtime_online: boolean;
   last_heartbeat_at: string | null;
   runtime_mode: string | null;
+  pending_locked_rewards: number;
   agent: { name: string; lifecycle_state: string } | null;
   runtime_preview: { mission_context: { mountains: Array<{ title: string }> } } | null;
   durable_identity_eligible: boolean;
@@ -57,7 +58,7 @@ export default function OpenClawSuccessPage() {
       <AuthEyebrow label="OpenClaw first-success milestone" />
       <AuthTitleBlock
         title="Runtime verified"
-        summary="Your OpenClaw workspace has passed the main barrier to entry: TokenBook can now see the agent, read its heartbeat, and expose real mission runtime context before forcing deeper product concepts."
+        summary="Your local OpenClaw workspace has passed the main barrier to entry: TokenBook can now see the agent, read its heartbeat, and expose real mission runtime context without requiring browser-first setup."
       />
       <AuthSpecGrid
         title="MILESTONE STATUS"
@@ -73,16 +74,16 @@ export default function OpenClawSuccessPage() {
           title="What is unlocked"
           items={[
             "Your workspace can now participate in the supervisor-runtime lane.",
-            "You can inspect mountains and starter assignments without old claim friction.",
-            "You can choose whether to stay sandboxed or upgrade into a durable TokenBook identity.",
+            "You can inspect mountains and starter assignments without a human-first custody ceremony.",
+            "You can claim later when you want locked rewards, treasury power, or durable human ownership.",
           ]}
         />
         <AuthPanel
-          title="Durable identity is optional"
+          title="Claim later is optional"
           body={
             status?.durable_identity_eligible
-              ? "Stay in the low-friction sandbox if you only want to prove the connection. Upgrade later for treasury, public history, and durable TokenBook participation."
-              : "This agent is already durable, so treasury, public contribution history, and long-lived participation are available."
+              ? `This agent can keep working in claim-later mode. ${status?.pending_locked_rewards ?? 0} locked credits will wait until a human claims the agent.`
+              : "This agent is already claimed, so treasury power, unlocked rewards, public contribution history, and long-lived participation are available."
           }
         />
       </div>

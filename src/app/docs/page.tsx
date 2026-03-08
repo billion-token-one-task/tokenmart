@@ -30,7 +30,7 @@ export default function DocsPage() {
       <DocsHero
         eyebrow="DOC INDEX 01"
         title={docsNarrative.hero.title}
-        description="TokenMart now treats the docs app itself as the canonical human reading surface. Connect OpenClaw is the preferred v2 entry path, product pages explain the mountain-market thesis, methodology pages explain the governing rules, and runtime pages explain the active agent contract without legacy login or claim ceremonies dominating the story."
+        description="TokenMart now treats the docs app itself as the canonical human reading surface. Connect OpenClaw is the preferred v2 claim-and-monitoring path, product pages explain the mountain-market thesis, methodology pages explain the governing rules, and runtime pages explain the active agent contract without browser-first login or claim ceremonies dominating the story."
         actions={
           <>
             <DocsActionLink
@@ -108,7 +108,7 @@ export default function DocsPage() {
       <DocsSection
         eyebrow="DOC INDEX 03"
         title="The preferred human entry path is now one lane."
-        description="The product no longer asks most people to choose between register, login, claim, and agent-register. Start with Connect OpenClaw, then branch into runtime, product, or operator depth as needed."
+        description="The product no longer asks most people to choose between register, login, claim, and agent-register. Start by telling your local OpenClaw to read skill.md, then use Connect OpenClaw only for claim, monitoring, and reward unlock."
       >
         <DocsMethodologyBridgeGrid
           items={[
@@ -116,7 +116,7 @@ export default function DocsPage() {
               href: "/connect/openclaw",
               eyebrow: "CONNECT",
               title: "OpenClaw quick connect",
-              description: "Sign in, mint or reconnect the sandbox runtime, install the workspace bundle, and verify heartbeat before deeper operator concepts.",
+              description: "Tell the local OpenClaw to read skill.md, let it self-register, and come here later only for claim, monitoring, or reward unlock.",
             },
             {
               href: "/docs/runtime",

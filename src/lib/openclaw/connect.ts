@@ -2,15 +2,25 @@ import { randomBytes } from "node:crypto";
 import { promises as fs } from "fs";
 import path from "path";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { generateApiKey } from "@/lib/auth/keys";
-import { ensureAgentWallet, ensureAccountWallet } from "@/lib/tokenhall/wallets";
+import { generateApiKey, generateClaimCode } from "@/lib/auth/keys";
+import { ensureAccountWallet, ensureAgentWallet } from "@/lib/tokenhall/wallets";
+import { getAgentLifecycleRecord, lifecycleCapabilityFlags, type AgentLifecycleState } from "@/lib/auth/agent-lifecycle";
 import { getAgentRuntime } from "@/lib/v2/runtime";
-import { V2_HEARTBEAT_ROOT_FILE, V2_RUNTIME_INSTALL_PATH } from "@/lib/v2/contracts";
-import { getAgentLifecycleRecord, sandboxCapabilityFlags, type AgentLifecycleState } from "@/lib/auth/agent-lifecycle";
+import {
+  V2_HEARTBEAT_ROOT_FILE,
+  V2_OPENCLAW_CLAIM_ENDPOINT,
+  V2_OPENCLAW_CLAIM_STATUS_ENDPOINT,
+  V2_OPENCLAW_IDENTITY_FILE,
+  V2_OPENCLAW_REGISTER_ENDPOINT,
+  V2_OPENCLAW_REKEY_ENDPOINT,
+  V2_RUNTIME_INSTALL_PATH,
+  V2_RUNTIME_PRIMARY_QUEUE_ENDPOINT,
+} from "@/lib/v2/contracts";
 import type {
-  OpenClawConnectResult,
+  OpenClawClaimStatus,
   OpenClawInstallBundle,
   OpenClawInstallCommands,
+  OpenClawRegisterResult,
   OpenClawStatusView,
 } from "@/lib/v2/types";
 
@@ -19,15 +29,81 @@ const APP_URL =
 const HEARTBEAT_URL = `${APP_URL}/heartbeat.md`;
 const SKILL_URL = `${APP_URL}/skill.md`;
 const SKILL_JSON_URL = `${APP_URL}/skill.json`;
-const SANDBOX_KEY_TTL_DAYS = 7;
+
+type AdminClient = ReturnType<typeof createAdminClient>;
+
+interface RegisterOpenClawAgentInput {
+  name?: string | null;
+  description?: string | null;
+  capabilities?: string[] | null;
+  workspaceFingerprint?: string | null;
+  preferredModel?: string | null;
+}
+
+interface OpenClawAgentRow {
+  id: string;
+  name: string;
+  lifecycle_state: AgentLifecycleState;
+  owner_account_id: string | null;
+  bootstrap_account_id: string | null;
+  claimed: boolean;
+  claim_code: string | null;
+  status: string;
+  connected_at: string | null;
+  claimed_at: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface RewardSplitAmountRow {
+  amount_credits: number | string | null;
+}
+
+interface RewardSplitSelectClient {
+  select: (columns: string) => {
+    eq: (column: string, value: string) => {
+      eq: (column: string, value: string) => Promise<{ data: RewardSplitAmountRow[] | null }>;
+    };
+  };
+}
+
+interface RewardSplitUpdateClient {
+  update: (patch: { settlement_status: string; beneficiary_account_id: string }) => {
+    eq: (column: string, value: string) => {
+      eq: (column: string, value: string) => Promise<unknown>;
+    };
+  };
+}
 
 function slugifySegment(value: string | null | undefined) {
-  const base = (value ?? "openclaw").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const base = (value ?? "openclaw")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
   return base.length > 0 ? base.slice(0, 24) : "openclaw";
 }
 
 function uniqueAgentName(seed: string) {
-  return `${seed}-${randomBytes(3).toString("hex")}`;
+  return `${seed}-${randomBytes(3).toString("hex")}`.slice(0, 64);
+}
+
+function normalizeName(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+  return trimmed.replace(/[^a-zA-Z0-9_-]+/g, "-").replace(/-{2,}/g, "-").slice(0, 64) || null;
+}
+
+function defaultAgentName(input: RegisterOpenClawAgentInput) {
+  const preferred = normalizeName(input.name);
+  if (preferred) return preferred;
+
+  const modelSeed = normalizeName(input.preferredModel) ?? "openclaw";
+  return uniqueAgentName(`${slugifySegment(modelSeed)}-tokenbook`);
+}
+
+function buildClaimUrl(claimCode: string) {
+  return `${APP_URL}/connect/openclaw?claim_code=${encodeURIComponent(claimCode)}`;
 }
 
 function buildInstallCommands(apiKey: string): OpenClawInstallCommands {
@@ -41,6 +117,31 @@ function buildInstallCommands(apiKey: string): OpenClawInstallCommands {
       `curl -fsSL ${HEARTBEAT_URL} > ${V2_HEARTBEAT_ROOT_FILE}`,
     ].join("\n"),
   };
+}
+
+function buildIdentityFileContent(input: {
+  agentId: string;
+  agentName: string;
+  apiKey: string;
+  claimCode: string;
+  claimUrl: string;
+  skillVersion: string | null;
+  workspaceFingerprint?: string | null;
+}) {
+  return JSON.stringify(
+    {
+      agent_id: input.agentId,
+      agent_name: input.agentName,
+      api_key: input.apiKey,
+      claim_code: input.claimCode,
+      claim_url: input.claimUrl,
+      registered_at: new Date().toISOString(),
+      skill_version: input.skillVersion,
+      ...(input.workspaceFingerprint ? { workspace_fingerprint: input.workspaceFingerprint } : {}),
+    },
+    null,
+    2,
+  );
 }
 
 async function readPublicFile(filename: string) {
@@ -61,7 +162,7 @@ async function readPublicFile(filename: string) {
   }
 }
 
-async function ensureDaemonScore(agentId: string, db: ReturnType<typeof createAdminClient>) {
+async function ensureDaemonScore(agentId: string, db: AdminClient) {
   await db.from("daemon_scores").upsert({ agent_id: agentId }, { onConflict: "agent_id" });
 }
 
@@ -70,10 +171,10 @@ async function mintAgentKey(input: {
   accountId: string | null;
   label: string;
   expiresAt: string | null;
-  db: ReturnType<typeof createAdminClient>;
+  db: AdminClient;
 }) {
   const generated = generateApiKey("tokenmart");
-  await input.db
+  const { error } = await input.db
     .from("auth_api_keys")
     .insert({
       key_hash: generated.hash,
@@ -84,6 +185,11 @@ async function mintAgentKey(input: {
       permissions: ["read", "write"],
       expires_at: input.expiresAt,
     });
+
+  if (error) {
+    throw new Error("Failed to mint a TokenBook runtime key");
+  }
+
   return {
     api_key: generated.key,
     key_prefix: generated.prefix,
@@ -91,245 +197,457 @@ async function mintAgentKey(input: {
   };
 }
 
-async function loadAccessibleOpenClawAgents(
-  accountId: string,
-  db: ReturnType<typeof createAdminClient>,
-) {
+async function skillVersion() {
+  const skillJson = JSON.parse(await readPublicFile("skill.json")) as { version?: string };
+  return skillJson.version ?? null;
+}
+
+async function resolveUniqueAgentName(name: string, db: AdminClient) {
+  let candidate = normalizeName(name) ?? defaultAgentName({});
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    const { data: existing } = await db
+      .from("agents")
+      .select("id")
+      .eq("name", candidate)
+      .maybeSingle();
+    if (!existing) return candidate;
+    candidate = uniqueAgentName(candidate);
+  }
+  return uniqueAgentName(candidate);
+}
+
+async function findUnclaimedAgentByWorkspaceFingerprint(
+  workspaceFingerprint: string,
+  db: AdminClient,
+): Promise<OpenClawAgentRow | null> {
   const { data } = await db
     .from("agents")
     .select(
-      "id, name, harness, lifecycle_state, owner_account_id, bootstrap_account_id, claimed, claim_code, status, connected_at, claimed_at, bootstrap_expires_at, metadata, created_at, updated_at",
+      "id, name, lifecycle_state, owner_account_id, bootstrap_account_id, claimed, claim_code, status, connected_at, claimed_at, metadata, created_at, updated_at",
+    )
+    .eq("harness", "openclaw")
+    .eq("claimed", false)
+    .contains("metadata", { workspace_fingerprint: workspaceFingerprint })
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return (data as OpenClawAgentRow | null) ?? null;
+}
+
+async function loadAccessibleOpenClawAgents(
+  accountId: string,
+  db: AdminClient,
+): Promise<OpenClawAgentRow[]> {
+  const { data } = await db
+    .from("agents")
+    .select(
+      "id, name, lifecycle_state, owner_account_id, bootstrap_account_id, claimed, claim_code, status, connected_at, claimed_at, metadata, created_at, updated_at",
     )
     .eq("harness", "openclaw")
     .or(`owner_account_id.eq.${accountId},bootstrap_account_id.eq.${accountId}`)
     .order("created_at", { ascending: false });
 
-  return (data ?? []) as Array<Record<string, unknown>>;
+  return (data ?? []) as OpenClawAgentRow[];
 }
 
-function choosePreferredAgent(rows: Array<Record<string, unknown>>) {
+function choosePreferredAgent(rows: OpenClawAgentRow[]) {
   return (
-    rows.find((row) => row.lifecycle_state === "connected_unclaimed") ??
-    rows.find((row) => row.lifecycle_state === "sandbox") ??
     rows.find((row) => row.lifecycle_state === "claimed") ??
+    rows.find((row) => row.lifecycle_state === "connected_unclaimed") ??
+    rows.find((row) => row.lifecycle_state === "registered_unclaimed") ??
     rows[0] ??
     null
   );
 }
 
-export async function connectOpenClawForAccount(input: {
-  accountId: string;
-  accountDisplayName?: string | null;
-}): Promise<OpenClawConnectResult> {
-  const db = createAdminClient();
-  const agents = await loadAccessibleOpenClawAgents(input.accountId, db);
-  const existing = choosePreferredAgent(agents);
+async function loadAgentById(agentId: string, db: AdminClient): Promise<OpenClawAgentRow | null> {
+  const { data } = await db
+    .from("agents")
+    .select(
+      "id, name, lifecycle_state, owner_account_id, bootstrap_account_id, claimed, claim_code, status, connected_at, claimed_at, metadata, created_at, updated_at",
+    )
+    .eq("id", agentId)
+    .eq("harness", "openclaw")
+    .maybeSingle();
 
-  let agentId: string;
-  let lifecycleState: AgentLifecycleState;
-  let agentName: string;
-  let bootstrapExpiresAt: string | null = null;
-
-  if (existing) {
-    agentId = existing.id as string;
-    lifecycleState = existing.lifecycle_state as AgentLifecycleState;
-    agentName = existing.name as string;
-    bootstrapExpiresAt = (existing.bootstrap_expires_at as string | null) ?? null;
-  } else {
-    const seed = slugifySegment(input.accountDisplayName);
-    const name = uniqueAgentName(`${seed}-openclaw`);
-    const expiresAt = new Date(Date.now() + SANDBOX_KEY_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString();
-    const { data: inserted, error } = await db
-      .from("agents")
-      .insert({
-        name,
-        harness: "openclaw",
-        description: "OpenClaw sandbox agent connected through the zero-friction TokenBook onboarding flow.",
-        claimed: false,
-        lifecycle_state: "sandbox",
-        bootstrap_account_id: input.accountId,
-        bootstrap_expires_at: expiresAt,
-        metadata: {
-          bootstrap_mode: "openclaw_zero_friction",
-          install_contract: "v2",
-        },
-      })
-      .select("id, name, lifecycle_state, bootstrap_expires_at")
-      .single();
-
-    if (error || !inserted) {
-      throw new Error("Failed to create OpenClaw sandbox agent");
-    }
-
-    agentId = inserted.id;
-    agentName = inserted.name;
-    lifecycleState = inserted.lifecycle_state as AgentLifecycleState;
-    bootstrapExpiresAt = inserted.bootstrap_expires_at;
-    await ensureAgentWallet(agentId, null, db);
-    await ensureDaemonScore(agentId, db);
-  }
-
-  const durable = lifecycleState === "claimed";
-  const keyExpiresAt =
-    durable
-      ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-      : bootstrapExpiresAt ??
-        new Date(Date.now() + SANDBOX_KEY_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString();
-  const key = await mintAgentKey({
-    agentId,
-    accountId: durable ? input.accountId : null,
-    label: durable ? `${agentName}-connect` : `${agentName}-sandbox`,
-    expiresAt: keyExpiresAt,
-    db,
-  });
-
-  const [heartbeatContent, skillContent] = await Promise.all([
-    readPublicFile("heartbeat.md"),
-    readPublicFile("skill.md"),
-  ]);
-  const install = buildInstallCommands(key.api_key);
-
-  return {
-    agent_id: agentId,
-    agent_name: agentName,
-    lifecycle_state: lifecycleState,
-    bootstrap_expires_at: bootstrapExpiresAt,
-    api_key: key.api_key,
-    key_prefix: key.key_prefix,
-    key_expires_at: key.expires_at,
-    install,
-    artifacts: {
-      skill_url: SKILL_URL,
-      skill_json_url: SKILL_JSON_URL,
-      heartbeat_url: HEARTBEAT_URL,
-      skill_content: skillContent,
-      heartbeat_content: heartbeatContent,
-    },
-    sandbox_capabilities: sandboxCapabilityFlags(lifecycleState),
-  };
+  return (data as OpenClawAgentRow | null) ?? null;
 }
 
-export async function getOpenClawStatus(input: {
-  accountId: string;
-  agentId?: string | null;
-}): Promise<OpenClawStatusView> {
-  const db = createAdminClient();
-  const agents = await loadAccessibleOpenClawAgents(input.accountId, db);
-  const selected =
-    (input.agentId
-      ? agents.find((agent) => agent.id === input.agentId)
-      : choosePreferredAgent(agents)) ?? null;
-
-  if (!selected) {
-    return {
-      connected: false,
-      agent: null,
-      runtime_online: false,
-      first_success_ready: false,
-      install_validator: {
-        api_key_present: false,
-        heartbeat_recent: false,
-        runtime_mode_detected: false,
-        challenge_capable: false,
-        skill_current: true,
-      },
-      runtime_preview: null,
-      last_heartbeat_at: null,
-      runtime_mode: null,
-      skill_version: null,
-      durable_identity_eligible: false,
-      sandbox_capabilities: sandboxCapabilityFlags("sandbox"),
-    };
-  }
-
-  const agentId = selected.id as string;
-  const lifecycleState = selected.lifecycle_state as AgentLifecycleState;
-  const runtimePreview = await getAgentRuntime(agentId);
-  const { data: latestHeartbeat } = await db
+async function getLatestHeartbeat(agentId: string, db: AdminClient) {
+  const { data } = await db
     .from("heartbeats")
     .select("timestamp")
     .eq("agent_id", agentId)
     .order("timestamp", { ascending: false })
     .limit(1)
     .maybeSingle();
-  const { data: daemonScore } = await db
+
+  return data?.timestamp ? new Date(data.timestamp) : null;
+}
+
+async function getRuntimeMode(agentId: string, db: AdminClient) {
+  const { data } = await db
     .from("daemon_scores")
-    .select("runtime_mode, challenge_sample_count, updated_at")
+    .select("runtime_mode, challenge_sample_count")
     .eq("agent_id", agentId)
     .maybeSingle();
 
-  const heartbeatAt = latestHeartbeat?.timestamp ? new Date(latestHeartbeat.timestamp) : null;
-  const heartbeatRecent = heartbeatAt ? Date.now() - heartbeatAt.getTime() < 10 * 60 * 1000 : false;
-  const currentSkill = JSON.parse(await readPublicFile("skill.json")) as { version?: string };
-  const lifecycleRecord = await getAgentLifecycleRecord(agentId, db);
+  return {
+    runtime_mode: data?.runtime_mode ?? null,
+    challenge_capable: (data?.challenge_sample_count ?? 0) >= 0,
+  };
+}
+
+async function getPendingLockedRewards(agentId: string, db: AdminClient) {
+  const rewardSplits = db.from("reward_splits" as never) as unknown as RewardSplitSelectClient;
+  const response = await rewardSplits
+    .select("amount_credits")
+    .eq("beneficiary_agent_id", agentId)
+    .eq("settlement_status", "locked_unclaimed");
+
+  const rows = response.data ?? [];
+  return rows.reduce((sum: number, row) => sum + Number(row.amount_credits ?? 0), 0);
+}
+
+function buildDisconnectedStatus(): OpenClawStatusView {
+  return {
+    connected: false,
+    agent: null,
+    runtime_online: false,
+    first_success_ready: false,
+    install_validator: {
+      api_key_present: false,
+      heartbeat_recent: false,
+      runtime_mode_detected: false,
+      challenge_capable: false,
+      skill_current: true,
+    },
+    runtime_preview: null,
+    last_heartbeat_at: null,
+    runtime_mode: null,
+    skill_version: null,
+    durable_identity_eligible: false,
+    claim_required_for_rewards: false,
+    pending_locked_rewards: 0,
+    claim_url: null,
+    capability_flags: lifecycleCapabilityFlags("registered_unclaimed"),
+  };
+}
+
+export async function registerOpenClawAgent(
+  input: RegisterOpenClawAgentInput,
+): Promise<OpenClawRegisterResult> {
+  const db = createAdminClient();
+  const workspaceFingerprint = input.workspaceFingerprint?.trim() || null;
+  const existing =
+    workspaceFingerprint ? await findUnclaimedAgentByWorkspaceFingerprint(workspaceFingerprint, db) : null;
+
+  let agent = existing;
+
+  if (!agent) {
+    const requestedName = defaultAgentName(input);
+    const agentName = await resolveUniqueAgentName(requestedName, db);
+    const claimCode = generateClaimCode();
+    const { data: inserted, error } = await db
+      .from("agents")
+      .insert({
+        name: agentName,
+        description:
+          input.description?.trim() ||
+          "OpenClaw agent self-registered from a local workspace through the TokenBook local-first runtime.",
+        harness: "openclaw",
+        claimed: false,
+        claim_code: claimCode,
+        lifecycle_state: "registered_unclaimed",
+        metadata: {
+          registration_mode: "local_first_openclaw_v2",
+          preferred_model: input.preferredModel?.trim() || null,
+          workspace_fingerprint: workspaceFingerprint,
+          capabilities: input.capabilities ?? [],
+        },
+      })
+      .select(
+        "id, name, lifecycle_state, owner_account_id, bootstrap_account_id, claimed, claim_code, status, connected_at, claimed_at, metadata, created_at, updated_at",
+      )
+      .single();
+
+    if (error || !inserted) {
+      throw new Error("Failed to self-register this OpenClaw workspace");
+    }
+
+    agent = inserted as OpenClawAgentRow;
+    await ensureAgentWallet(agent.id, null, db);
+    await ensureDaemonScore(agent.id, db);
+  }
+
+  if (!agent.claim_code) {
+    const claimCode = generateClaimCode();
+    const { data: updated, error } = await db
+      .from("agents")
+      .update({
+        claim_code: claimCode,
+        lifecycle_state:
+          agent.lifecycle_state === "claimed" ? "claimed" : "registered_unclaimed",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", agent.id)
+      .select(
+        "id, name, lifecycle_state, owner_account_id, bootstrap_account_id, claimed, claim_code, status, connected_at, claimed_at, metadata, created_at, updated_at",
+      )
+      .single();
+
+    if (error || !updated) {
+      throw new Error("Failed to refresh this OpenClaw claim code");
+    }
+
+    agent = updated as OpenClawAgentRow;
+  }
+
+  const key = await mintAgentKey({
+    agentId: agent.id,
+    accountId: agent.owner_account_id,
+    label: `${agent.name}-local-first`,
+    expiresAt: null,
+    db,
+  });
+
+  const [heartbeatContent, skillContent, version] = await Promise.all([
+    readPublicFile("heartbeat.md"),
+    readPublicFile("skill.md"),
+    skillVersion(),
+  ]);
+  const claimUrl = buildClaimUrl(agent.claim_code!);
+
+  return {
+    agent_id: agent.id,
+    agent_name: agent.name,
+    lifecycle_state: agent.lifecycle_state,
+    api_key: key.api_key,
+    key_prefix: key.key_prefix,
+    key_expires_at: key.expires_at,
+    claim_code: agent.claim_code!,
+    claim_url: claimUrl,
+    runtime_endpoint: `${APP_URL}${V2_RUNTIME_PRIMARY_QUEUE_ENDPOINT}`,
+    heartbeat_endpoint: `${APP_URL}/api/v1/agents/heartbeat`,
+    skill_version: version,
+    identity_file_path: V2_OPENCLAW_IDENTITY_FILE,
+    identity_file_content: buildIdentityFileContent({
+      agentId: agent.id,
+      agentName: agent.name,
+      apiKey: key.api_key,
+      claimCode: agent.claim_code!,
+      claimUrl,
+      skillVersion: version,
+      workspaceFingerprint,
+    }),
+    install: buildInstallCommands(key.api_key),
+    artifacts: {
+      skill_url: SKILL_URL,
+      skill_json_url: SKILL_JSON_URL,
+      heartbeat_url: HEARTBEAT_URL,
+      heartbeat_content: heartbeatContent,
+      skill_content: skillContent,
+    },
+    important:
+      "Save tokenbook-agent.json in ./skills/tokenmart, keep HEARTBEAT.md at the workspace root, and claim later only when you want rewards or treasury powers unlocked.",
+  };
+}
+
+export async function getOpenClawClaimStatus(input: {
+  claimCode: string;
+}): Promise<OpenClawClaimStatus> {
+  const db = createAdminClient();
+  const { data: agent } = await db
+    .from("agents")
+    .select("id, name, lifecycle_state, claimed, claim_code")
+    .eq("claim_code", input.claimCode)
+    .eq("harness", "openclaw")
+    .maybeSingle();
+
+  if (!agent) {
+    throw new Error("Invalid claim code");
+  }
+
+  const [heartbeatAt, pendingLockedRewards] = await Promise.all([
+    getLatestHeartbeat(agent.id, db),
+    getPendingLockedRewards(agent.id, db),
+  ]);
+
+  return {
+    agent_name: agent.name,
+    lifecycle_state: String(agent.lifecycle_state),
+    connected: Boolean(heartbeatAt),
+    last_heartbeat_at: heartbeatAt?.toISOString() ?? null,
+    pending_locked_rewards: pendingLockedRewards,
+    claimable: !agent.claimed && Boolean(agent.claim_code),
+    claim_url: agent.claim_code ? buildClaimUrl(agent.claim_code) : null,
+  };
+}
+
+export async function getOpenClawStatus(input: {
+  accountId?: string | null;
+  agentId?: string | null;
+}): Promise<OpenClawStatusView> {
+  const db = createAdminClient();
+
+  let selected: OpenClawAgentRow | null = null;
+
+  if (input.accountId) {
+    const agents = await loadAccessibleOpenClawAgents(input.accountId, db);
+    selected =
+      (input.agentId ? agents.find((agent) => agent.id === input.agentId) : choosePreferredAgent(agents)) ??
+      null;
+  } else if (input.agentId) {
+    selected = await loadAgentById(input.agentId, db);
+  }
+
+  if (!selected) {
+    return buildDisconnectedStatus();
+  }
+
+  const [runtimePreview, heartbeatAt, daemonInfo, version, lifecycleRecord, pendingLockedRewards] =
+    await Promise.all([
+      getAgentRuntime(selected.id),
+      getLatestHeartbeat(selected.id, db),
+      getRuntimeMode(selected.id, db),
+      skillVersion(),
+      getAgentLifecycleRecord(selected.id, db),
+      getPendingLockedRewards(selected.id, db),
+    ]);
+
+  const heartbeatRecent =
+    heartbeatAt ? Date.now() - heartbeatAt.getTime() < 10 * 60 * 1000 : false;
+  const lifecycleState = (lifecycleRecord?.lifecycle_state ?? selected.lifecycle_state) as AgentLifecycleState;
 
   return {
     connected: true,
     agent: {
-      id: agentId,
-      name: selected.name as string,
+      id: selected.id,
+      name: selected.name,
       lifecycle_state: lifecycleState,
-      bootstrap_expires_at: (selected.bootstrap_expires_at as string | null) ?? null,
-      connected_at: (selected.connected_at as string | null) ?? null,
-      claimed_at: (selected.claimed_at as string | null) ?? null,
+      connected_at: selected.connected_at,
+      claimed_at: selected.claimed_at,
     },
     runtime_online: heartbeatRecent,
     first_success_ready: heartbeatRecent,
     install_validator: {
       api_key_present: true,
       heartbeat_recent: heartbeatRecent,
-      runtime_mode_detected: Boolean(daemonScore?.runtime_mode),
-      challenge_capable: (daemonScore?.challenge_sample_count ?? 0) >= 0,
+      runtime_mode_detected: Boolean(daemonInfo.runtime_mode),
+      challenge_capable: daemonInfo.challenge_capable,
       skill_current: true,
     },
     runtime_preview: runtimePreview,
     last_heartbeat_at: heartbeatAt?.toISOString() ?? null,
-    runtime_mode: daemonScore?.runtime_mode ?? null,
-    skill_version: currentSkill.version ?? null,
-    durable_identity_eligible: lifecycleRecord
-      ? lifecycleRecord.lifecycle_state !== "claimed"
-      : false,
-    sandbox_capabilities: sandboxCapabilityFlags(lifecycleState),
+    runtime_mode: daemonInfo.runtime_mode,
+    skill_version: version,
+    durable_identity_eligible: lifecycleState !== "claimed",
+    claim_required_for_rewards: lifecycleState !== "claimed",
+    pending_locked_rewards: pendingLockedRewards,
+    claim_url: selected.claim_code ? buildClaimUrl(selected.claim_code) : null,
+    capability_flags: lifecycleCapabilityFlags(lifecycleState),
   };
 }
 
-export async function getOpenClawInstallBundle(input: {
+export async function claimOpenClawAgent(input: {
   accountId: string;
-  agentId?: string | null;
-}): Promise<OpenClawInstallBundle> {
+  claimCode: string;
+}): Promise<OpenClawStatusView> {
   const db = createAdminClient();
-  const agents = await loadAccessibleOpenClawAgents(input.accountId, db);
-  const selected =
-    (input.agentId ? agents.find((agent) => agent.id === input.agentId) : choosePreferredAgent(agents)) ??
-    null;
+  const { data: agent } = await db
+    .from("agents")
+    .select("id, owner_account_id, claimed, claim_code")
+    .eq("claim_code", input.claimCode)
+    .eq("harness", "openclaw")
+    .maybeSingle();
 
-  if (!selected) {
-    throw new Error("No OpenClaw agent is connected for this account");
+  if (!agent) {
+    throw new Error("Invalid claim code");
   }
 
-  const agentId = selected.id as string;
+  if (agent.owner_account_id && agent.owner_account_id !== input.accountId) {
+    throw new Error("This OpenClaw agent is already claimed by another account");
+  }
+
+  const now = new Date().toISOString();
+  const { data: claimedAgent, error } = await db
+    .from("agents")
+    .update({
+      owner_account_id: input.accountId,
+      claimed: true,
+      claim_code: null,
+      lifecycle_state: "claimed",
+      bootstrap_account_id: null,
+      bootstrap_expires_at: null,
+      claimed_at: now,
+      updated_at: now,
+    })
+    .eq("id", agent.id)
+    .eq("claim_code", input.claimCode)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !claimedAgent) {
+    throw new Error("This OpenClaw agent has already been claimed");
+  }
+
+  await Promise.all([
+    ensureAccountWallet(input.accountId, db),
+    ensureAgentWallet(agent.id, input.accountId, db),
+    (db.from("reward_splits" as never) as unknown as RewardSplitUpdateClient)
+      .update({
+        settlement_status: "claim_ready",
+        beneficiary_account_id: input.accountId,
+      })
+      .eq("beneficiary_agent_id", agent.id)
+      .eq("settlement_status", "locked_unclaimed"),
+    db
+      .from("auth_api_keys")
+      .update({ account_id: input.accountId })
+      .eq("agent_id", agent.id)
+      .is("account_id", null),
+  ]);
+
+  return getOpenClawStatus({ accountId: input.accountId, agentId: agent.id });
+}
+
+export async function rekeyOpenClawAgent(input: {
+  accountId: string;
+  agentId: string;
+}): Promise<OpenClawInstallBundle> {
+  const db = createAdminClient();
+  const agent = await loadAgentById(input.agentId, db);
+
+  if (!agent) {
+    throw new Error("Agent not found");
+  }
+  if (agent.owner_account_id !== input.accountId || agent.lifecycle_state !== "claimed") {
+    throw new Error("Only the claimed owner can rekey this OpenClaw agent");
+  }
+
+  await db
+    .from("auth_api_keys")
+    .update({ revoked: true })
+    .eq("agent_id", agent.id)
+    .eq("revoked", false);
+
   const key = await mintAgentKey({
-    agentId,
-    accountId: selected.lifecycle_state === "claimed" ? input.accountId : null,
-    label: `${selected.name as string}-install-refresh`,
-    expiresAt:
-      selected.lifecycle_state === "claimed"
-        ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-        : ((selected.bootstrap_expires_at as string | null) ??
-            new Date(Date.now() + SANDBOX_KEY_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString()),
+    agentId: agent.id,
+    accountId: input.accountId,
+    label: `${agent.name}-rekey`,
+    expiresAt: null,
     db,
   });
 
-  const install = buildInstallCommands(key.api_key);
-
   return {
-    agent_id: agentId,
-    agent_name: selected.name as string,
-    lifecycle_state: selected.lifecycle_state as AgentLifecycleState,
+    agent_id: agent.id,
+    agent_name: agent.name,
+    lifecycle_state: agent.lifecycle_state,
     key_prefix: key.key_prefix,
     api_key: key.api_key,
     expires_at: key.expires_at,
-    install,
+    install: buildInstallCommands(key.api_key),
     heartbeat_content: await readPublicFile("heartbeat.md"),
     skill_url: SKILL_URL,
     skill_json_url: SKILL_JSON_URL,
@@ -337,79 +655,77 @@ export async function getOpenClawInstallBundle(input: {
   };
 }
 
+export async function connectOpenClawForAccount(input: {
+  accountId: string;
+  accountDisplayName?: string | null;
+}) {
+  return registerOpenClawAgent({
+    name: input.accountDisplayName ? `${slugifySegment(input.accountDisplayName)}-openclaw` : null,
+  });
+}
+
+export async function getOpenClawInstallBundle(input: {
+  accountId: string;
+  agentId?: string | null;
+}) {
+  const db = createAdminClient();
+  const agents = await loadAccessibleOpenClawAgents(input.accountId, db);
+  const selected =
+    (input.agentId ? agents.find((agent) => agent.id === input.agentId) : choosePreferredAgent(agents)) ??
+    null;
+
+  if (!selected) {
+    throw new Error("No claimed OpenClaw agent is connected for this account");
+  }
+
+  return rekeyOpenClawAgent({
+    accountId: input.accountId,
+    agentId: selected.id,
+  });
+}
+
 export async function upgradeOpenClawClaim(input: {
   accountId: string;
   agentId: string;
 }) {
   const db = createAdminClient();
-  const agent = await getAgentLifecycleRecord(input.agentId, db);
+  const agent = await loadAgentById(input.agentId, db);
   if (!agent) {
     throw new Error("Agent not found");
   }
-  if (agent.owner_account_id && agent.owner_account_id !== input.accountId) {
-    throw new Error("Agent is already owned by another account");
+  if (agent.owner_account_id === input.accountId && agent.lifecycle_state === "claimed") {
+    return getOpenClawStatus({ accountId: input.accountId, agentId: input.agentId });
   }
-  if (
-    agent.bootstrap_account_id !== input.accountId &&
-    agent.owner_account_id !== input.accountId
-  ) {
-    throw new Error("This agent is not connected to the current account");
+  if (!agent.claim_code) {
+    throw new Error("This agent can only be upgraded through its claim link");
   }
-
-  await db
-    .from("agents")
-    .update({
-      owner_account_id: input.accountId,
-      claimed: true,
-      claim_code: null,
-      lifecycle_state: "claimed",
-      bootstrap_account_id: null,
-      bootstrap_expires_at: null,
-      claimed_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", input.agentId);
-
-  await ensureAccountWallet(input.accountId, db);
-  await ensureAgentWallet(input.agentId, input.accountId, db);
-
-  return getOpenClawStatus({ accountId: input.accountId, agentId: input.agentId });
+  return claimOpenClawAgent({
+    accountId: input.accountId,
+    claimCode: agent.claim_code,
+  });
 }
 
 export async function recoverOpenClawAgent(input: {
   accountId: string;
   claimCode: string;
 }) {
-  const db = createAdminClient();
-  const { data: agent } = await db
-    .from("agents")
-    .select("id, owner_account_id, lifecycle_state")
-    .eq("claim_code", input.claimCode)
-    .eq("claimed", false)
-    .maybeSingle();
+  return claimOpenClawAgent({
+    accountId: input.accountId,
+    claimCode: input.claimCode,
+  });
+}
 
-  if (!agent) {
-    throw new Error("Invalid claim code");
-  }
-
-  await db
-    .from("agents")
-    .update({
-      owner_account_id: input.accountId,
-      claimed: true,
-      claim_code: null,
-      lifecycle_state: "claimed",
-      bootstrap_account_id: null,
-      bootstrap_expires_at: null,
-      claimed_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", agent.id)
-    .eq("claimed", false)
-    .eq("claim_code", input.claimCode);
-
-  await ensureAccountWallet(input.accountId, db);
-  await ensureAgentWallet(agent.id, input.accountId, db);
-
-  return getOpenClawStatus({ accountId: input.accountId, agentId: agent.id });
+export function openClawApiReference() {
+  return {
+    register_endpoint: `${APP_URL}${V2_OPENCLAW_REGISTER_ENDPOINT}`,
+    claim_status_endpoint: `${APP_URL}${V2_OPENCLAW_CLAIM_STATUS_ENDPOINT}`,
+    claim_endpoint: `${APP_URL}${V2_OPENCLAW_CLAIM_ENDPOINT}`,
+    rekey_endpoint: `${APP_URL}${V2_OPENCLAW_REKEY_ENDPOINT}`,
+    runtime_endpoint: `${APP_URL}${V2_RUNTIME_PRIMARY_QUEUE_ENDPOINT}`,
+    heartbeat_endpoint: `${APP_URL}/api/v1/agents/heartbeat`,
+    skill_url: SKILL_URL,
+    skill_json_url: SKILL_JSON_URL,
+    heartbeat_url: HEARTBEAT_URL,
+    identity_file_path: V2_OPENCLAW_IDENTITY_FILE,
+  };
 }

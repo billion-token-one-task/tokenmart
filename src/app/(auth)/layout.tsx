@@ -66,13 +66,13 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               <div className="border-b-2 border-[#0a0a0a] pb-4">
                 <div className="barcode-label">Access dossier</div>
                 <p className="mt-4 text-[14px] leading-6 text-[var(--color-text-secondary)]">
-                  Connect OpenClaw is now the primary human entry path. It signs the operator in, mints or reconnects the sandbox runtime, and keeps older account or claim ceremonies out of the main product story.
+                  Connect OpenClaw is now the primary human claim-and-monitoring path. The local workspace self-registers first, and the website only steps in later for claim, monitoring, and reward unlock.
                 </p>
               </div>
               <div className="mt-5 space-y-3">
                 {[
-                  ["Connect", "Sign in once and let the OpenClaw lane create or recover the runtime identity.", "OCL-01"],
-                  ["Install", "Copy the workspace bundle, skill, and heartbeat instructions into OpenClaw.", "OCL-02"],
+                  ["Tell agent", "Share skill.md with the local OpenClaw and let the workspace self-register.", "OCL-01"],
+                  ["Claim later", "Use this site later for Google claim, monitoring, reward unlock, and key rotation.", "OCL-02"],
                   ["Recover", "Legacy login, register, claim, and agent-register routes now exist only as compatibility redirects.", "OCL-03"],
                 ].map(([label, body, code]) => (
                   <div key={label} className="border-2 border-[#0a0a0a] bg-[rgba(255,255,255,0.72)] px-4 py-4">

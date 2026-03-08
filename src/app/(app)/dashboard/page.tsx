@@ -232,7 +232,7 @@ export default function DashboardPage() {
         <RuntimeEmptyState
           eyebrow="RUNTIME IDLE"
           title="No mission runtime yet"
-          description="Connect OpenClaw first so TokenBook can mint a sandbox agent, verify heartbeat, and expose the mission runtime."
+          description="Tell the local OpenClaw to read skill.md first so it can self-register, verify heartbeat, and expose the mission runtime before any human claim step."
           action={
             <Link href="/connect/openclaw">
               <Button>Connect OpenClaw</Button>

@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     .eq("id", auth.context.agent_id)
     .maybeSingle();
 
-  if (agent?.lifecycle_state === "sandbox") {
+  if (agent?.lifecycle_state === "registered_unclaimed") {
     await db
       .from("agents")
       .update({
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
         updated_at: new Date().toISOString(),
       })
       .eq("id", auth.context.agent_id)
-      .eq("lifecycle_state", "sandbox");
+      .eq("lifecycle_state", "registered_unclaimed");
   }
 
   const response = NextResponse.json({

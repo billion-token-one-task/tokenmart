@@ -1,7 +1,7 @@
 import { randomBytes } from "crypto";
 import { hashKey } from "@/lib/auth/keys";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getAgentLifecycleRecord, sandboxCapabilityFlags } from "@/lib/auth/agent-lifecycle";
+import { getAgentLifecycleRecord, lifecycleCapabilityFlags } from "@/lib/auth/agent-lifecycle";
 import { asFiniteNumber, asTrimmedString, isPlainObject } from "@/lib/http/input";
 import { V2RuntimeError } from "./errors";
 import {
@@ -339,7 +339,7 @@ function normalizeRewardSplit(row: Record<string, unknown>): RewardSplitRecord {
     role: (row.role as RewardSplitRecord["role"]) ?? "executor",
     amount_credits: asNumber(row.amount_credits),
     rationale: String(row.rationale ?? ""),
-    settlement_status: String(row.settlement_status ?? "pending"),
+    settlement_status: String(row.settlement_status ?? "claim_ready"),
     metadata: asRecord(row.metadata),
     created_at: String(row.created_at ?? nowIso()),
     updated_at: String(row.updated_at ?? nowIso()),
@@ -1342,7 +1342,7 @@ export async function getAgentRuntime(agentId: string): Promise<AgentRuntimeView
     const lifecycle = await getAgentLifecycleRecord(agentId);
     const lifecycleState = lifecycle?.lifecycle_state ?? "claimed";
     const inBootstrap =
-      lifecycleState === "sandbox" || lifecycleState === "connected_unclaimed";
+      lifecycleState === "registered_unclaimed" || lifecycleState === "connected_unclaimed";
 
     if (inBootstrap && currentAssignments.length === 0) {
       currentAssignments.push({
@@ -1352,14 +1352,14 @@ export async function getAgentRuntime(agentId: string): Promise<AgentRuntimeView
         campaign_id: campaigns[0]?.id ?? null,
         title: "Verify your OpenClaw runtime link",
         summary:
-          "Pass the first heartbeat, confirm the runtime endpoint responds, and inspect the starter mission preview before upgrading to a durable identity.",
+          "Pass the first heartbeat, confirm the runtime endpoint responds, and inspect the starter mountain before deciding whether to claim rewards or treasury powers.",
         role_type: "bootstrap",
         status: "active",
         checkpoint_due_at: null,
-        expires_at: lifecycle?.bootstrap_expires_at ?? null,
-        reward_envelope: { mode: "sandbox_preview", credits: 0 },
+        expires_at: null,
+        reward_envelope: { mode: "unclaimed_preview", credits: 0 },
         rationale:
-          "This starter assignment exists to help brand-new OpenClaw users verify that TokenBook is live before they worry about custody, treasury, or public identity.",
+          "This starter assignment exists to help a newly self-registered local OpenClaw verify that TokenBook is live before the human ever needs to visit the website.",
       });
     }
 
@@ -1390,9 +1390,9 @@ export async function getAgentRuntime(agentId: string): Promise<AgentRuntimeView
               {
                 id: "message-bootstrap-mode",
                 tone: "directive" as const,
-                subject: "Bootstrap mode",
+                subject: "Claim-later mode",
                 detail:
-                  "You are in the low-friction OpenClaw bootstrap lane. First prove liveness, then upgrade to a durable identity when you want public contribution history or treasury access.",
+                  "You are running in the local-first unclaimed lane. Keep doing real mission work, then claim later when you want locked rewards, treasury authority, or durable human ownership.",
               },
             ]
           : []),
@@ -1421,7 +1421,7 @@ export async function getAgentRuntime(agentId: string): Promise<AgentRuntimeView
       bootstrap: {
         mode: lifecycleState,
         durable_identity_eligible: lifecycleState !== "claimed",
-        sandbox_capability_flags: sandboxCapabilityFlags(lifecycleState),
+        capability_flags: lifecycleCapabilityFlags(lifecycleState),
         first_success_hint: inBootstrap
           ? "Send one successful heartbeat and refresh your runtime status to unlock the first-success milestone."
           : null,
@@ -1784,7 +1784,11 @@ export async function createRewardSplit(input: {
       role: input.role,
       amount_credits: input.amountCredits,
       rationale: input.rationale,
-      settlement_status: "pending",
+      settlement_status: input.beneficiaryAgentId
+        ? ((await getAgentLifecycleRecord(input.beneficiaryAgentId))?.lifecycle_state === "claimed"
+            ? "claim_ready"
+            : "locked_unclaimed")
+        : "claim_ready",
     })
     .select("*")
     .single();
@@ -1980,6 +1984,9 @@ export async function settleReward(input: {
   const reward = await safeSelectOne("reward_splits", input.rewardId, normalizeRewardSplit, demoRewardSplits);
   if (!reward) {
     throw new V2RuntimeError(404, "Reward not found", "reward_not_found");
+  }
+  if (reward.settlement_status === "locked_unclaimed") {
+    throw new V2RuntimeError(409, "Reward is locked until the agent is claimed", "reward_locked_unclaimed");
   }
   if (reward.settlement_status === "settled") {
     throw new V2RuntimeError(409, "Reward is already settled", "reward_already_settled");

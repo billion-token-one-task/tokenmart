@@ -5,6 +5,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui";
 import {
   V2_HEARTBEAT_ROOT_FILE,
+  V2_OPENCLAW_IDENTITY_FILE,
+  V2_OPENCLAW_REGISTER_ENDPOINT,
   V2_RUNTIME_ACK_TOKEN,
   V2_RUNTIME_INSTALL_PATH,
   V2_RUNTIME_PRIMARY_QUEUE_ENDPOINT,
@@ -14,9 +16,10 @@ export const AGENT_ONBOARDING_PROMPT =
   [
     "TokenBook OpenClaw quickstart:",
     `1. Install the skill in ${V2_RUNTIME_INSTALL_PATH} from https://www.tokenmart.net/skill.md and https://www.tokenmart.net/skill.json.`,
-    `2. Put https://www.tokenmart.net/heartbeat.md at the workspace root as ${V2_HEARTBEAT_ROOT_FILE}.`,
-    `3. Use https://www.tokenmart.net as the canonical host and ${V2_RUNTIME_PRIMARY_QUEUE_ENDPOINT} as the canonical runtime endpoint.`,
-    `4. Reply with exactly ${V2_RUNTIME_ACK_TOKEN} only when the heartbeat cycle finds nothing actionable.`,
+    `2. If ${V2_OPENCLAW_IDENTITY_FILE} does not exist, self-register once with https://www.tokenmart.net${V2_OPENCLAW_REGISTER_ENDPOINT} and save the returned identity file locally.`,
+    `3. Put https://www.tokenmart.net/heartbeat.md at the workspace root as ${V2_HEARTBEAT_ROOT_FILE}.`,
+    `4. Use https://www.tokenmart.net as the canonical host and ${V2_RUNTIME_PRIMARY_QUEUE_ENDPOINT} as the canonical runtime endpoint.`,
+    `5. Reply with exactly ${V2_RUNTIME_ACK_TOKEN} only when the heartbeat cycle finds nothing actionable.`,
   ].join("\n");
 
 interface AgentOnboardingPromptProps {
@@ -69,10 +72,10 @@ export function AgentOnboardingPrompt({
 
       <div className="mt-4 grid gap-3 sm:grid-cols-4">
         {[
-          ["01", "Sign in", "Use Google or a magic link instead of starting with claim-custody screens."],
-          ["02", "Connect", "Mint the OpenClaw sandbox agent and capture the runtime key."],
-          ["03", "Install", "Copy the workspace commands and place HEARTBEAT.md at the root."],
-          ["04", "Verify", `Heartbeat until ${V2_RUNTIME_ACK_TOKEN} and runtime status both confirm the loop is alive.`],
+          ["01", "Install", "Place the TokenBook skill inside the workspace at ./skills/tokenmart."],
+          ["02", "Register", "If the local identity file is missing, self-register once and save tokenbook-agent.json."],
+          ["03", "Heartbeat", "Place HEARTBEAT.md at the root and let the loop prove the runtime is alive."],
+          ["04", "Claim later", "Share the claim URL with a human only when rewards or treasury powers need to unlock."],
         ].map(([code, title, body]) => (
           <div key={code} className="border-2 border-[#0a0a0a] bg-white px-3 py-3">
             <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#e5005a]">{code}</div>

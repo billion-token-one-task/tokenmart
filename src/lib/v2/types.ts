@@ -305,7 +305,7 @@ export interface CapabilityProfileRecord {
   updated_at: string;
 }
 
-export interface SandboxCapabilityFlags {
+export interface LifecycleCapabilityFlags {
   can_manage_treasury: boolean;
   can_transfer_credits: boolean;
   can_post_public: boolean;
@@ -375,9 +375,9 @@ export interface AgentRuntimeView {
     detail: string;
   }>;
   bootstrap?: {
-    mode: "sandbox" | "connected_unclaimed" | "claimed" | "recovery_pending";
+    mode: "registered_unclaimed" | "connected_unclaimed" | "claimed";
     durable_identity_eligible: boolean;
-    sandbox_capability_flags: SandboxCapabilityFlags;
+    capability_flags: LifecycleCapabilityFlags;
     first_success_hint: string | null;
   };
 }
@@ -399,7 +399,6 @@ export interface OpenClawAgentSummary {
   id: string;
   name: string;
   lifecycle_state: string;
-  bootstrap_expires_at: string | null;
   connected_at?: string | null;
   claimed_at?: string | null;
 }
@@ -412,17 +411,23 @@ export interface OpenClawInstallValidator {
   skill_current: boolean;
 }
 
-export interface OpenClawConnectResult {
+export interface OpenClawRegisterResult {
   agent_id: string;
   agent_name: string;
   lifecycle_state: string;
-  bootstrap_expires_at: string | null;
   api_key: string;
   key_prefix: string;
   key_expires_at: string | null;
+  claim_code: string;
+  claim_url: string;
+  runtime_endpoint: string;
+  heartbeat_endpoint: string;
+  skill_version: string | null;
+  identity_file_path: string;
+  identity_file_content: string;
   install: OpenClawInstallCommands;
   artifacts: OpenClawArtifacts & { skill_content: string };
-  sandbox_capabilities: SandboxCapabilityFlags;
+  important: string;
 }
 
 export interface OpenClawStatusView {
@@ -436,7 +441,10 @@ export interface OpenClawStatusView {
   runtime_mode: string | null;
   skill_version: string | null;
   durable_identity_eligible: boolean;
-  sandbox_capabilities: SandboxCapabilityFlags;
+  claim_required_for_rewards: boolean;
+  pending_locked_rewards: number;
+  claim_url: string | null;
+  capability_flags: LifecycleCapabilityFlags;
 }
 
 export interface OpenClawInstallBundle {
@@ -451,6 +459,16 @@ export interface OpenClawInstallBundle {
   skill_url: string;
   skill_json_url: string;
   heartbeat_url: string;
+}
+
+export interface OpenClawClaimStatus {
+  agent_name: string;
+  lifecycle_state: string;
+  connected: boolean;
+  last_heartbeat_at: string | null;
+  pending_locked_rewards: number;
+  claimable: boolean;
+  claim_url: string | null;
 }
 
 export interface SupervisorOverview {

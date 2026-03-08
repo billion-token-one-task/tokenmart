@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { generateApiKey, generateClaimCode } from "@/lib/auth/keys";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
-import { ensureAgentWallet } from "@/lib/tokenhall/wallets";
+import { registerOpenClawAgent } from "@/lib/openclaw/connect";
 import type { AgentRegistrationRequest } from "@/types/auth";
 
 const VALID_HARNESSES = ["openclaw", "claude_code", "pi_agent", "custom", "unknown"];
@@ -47,102 +45,35 @@ export async function POST(request: NextRequest) {
   const harness = body.harness && VALID_HARNESSES.includes(body.harness)
     ? body.harness
     : "unknown";
-
-  const db = createAdminClient();
-
-  // Check if name is taken
-  const { data: existing } = await db
-    .from("agents")
-    .select("id")
-    .eq("name", body.name)
-    .single();
-
-  if (existing) {
-    return NextResponse.json(
-      { error: { code: 409, message: "Agent name already taken" } },
-      { status: 409 }
-    );
-  }
-
-  // Generate API key and claim code
-  const apiKey = generateApiKey("tokenmart");
-  const claimCode = generateClaimCode();
-  const appUrl =
-    process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "") ||
-    "https://www.tokenmart.net";
-
-  // Create agent
-  const { data: agent, error: agentError } = await db
-    .from("agents")
-      .insert({
-        name: body.name,
-        description: body.description || null,
-        harness,
-        claim_code: claimCode,
-        lifecycle_state: "recovery_pending",
-      })
-    .select("id")
-    .single();
-
-  if (agentError || !agent) {
-    if ((agentError as { code?: string } | null)?.code === "23505") {
-      return NextResponse.json(
-        { error: { code: 409, message: "Agent name already taken" } },
-        { status: 409 }
-      );
-    }
-    return NextResponse.json(
-      { error: { code: 500, message: "Failed to create agent" } },
-      { status: 500 }
-    );
-  }
-
-  // Create API key
-  const { error: keyError } = await db.from("auth_api_keys").insert({
-    key_hash: apiKey.hash,
-    key_prefix: apiKey.prefix,
-    label: `${body.name}-default`,
-    agent_id: agent.id,
-    permissions: ["read", "write"],
-  });
-
-  if (keyError) {
-    // Rollback agent creation
-    await db.from("agents").delete().eq("id", agent.id);
-    return NextResponse.json(
-      { error: { code: 500, message: "Failed to create API key" } },
-      { status: 500 }
-    );
-  }
-
-  let walletAddress: string;
   try {
-    const wallet = await ensureAgentWallet(agent.id, null, db);
-    walletAddress = wallet.wallet_address;
-  } catch {
-    await db.from("auth_api_keys").delete().eq("agent_id", agent.id);
-    await db.from("agents").delete().eq("id", agent.id);
+    const result = await registerOpenClawAgent({
+      name: body.name,
+      description: body.description || null,
+      preferredModel: harness === "openclaw" ? "openclaw" : harness,
+    });
+
     return NextResponse.json(
-      { error: { code: 500, message: "Failed to initialize agent wallet" } },
-      { status: 500 }
+      {
+        agent_id: result.agent_id,
+        agent_name: result.agent_name,
+        lifecycle_state: result.lifecycle_state,
+        api_key: result.api_key,
+        key_prefix: result.key_prefix,
+        claim_url: result.claim_url,
+        claim_code: result.claim_code,
+        runtime_endpoint: result.runtime_endpoint,
+        heartbeat_endpoint: result.heartbeat_endpoint,
+        identity_file_path: result.identity_file_path,
+        important: result.important,
+      },
+      { status: 201 },
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to create agent";
+    const status = message.includes("taken") ? 409 : 500;
+    return NextResponse.json(
+      { error: { code: status, message } },
+      { status },
     );
   }
-
-  // Initialize the legacy compatibility row; canonical service-health and orchestration
-  // snapshots are recomputed from runtime activity after registration.
-  await db.from("daemon_scores").insert({ agent_id: agent.id });
-
-  return NextResponse.json(
-    {
-      agent_id: agent.id,
-      api_key: apiKey.key,
-      key_prefix: apiKey.prefix,
-      claim_url: `${appUrl}/connect/openclaw?claim_code=${encodeURIComponent(claimCode)}`,
-      claim_code: claimCode,
-      wallet_address: walletAddress,
-      wallet_type: "sub_wallet",
-      important: "Save your API key! It will not be shown again.",
-    },
-    { status: 201 }
-  );
 }
