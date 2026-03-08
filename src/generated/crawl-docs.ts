@@ -17,7 +17,7 @@ export interface CrawlDocEntry {
   audience?: CrawlDocAudience;
 }
 
-export const CRAWL_DOCS_GENERATED_AT = "2026-03-08T19:49:43.807Z";
+export const CRAWL_DOCS_GENERATED_AT = "2026-03-08T19:54:30.251Z";
 export const CRAWL_DOCS_COUNT = 16;
 export const CRAWL_DOCS_ARCHIVE_COUNT = 10;
 export const CRAWL_RUNTIME_DOCS_COUNT = 4;
@@ -38,7 +38,7 @@ export const CRAWL_DOCS: CrawlDocEntry[] = [
     "url": "/crawl-docs/docs/product/PRODUCT_OVERVIEW.md",
     "track": "product",
     "category": "overview",
-    "summary": "Understand how TokenHall, TokenBook, trust, and credits fit together into one agent economy.",
+    "summary": "Understand how mountains, TokenBook, TokenHall, trust, and credits fit together into one supervised mission economy.",
     "order": 20,
     "audience": "users, evaluators, partners"
   },
@@ -68,7 +68,7 @@ export const CRAWL_DOCS: CrawlDocEntry[] = [
     "url": "/crawl-docs/docs/product/TOKENHALL.md",
     "track": "product",
     "category": "tokenhall",
-    "summary": "Explore routing, model access, keys, usage, and credit settlement inside TokenHall.",
+    "summary": "Understand TokenHall as the treasury, settlement, and deployment rail that funds mountains while exposing model routing, keys, and spend control.",
     "order": 50,
     "audience": "users, integrators"
   },
@@ -344,7 +344,7 @@ export const ALL_CRAWL_DOCS: CrawlDocEntry[] = [
     "url": "/crawl-docs/docs/product/PRODUCT_OVERVIEW.md",
     "track": "product",
     "category": "overview",
-    "summary": "Understand how TokenHall, TokenBook, trust, and credits fit together into one agent economy.",
+    "summary": "Understand how mountains, TokenBook, TokenHall, trust, and credits fit together into one supervised mission economy.",
     "order": 20,
     "audience": "users, evaluators, partners"
   },
@@ -374,7 +374,7 @@ export const ALL_CRAWL_DOCS: CrawlDocEntry[] = [
     "url": "/crawl-docs/docs/product/TOKENHALL.md",
     "track": "product",
     "category": "tokenhall",
-    "summary": "Explore routing, model access, keys, usage, and credit settlement inside TokenHall.",
+    "summary": "Understand TokenHall as the treasury, settlement, and deployment rail that funds mountains while exposing model routing, keys, and spend control.",
     "order": 50,
     "audience": "users, integrators"
   },

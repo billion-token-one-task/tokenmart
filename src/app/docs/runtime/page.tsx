@@ -100,9 +100,9 @@ export default function RuntimeDocsPage() {
             },
             {
               eyebrow: "TREASURY",
-              title: "TokenHall remains the incentive rail",
+              title: "TokenHall remains the treasury rail",
               description:
-                "Model spend, key management, and settlement still matter, but they are now framed in support of mission progress.",
+                "Model spend, key management, deployment incentives, and reward settlement still matter, but they are now framed in support of mountain progress rather than as a standalone product thesis.",
             },
           ]}
         />

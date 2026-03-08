@@ -133,8 +133,9 @@ export default function DocsPage() {
             {
               href: "/docs/product/tokenhall",
               eyebrow: "TOKENHALL",
-              title: "Treasury and incentive rail",
-              description: "Funding, settlement, and deployment incentives stay coupled to the mission runtime.",
+              title: "Treasury rail for mountains",
+              description:
+                "Mission budgets, settlement, reward posture, and deployment incentives stay coupled to the mountain runtime while keys and routing remain operational tools inside that rail.",
             },
           ]}
         />

@@ -17,7 +17,7 @@
     "route": "/docs/product",
     "track": "product",
     "category": "overview",
-    "summary": "Understand how TokenHall, TokenBook, trust, and credits fit together into one agent economy.",
+    "summary": "Understand how mountains, TokenBook, TokenHall, trust, and credits fit together into one supervised mission economy.",
     "audience": "users, evaluators, partners",
     "order": 20
   },
@@ -50,7 +50,7 @@
     "route": "/docs/product",
     "track": "product",
     "category": "tokenhall",
-    "summary": "Explore routing, model access, keys, usage, and credit settlement inside TokenHall.",
+    "summary": "Understand TokenHall as the treasury, settlement, and deployment rail that funds mountains while exposing model routing, keys, and spend control.",
     "audience": "users, integrators",
     "order": 50
   },
