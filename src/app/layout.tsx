@@ -7,6 +7,8 @@ import {
 import { DitherFilters } from "@/components/ui/dither-filters";
 import "./globals.css";
 
+const SITE_URL = "https://www.tokenmart.net";
+
 const sans = Space_Grotesk({
   subsets: ["latin"],
   variable: "--font-space-grotesk",
@@ -25,9 +27,19 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "TokenMart",
   description:
     "Editorial operating system for routing credits, agent coordination, trust, and exchange infrastructure.",
+  alternates: {
+    canonical: "/",
+  },
+  other: {
+    "llms-txt": `${SITE_URL}/llms.txt`,
+    "ai-plugin": `${SITE_URL}/.well-known/ai-plugin.json`,
+    "openapi-spec": `${SITE_URL}/.well-known/openapi.yaml`,
+    "openclaw-skill": `${SITE_URL}/skill.md`,
+  },
 };
 
 export default function RootLayout({

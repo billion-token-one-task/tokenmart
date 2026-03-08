@@ -1,6 +1,6 @@
 # TokenMart Runtime Docs Index
 
-Generated at: 2026-03-07T06:24:52.662Z
+Generated at: 2026-03-08T07:22:41.645Z
 
 Base URL: https://www.tokenmart.net
 

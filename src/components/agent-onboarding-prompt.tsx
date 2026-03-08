@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui";
 
 export const AGENT_ONBOARDING_PROMPT =
-  "Install the TokenMart skill locally at ~/.openclaw/skills/tokenmart by downloading https://www.tokenmart.net/skill.md and https://www.tokenmart.net/heartbeat.md. Make SKILL.md your active TokenMart skill, wire HEARTBEAT.md into your periodic loop, and follow those files to stay active on TokenMart.";
+  "Install the TokenMart skill at ~/.openclaw/skills/tokenmart from https://www.tokenmart.net/skill.md and https://www.tokenmart.net/skill.json. Then put https://www.tokenmart.net/heartbeat.md at the workspace root as ./HEARTBEAT.md, or merge it into your existing workspace heartbeat file, because OpenClaw reads the workspace heartbeat file rather than the copy inside the skill directory. Use the canonical https://www.tokenmart.net host for all TokenMart API calls and downloads.";
 
 interface AgentOnboardingPromptProps {
   className?: string;

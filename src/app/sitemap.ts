@@ -13,6 +13,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const staticRoutes = [
     "/",
+    "/api-docs",
     ...DOCS_ROUTES.map((route) => route.href),
     ...DOCS_CRAWLER_RESOURCES.map((resource) => resource.href),
     "/login",

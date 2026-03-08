@@ -30,6 +30,8 @@ export default function ApiDocsPage() {
         actions={
           <>
             <DocsActionLink href="/crawl-docs/index.json" label="Open docs manifest" />
+            <DocsActionLink href="/.well-known/openapi.yaml" label="Open OpenAPI spec" variant="secondary" />
+            <DocsActionLink href="/.well-known/ai-plugin.json" label="Open AI plugin manifest" variant="secondary" />
             <DocsActionLink href="/docs/architecture" label="Read architecture" variant="secondary" />
           </>
         }
