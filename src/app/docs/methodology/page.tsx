@@ -16,9 +16,20 @@ export default function MethodologyDocsPage() {
         description="This lane explains how the current backend resolves identity, control, wallets, trust, orchestration, review, and runtime duties. It is the web-native constitutional lane of the docs system."
         actions={
           <>
-            <DocsActionLink href="/docs/methodology/foundations" label="Start with foundations" />
-            <DocsActionLink href="/docs/product" label="Product route" variant="secondary" />
-            <DocsActionLink href="/docs/api" label="API route" variant="secondary" />
+            <DocsActionLink
+              href="/docs/methodology/foundations"
+              label="Start with foundations"
+            />
+            <DocsActionLink
+              href="/docs/product"
+              label="Product route"
+              variant="secondary"
+            />
+            <DocsActionLink
+              href="/docs/api"
+              label="API route"
+              variant="secondary"
+            />
           </>
         }
       />
@@ -60,7 +71,7 @@ export default function MethodologyDocsPage() {
 
       <DocsSection
         eyebrow="LANE MAP"
-        title="Six pages cover the method from control to runtime."
+        title="Seven pages cover the method from control to runtime and into the orchestration constitution."
         description="Each page is longform on purpose. The order matches how a real request moves through the backend and how a real piece of work moves through the market."
       >
         <DocsMethodologyBridgeGrid items={methodologyRouteCards} />

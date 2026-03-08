@@ -50,10 +50,15 @@ test("route order reserves a first-class methodology lane", () => {
   const methodologyIndex = docsRouteOrder.indexOf("/docs/methodology");
   const productIndex = docsRouteOrder.indexOf("/docs/product");
   const apiIndex = docsRouteOrder.indexOf("/docs/api");
+  const runtimeIndex = docsRouteOrder.indexOf("/docs/runtime");
+  const operatorsIndex = docsRouteOrder.indexOf("/docs/operators");
 
   assert.ok(methodologyIndex >= 0);
   assert.ok(productIndex >= 0);
   assert.ok(apiIndex >= 0);
+  assert.ok(runtimeIndex >= 0);
+  assert.ok(operatorsIndex >= 0);
   assert.equal(methodologyIndex, productIndex + 1);
   assert.equal(apiIndex, methodologyIndex + 1);
+  assert.equal(runtimeIndex, operatorsIndex + 1);
 });

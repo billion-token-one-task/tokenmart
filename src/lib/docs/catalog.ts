@@ -44,6 +44,7 @@ export const docsRouteOrder = [
   "/docs/api",
   "/docs/architecture",
   "/docs/operators",
+  "/docs/runtime",
   "/docs/plans",
 ] as const;
 

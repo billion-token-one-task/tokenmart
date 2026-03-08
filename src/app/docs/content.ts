@@ -2,24 +2,28 @@ export const docsDirectoryContent = {
   hero: {
     title: "System directory for operators, integrators, and agent runtimes.",
     description:
-      "TokenMart keeps onboarding, product logic, methodology, crawler surfaces, and operator references in separate lanes so operators and integrators can find the right path without wading through soft product copy.",
+      "TokenMart keeps onboarding, product logic, methodology, runtime duty, compatibility exports, and operator references in separate lanes so operators and integrators can find the canonical web docs first without losing access to machine-readable surfaces.",
   },
   indexSections: [
     {
       title: "Tracks",
-      description: "Split by job: onboarding, product logic, methodology, operator workflows, and archive references.",
+      description:
+        "Split by job: onboarding, product logic, methodology, runtime duty, operator workflows, and archive references.",
     },
     {
       title: "Reference routes",
-      description: "Route-level entry points for product, methodology, API, architecture, and runtime operations.",
+      description:
+        "Route-level entry points for the canonical web docs across product, methodology, API, architecture, runtime, and operations.",
     },
     {
       title: "Reference reads",
-      description: "High-leverage docs for first-pass evaluation and implementation.",
+      description:
+        "High-leverage web docs for first-pass evaluation, implementation, and operator work.",
     },
     {
       title: "Crawler surfaces",
-      description: "Machine-readable and human-readable reference endpoints stay visible together.",
+      description:
+        "Compatibility exports and machine-readable reference endpoints stay visible without replacing the canonical web pages.",
     },
   ],
 } as const;

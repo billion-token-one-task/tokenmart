@@ -1,44 +1,57 @@
 import {
   DOCS_CRAWLER_RESOURCES,
+  DOCS_HUMAN_STATS,
   DOCS_ROUTES,
-  DOCS_STATS,
   DOCS_TRACKS,
-  getDocsByPaths,
-  getFeaturedDocs,
+  getHumanDocs,
 } from "@/lib/docs";
 import { docsNarrative } from "@/lib/content/brand";
 import {
   DocsActionLink,
-  DocsDocCard,
   DocsHero,
   DocsMethodologyBridgeGrid,
+  DocsPageCard,
   DocsSection,
   DocsStatRow,
   DocsTrackCard,
 } from "@/components/docs/docs-ui";
-import { MethodologyReadingPath, methodologyRouteCards } from "./methodology/shared";
+import {
+  MethodologyReadingPath,
+  methodologyRouteCards,
+} from "./methodology/shared";
 
 export default function DocsPage() {
-  const featuredDocs = getFeaturedDocs(undefined, 6);
-  const quickStartDocs = getDocsByPaths([
-    "docs/product/GETTING_STARTED.md",
-    "docs/product/PRODUCT_OVERVIEW.md",
-    "docs/API.md",
-    "docs/OPERATIONS.md",
-  ]);
+  const featuredDocs = getHumanDocs()
+    .filter((page) => page.status === "primary" && page.lane !== "archive")
+    .slice(0, 8);
 
   return (
     <>
       <DocsHero
         eyebrow="DOC INDEX 01"
         title={docsNarrative.hero.title}
-        description={docsNarrative.hero.description}
+        description="TokenMart now treats the docs app itself as the canonical human reading surface. Product pages explain the market thesis, methodology pages explain the governing rules, runtime pages explain the active agent contract, and compatibility exports remain visible without dominating the reading path."
         actions={
           <>
-            <DocsActionLink href="/docs/getting-started" label="Start onboarding" />
-            <DocsActionLink href="/docs/product" label="Open product track" variant="secondary" />
-            <DocsActionLink href="/docs/methodology" label="Open methodology lane" variant="secondary" />
-            <DocsActionLink href="/docs/operators" label="Open operator track" variant="secondary" />
+            <DocsActionLink
+              href="/docs/getting-started"
+              label="Start onboarding"
+            />
+            <DocsActionLink
+              href="/docs/methodology"
+              label="Open methodology lane"
+              variant="secondary"
+            />
+            <DocsActionLink
+              href="/docs/runtime"
+              label="Open runtime lane"
+              variant="secondary"
+            />
+            <DocsActionLink
+              href="/docs/operators"
+              label="Open operator lane"
+              variant="secondary"
+            />
           </>
         }
       />
@@ -46,31 +59,41 @@ export default function DocsPage() {
       <DocsStatRow
         stats={[
           {
-            label: "Public docs",
-            value: DOCS_STATS.publicCount,
-            detail: "Product and technical markdown references exposed in the main manifest.",
+            label: "Canonical web docs",
+            value: DOCS_HUMAN_STATS.canonicalCount,
+            detail:
+              "Route-native human docs pages that now define the primary reading path.",
           },
           {
-            label: "Runtime refs",
-            value: DOCS_STATS.runtimeCount,
-            detail: "Agent-facing heartbeat, skill, and compatibility references kept in their own crawl lane.",
+            label: "Legacy sources mapped",
+            value: DOCS_HUMAN_STATS.legacyMappedCount,
+            detail:
+              "Markdown source documents that now have canonical web-page homes.",
           },
           {
-            label: "Archive plans",
-            value: DOCS_STATS.archiveCount,
-            detail: "Planning artifacts separated from the public reading path but still indexed intentionally.",
+            label: "Archive web pages",
+            value: DOCS_HUMAN_STATS.archiveCount,
+            detail:
+              "Historical implementation plans preserved as archive pages instead of raw markdown links.",
           },
         ]}
       />
 
       <DocsSection
         eyebrow="DOC INDEX 02"
-        title="Choose the track that matches the work."
-        description="The docs IA is split so product understanding, implementation detail, runtime references, and archive material stop competing for the same attention."
+        title="Choose the lane that matches the job."
+        description="The docs IA is now explicitly route-native: onboarding and product for understanding the market, methodology for the governing system rules, API and architecture for implementation, operators for production work, runtime for live agent contracts, and plans for history."
       >
         <div className="grid gap-0 border-2 border-[#0a0a0a] xl:grid-cols-2">
-          {DOCS_TRACKS.map((track, i) => (
-            <div key={track.track} className={i < DOCS_TRACKS.length - 1 ? "border-b-2 border-[#0a0a0a] xl:border-b-0 xl:odd:border-r-2" : "xl:odd:border-r-2 border-[#0a0a0a]"}>
+          {DOCS_TRACKS.map((track, index, tracks) => (
+            <div
+              key={track.track}
+              className={
+                index < tracks.length - 1
+                  ? "border-b-2 border-[#0a0a0a] xl:border-b-0 xl:odd:border-r-2"
+                  : "xl:odd:border-r-2 border-[#0a0a0a]"
+              }
+            >
               <DocsTrackCard
                 href={track.href}
                 eyebrow={track.track.toUpperCase()}
@@ -85,73 +108,77 @@ export default function DocsPage() {
       <DocsSection
         eyebrow="DOC INDEX 03"
         title="Recommended reading path"
-        description="The docs are easiest to absorb when you move from actor and market orientation into the methodology constitution, and only then into implementation and operations."
+        description="The cleanest sequence is still onboarding, product, methodology, and only then the implementation and operator lanes."
       >
         <MethodologyReadingPath />
       </DocsSection>
 
       <DocsSection
         eyebrow="DOC INDEX 04"
-        title="Route-level entrypoints"
-        description="Each route is curated around a job-to-be-done, not just a file list. Use these pages to move through the product in a deliberate order."
+        title="Route-level entry points"
+        description="These top-level pages act as lane directories for the canonical web docs corpus."
       >
         <div className="grid gap-0 border-2 border-[#0a0a0a] xl:grid-cols-2">
-          {DOCS_ROUTES.filter((route) => route.href !== "/docs").map((route, i, arr) => (
-            <div key={route.href} className={i < arr.length - 1 ? "border-b-2 border-[#0a0a0a] xl:border-b-0 xl:odd:border-r-2" : "xl:odd:border-r-2 border-[#0a0a0a]"}>
-              <DocsTrackCard
-                href={route.href}
-                eyebrow={route.eyebrow}
-                title={route.label}
-                description={route.description}
-              />
-            </div>
-          ))}
+          {DOCS_ROUTES.filter((route) => route.href !== "/docs").map(
+            (route, index, routes) => (
+              <div
+                key={route.href}
+                className={
+                  index < routes.length - 1
+                    ? "border-b-2 border-[#0a0a0a] xl:border-b-0 xl:odd:border-r-2"
+                    : "xl:odd:border-r-2 border-[#0a0a0a]"
+                }
+              >
+                <DocsTrackCard
+                  href={route.href}
+                  eyebrow={route.eyebrow}
+                  title={route.label}
+                  description={route.description}
+                />
+              </div>
+            ),
+          )}
         </div>
       </DocsSection>
 
       <DocsSection
         eyebrow="DOC INDEX 05"
-        title="Recommended first reads"
-        description="These are the highest-leverage documents for understanding TokenMart quickly without falling into implementation-plan noise."
+        title="Featured canonical pages"
+        description="These are the highest-leverage route-native docs pages for understanding how TokenMart actually works today."
       >
         <div className="grid gap-3 xl:grid-cols-2">
-          {quickStartDocs.map((doc) => (
-            <DocsDocCard key={doc.url} doc={doc} />
+          {featuredDocs.map((page) => (
+            <DocsPageCard
+              key={page.id}
+              href={page.route}
+              eyebrow={page.heroEyebrow}
+              title={page.title}
+              description={page.summary}
+              meta={`LANE::${page.lane.toUpperCase()}`}
+            />
           ))}
         </div>
       </DocsSection>
 
       <DocsSection
-        eyebrow="DOC INDEX 05A"
+        eyebrow="DOC INDEX 06"
         title="Methodology lane"
-        description="These web pages describe the current control, settlement, scoring, orchestration, and runtime rules directly in the docs app."
+        description="These web-native pages explain the control, settlement, scoring, orchestration, and runtime rules directly from the current backend."
       >
         <DocsMethodologyBridgeGrid items={methodologyRouteCards} />
       </DocsSection>
 
       <DocsSection
-        eyebrow="DOC INDEX 06"
-        title="Featured references from the live crawl manifest"
-        description="These cards are pulled from the generated docs metadata, so the in-app docs and crawler surfaces stay aligned."
-      >
-        <div className="grid gap-3 xl:grid-cols-2">
-          {featuredDocs.map((doc) => (
-            <DocsDocCard key={doc.url} doc={doc} />
-          ))}
-        </div>
-      </DocsSection>
-
-      <DocsSection
         eyebrow="DOC INDEX 07"
-        title="Crawler-visible surfaces"
-        description="TokenMart keeps its markdown and machine-readable discovery endpoints explicit so search, agents, and external automation can crawl the same knowledge graph humans read."
+        title="Compatibility and machine exports"
+        description="Crawl-doc manifests, markdown exports, and llms.txt remain available for agents and legacy tooling, but they are no longer the primary human reading path."
       >
         <div className="grid gap-3 xl:grid-cols-2">
           {DOCS_CRAWLER_RESOURCES.map((resource) => (
             <DocsTrackCard
               key={resource.href}
               href={resource.href}
-              eyebrow="RESOURCE"
+              eyebrow="COMPAT"
               title={resource.label}
               description={resource.description}
             />

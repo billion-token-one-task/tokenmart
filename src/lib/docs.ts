@@ -10,6 +10,23 @@ import {
   type CrawlDocEntry,
   type CrawlDocTrack,
 } from "@/generated/crawl-docs";
+import {
+  getAdjacentHumanDocs,
+  getHumanDocById,
+  getHumanDocByLaneAndSlug,
+  getHumanDocByLegacySourcePath,
+  getHumanDocByRoute,
+  getHumanDocsByRoutes,
+  getHumanDocsByIds,
+  getHumanDocsByLane,
+  humanDocLegacySourcePaths,
+  humanDocPages,
+} from "@/lib/docs/web-docs";
+import type { HumanDocLane, HumanDocPage } from "@/lib/docs/web-doc-types";
+import {
+  getArchiveChronologyGroups,
+  getArchiveThemeGroups,
+} from "@/lib/docs/archive-groups";
 
 export interface DocsRouteDefinition {
   href: string;
@@ -19,7 +36,7 @@ export interface DocsRouteDefinition {
 }
 
 export interface DocsTrackDefinition {
-  track: Exclude<CrawlDocTrack, "archive"> | "plans";
+  track: Exclude<CrawlDocTrack, "archive"> | "plans" | "human";
   label: string;
   description: string;
   href: string;
@@ -48,7 +65,8 @@ export const DOCS_ROUTES: DocsRouteDefinition[] = [
     href: "/docs/methodology",
     label: "Methodology",
     eyebrow: "METHOD",
-    description: "Normative system rules for control, settlement, scoring, orchestration, and runtime duty.",
+    description:
+      "Normative system rules for control, settlement, scoring, orchestration, and runtime duty.",
   },
   {
     href: "/docs/api",
@@ -66,7 +84,14 @@ export const DOCS_ROUTES: DocsRouteDefinition[] = [
     href: "/docs/operators",
     label: "Operators",
     eyebrow: "OPS",
-    description: "Security, deployment, operations, and runtime refs.",
+    description: "Security, deployment, operations, and threat-model guidance.",
+  },
+  {
+    href: "/docs/runtime",
+    label: "Runtime",
+    eyebrow: "RUNTIME",
+    description:
+      "Canonical web docs for the skill, heartbeat, and compatibility contracts.",
   },
   {
     href: "/docs/plans",
@@ -80,44 +105,58 @@ export const DOCS_TRACKS: DocsTrackDefinition[] = [
   {
     track: "product",
     label: "Product Track",
-    description: "External users, evaluators, and agent operators learning how TokenMart works.",
+    description:
+      "External users, evaluators, and agent operators learning how TokenMart works.",
     href: "/docs/product",
   },
   {
     track: "technical",
     label: "Technical Track",
-    description: "Integrators and maintainers working with methodology, APIs, architecture, security, and operations.",
-    href: "/docs/operators#technical-docs",
+    description:
+      "Integrators and maintainers working with methodology, APIs, architecture, and operator guidance.",
+    href: "/docs/api",
   },
   {
     track: "runtime",
     label: "Runtime Track",
-    description: "Agent-facing runtime files for heartbeat loops, skills, messaging, and platform rules.",
-    href: "/docs/operators#runtime-docs",
+    description:
+      "Agent-facing runtime guidance rendered as canonical web docs with compatibility exports kept secondary.",
+    href: "/docs/runtime",
+  },
+  {
+    track: "human",
+    label: "Human Web Track",
+    description:
+      "Canonical route-native documentation pages for humans reading the TokenMart docs app.",
+    href: "/docs",
   },
   {
     track: "plans",
     label: "Archive Track",
-    description: "Implementation plans and internal design history kept out of the main docs path.",
+    description:
+      "Implementation plans and internal design history kept out of the main docs path.",
     href: "/docs/plans",
   },
 ];
 
 export const DOCS_CRAWLER_RESOURCES = [
   {
-    label: "Public markdown index",
+    label: "Compatibility markdown index",
     href: "/crawl-docs/index.md",
-    description: "Human-readable public docs manifest.",
+    description:
+      "Legacy human-readable export for crawler and compatibility consumers.",
   },
   {
-    label: "Public docs manifest",
+    label: "Docs manifest JSON",
     href: "/crawl-docs/index.json",
-    description: "Machine-readable metadata for product and technical docs.",
+    description:
+      "Machine-readable compatibility metadata for product and technical docs.",
   },
   {
-    label: "Runtime index",
+    label: "Runtime markdown index",
     href: "/crawl-docs/runtime/index.md",
-    description: "Runtime-facing heartbeat, skill, and compatibility references.",
+    description:
+      "Legacy runtime export surface for heartbeat, skill, and compatibility refs.",
   },
   {
     label: "Archive index",
@@ -127,7 +166,8 @@ export const DOCS_CRAWLER_RESOURCES = [
   {
     label: "LLMs index",
     href: "/llms.txt",
-    description: "Agent crawler entrypoint with public, runtime, and archive sections.",
+    description:
+      "Agent crawler entrypoint with public, runtime, and archive sections.",
   },
   {
     label: "Sitemap",
@@ -141,6 +181,14 @@ export const DOCS_STATS = {
   publicCount: CRAWL_DOCS_COUNT,
   runtimeCount: CRAWL_RUNTIME_DOCS_COUNT,
   archiveCount: CRAWL_DOCS_ARCHIVE_COUNT,
+};
+
+export const DOCS_HUMAN_STATS = {
+  totalCount: humanDocPages.length,
+  canonicalCount: humanDocPages.filter((page) => page.status === "primary")
+    .length,
+  archiveCount: humanDocPages.filter((page) => page.lane === "archive").length,
+  legacyMappedCount: humanDocLegacySourcePaths.length,
 };
 
 export function formatDocsLabel(value: string): string {
@@ -165,15 +213,24 @@ export function getDocsByTrack(track: CrawlDocTrack): CrawlDocEntry[] {
   }
 }
 
-export function getDocsByCategory(category: string, source: CrawlDocEntry[] = CRAWL_DOCS): CrawlDocEntry[] {
+export function getDocsByCategory(
+  category: string,
+  source: CrawlDocEntry[] = CRAWL_DOCS,
+): CrawlDocEntry[] {
   return source.filter((doc) => doc.category === category).sort(compareDocs);
 }
 
-export function getFeaturedDocs(source: CrawlDocEntry[] = CRAWL_DOCS, count = 4): CrawlDocEntry[] {
+export function getFeaturedDocs(
+  source: CrawlDocEntry[] = CRAWL_DOCS,
+  count = 4,
+): CrawlDocEntry[] {
   return [...source].sort(compareDocs).slice(0, count);
 }
 
-export function getDocsForAudience(audience: string, source: CrawlDocEntry[] = ALL_CRAWL_DOCS): CrawlDocEntry[] {
+export function getDocsForAudience(
+  audience: string,
+  source: CrawlDocEntry[] = ALL_CRAWL_DOCS,
+): CrawlDocEntry[] {
   const target = audience.trim().toLowerCase();
 
   return source
@@ -190,7 +247,10 @@ export function getDocsForAudience(audience: string, source: CrawlDocEntry[] = A
     .sort(compareDocs);
 }
 
-export function getDocsByPaths(paths: string[], source: CrawlDocEntry[] = ALL_CRAWL_DOCS): CrawlDocEntry[] {
+export function getDocsByPaths(
+  paths: string[],
+  source: CrawlDocEntry[] = ALL_CRAWL_DOCS,
+): CrawlDocEntry[] {
   const docMap = new Map(source.map((doc) => [doc.path, doc]));
 
   return paths
@@ -198,7 +258,52 @@ export function getDocsByPaths(paths: string[], source: CrawlDocEntry[] = ALL_CR
     .filter((doc): doc is CrawlDocEntry => Boolean(doc));
 }
 
-export function groupDocsByCategory(source: CrawlDocEntry[]): Array<{ category: string; docs: CrawlDocEntry[] }> {
+export function getHumanDocs(): HumanDocPage[] {
+  return [...humanDocPages];
+}
+
+export function getHumanDocsForLane(lane: HumanDocLane): HumanDocPage[] {
+  return getHumanDocsByLane(lane);
+}
+
+export function getHumanDoc(route: string): HumanDocPage | undefined {
+  return getHumanDocByRoute(route);
+}
+
+export function getHumanDocForLaneSlug(
+  lane: HumanDocLane,
+  slug: string,
+): HumanDocPage | undefined {
+  return getHumanDocByLaneAndSlug(lane, slug);
+}
+
+export function getHumanDocForLegacySource(
+  sourcePath: string,
+): HumanDocPage | undefined {
+  return getHumanDocByLegacySourcePath(sourcePath);
+}
+
+export function getHumanDocsForIds(ids: string[]): HumanDocPage[] {
+  return getHumanDocsByIds(ids);
+}
+
+export function getHumanDocsByCanonicalRoutes(
+  routes: string[],
+): HumanDocPage[] {
+  return getHumanDocsByRoutes(routes);
+}
+
+export function getHumanDocByRegistryId(id: string): HumanDocPage | undefined {
+  return getHumanDocById(id);
+}
+
+export function getAdjacentHumanDocLinks(page: HumanDocPage) {
+  return getAdjacentHumanDocs(page);
+}
+
+export function groupDocsByCategory(
+  source: CrawlDocEntry[],
+): Array<{ category: string; docs: CrawlDocEntry[] }> {
   const map = new Map<string, CrawlDocEntry[]>();
 
   for (const doc of [...source].sort(compareDocs)) {
@@ -207,12 +312,17 @@ export function groupDocsByCategory(source: CrawlDocEntry[]): Array<{ category: 
     map.set(doc.category, docs);
   }
 
-  return Array.from(map.entries()).map(([category, docs]) => ({ category, docs }));
+  return Array.from(map.entries()).map(([category, docs]) => ({
+    category,
+    docs,
+  }));
 }
 
 export function findDocByPath(path: string): CrawlDocEntry | undefined {
   return ALL_CRAWL_DOCS.find((doc) => doc.path === path);
 }
+
+export { getArchiveChronologyGroups, getArchiveThemeGroups };
 
 function compareDocs(a: CrawlDocEntry, b: CrawlDocEntry) {
   if (a.order !== b.order) return a.order - b.order;
