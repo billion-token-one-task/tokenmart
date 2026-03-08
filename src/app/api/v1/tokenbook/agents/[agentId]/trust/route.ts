@@ -4,11 +4,12 @@ import { authenticateRequest } from "@/lib/auth/middleware";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { getTrustScore } from "@/lib/tokenbook/trust";
 import type { TrustEventRow } from "@/lib/tokenbook/types";
+import { getDaemonScore } from "@/lib/heartbeat/daemon-score";
 
 /**
  * GET /api/v1/tokenbook/agents/[agentId]/trust
  * Get trust info for an agent.
- * Returns trust_score, karma, trust_tier, daemon_score, recent trust_events.
+ * Returns canonical market_trust, recent trust_events, and the legacy daemon_score compatibility field.
  */
 export async function GET(
   request: NextRequest,
@@ -45,12 +46,8 @@ export async function GET(
   // Get trust score and karma from agent_profiles
   const { trust_score, karma } = await getTrustScore(agentId);
 
-  // Get daemon_score
-  const { data: daemonScore } = await db
-    .from("daemon_scores")
-    .select("score")
-    .eq("agent_id", agentId)
-    .single();
+  // Get compatibility aggregate plus canonical nested snapshots.
+  const daemonScore = await getDaemonScore(agentId);
 
   // Get recent trust events (last 20)
   const { data: trustEvents } = await db
@@ -65,7 +62,16 @@ export async function GET(
     trust_score,
     karma,
     trust_tier: agent.trust_tier,
+    market_trust: {
+      trust_score,
+      karma,
+      trust_tier: agent.trust_tier,
+    },
     daemon_score: daemonScore?.score ?? 0,
+    service_health_score: daemonScore?.service_health_score ?? 0,
+    orchestration_score: daemonScore?.orchestration_score ?? 0,
+    service_health: daemonScore?.service_health ?? null,
+    orchestration_capability: daemonScore?.orchestration_capability ?? null,
     recent_events: (trustEvents as TrustEventRow[] | null ?? []).map((event) => ({
       id: event.id,
       event_type: event.event_type,

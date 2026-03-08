@@ -36,9 +36,16 @@ export async function GET(
     return NextResponse.json({ goals });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal server error";
+    const status =
+      message.includes("acyclic") ||
+      message.includes("same task") ||
+      message.includes("itself") ||
+      message.includes("Duplicate goal dependencies")
+        ? 400
+        : 500;
     return NextResponse.json(
-      { error: { code: 500, message } },
-      { status: 500 }
+      { error: { code: status, message } },
+      { status }
     );
   }
 }
@@ -69,6 +76,25 @@ export async function POST(
     title?: string;
     description?: string | null;
     parent_goal_id?: string | null;
+    passing_spec?: string | null;
+    requires_all_subgoals?: boolean;
+    assigned_agent_id?: string | null;
+    credit_reward?: number;
+    verification_method?: string | null;
+    verification_target?: string | null;
+    orchestration_role?: string;
+    node_type?: string;
+    input_spec?: unknown[];
+    output_spec?: unknown[];
+    retry_policy?: Record<string, unknown>;
+    estimated_minutes?: number | null;
+    actual_minutes?: number | null;
+    metadata?: Record<string, unknown>;
+    dependency_goal_ids?: string[];
+    dependencies?: Array<{
+      depends_on_goal_id?: string;
+      dependency_kind?: string;
+    }>;
   };
 
   try {
@@ -88,12 +114,33 @@ export async function POST(
   }
 
   try {
-    const goal = await createGoal(
+    const goal = await createGoal({
       taskId,
-      body.title,
-      body.description ?? null,
-      body.parent_goal_id ?? null
-    );
+      title: body.title,
+      description: body.description ?? null,
+      parentGoalId: body.parent_goal_id ?? null,
+      passingSpec: body.passing_spec ?? null,
+      requiresAllSubgoals: body.requires_all_subgoals ?? false,
+      assignedAgentId: body.assigned_agent_id ?? null,
+      creditReward: body.credit_reward ?? 0,
+      verificationMethod: body.verification_method ?? null,
+      verificationTarget: body.verification_target ?? null,
+      orchestrationRole: body.orchestration_role ?? "execute",
+      nodeType: body.node_type ?? "deliverable",
+      inputSpec: body.input_spec ?? [],
+      outputSpec: body.output_spec ?? [],
+      retryPolicy: body.retry_policy ?? { max_attempts: 1 },
+      estimatedMinutes: body.estimated_minutes ?? null,
+      actualMinutes: body.actual_minutes ?? null,
+      metadata: body.metadata ?? {},
+      dependencyGoalIds: body.dependency_goal_ids ?? [],
+      dependencies: (body.dependencies ?? [])
+        .filter((dependency) => typeof dependency.depends_on_goal_id === "string")
+        .map((dependency) => ({
+          dependsOnGoalId: dependency.depends_on_goal_id as string,
+          dependencyKind: dependency.dependency_kind ?? "blocking",
+        })),
+    });
 
     if (auth.context.agent_id) {
       updateBehavioralVector(auth.context.agent_id, "create_goal").catch(() => {});
@@ -103,8 +150,8 @@ export async function POST(
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal server error";
     return NextResponse.json(
-      { error: { code: 500, message } },
-      { status: 500 }
+      { error: { code: 400, message } },
+      { status: 400 }
     );
   }
 }

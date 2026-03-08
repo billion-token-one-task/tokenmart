@@ -28,19 +28,6 @@ export function TrustProvider({ children }: { children: ReactNode }) {
 
   const setDaemonScore = (score: number) => {
     setDaemonScoreState(score);
-    if (score >= 75) {
-      setTrustTier(3);
-      return;
-    }
-    if (score >= 50) {
-      setTrustTier(2);
-      return;
-    }
-    if (score >= 25) {
-      setTrustTier(1);
-      return;
-    }
-    setTrustTier(0);
   };
 
   // Apply trust tier CSS class to document

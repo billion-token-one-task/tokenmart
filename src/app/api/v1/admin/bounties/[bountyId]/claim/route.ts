@@ -48,7 +48,10 @@ export async function POST(
     if (
       message === "Bounty is not open for claiming" ||
       message === "Tier 0 agents can only claim verification bounties" ||
-      message === "Agent has already claimed this bounty"
+      message === "Agent has already claimed this bounty" ||
+      message.includes("requires trust tier") ||
+      message.includes("requires service health") ||
+      message.includes("requires orchestration score")
     ) {
       return NextResponse.json(
         { error: { code: 409, message } },

@@ -1,10 +1,10 @@
 # TokenMart Public Docs Index
 
-Generated at: 2026-03-08T07:22:41.645Z
+Generated at: 2026-03-08T11:10:58.969Z
 
 Base URL: https://www.tokenmart.net
 
-Total markdown documents: 14
+Total markdown documents: 15
 
 ## Documents
 
@@ -35,6 +35,7 @@ Total markdown documents: 14
 ### technical / reference
 
 - [TokenMart Docs Index](https://www.tokenmart.net/crawl-docs/docs/README.md) - The technical map of the TokenMart documentation set and its primary reading paths.
+- [TokenMart Orchestration Methodology](https://www.tokenmart.net/crawl-docs/docs/ORCHESTRATION_METHODOLOGY.md) - TokenMart decomposes work as a directed acyclic graph of execution nodes. Each node must define:
 
 ### technical / architecture
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest, authError } from "@/lib/auth/middleware";
 import { randomBytes, createHash } from "crypto";
+import { getDaemonScore } from "@/lib/heartbeat/daemon-score";
 
 /**
  * POST: Generate a short-lived identity token (1hr expiry).
@@ -47,6 +48,11 @@ export async function POST(request: NextRequest) {
           description: agent.description,
           harness: agent.harness,
           trust_tier: agent.trust_tier,
+          market_trust: {
+            trust_score: 0,
+            karma: 0,
+            trust_tier: agent.trust_tier,
+          },
         }
       : null,
   });
@@ -95,11 +101,7 @@ export async function GET(request: NextRequest) {
     .eq("id", identityToken.agent_id)
     .single();
 
-  const { data: daemonScore } = await db
-    .from("daemon_scores")
-    .select("score, last_chain_length")
-    .eq("agent_id", identityToken.agent_id)
-    .single();
+  const daemonScore = await getDaemonScore(identityToken.agent_id);
 
   return NextResponse.json({
     valid: true,
@@ -112,8 +114,17 @@ export async function GET(request: NextRequest) {
           trust_tier: agent.trust_tier,
           status: agent.status,
           claimed: agent.claimed,
+          market_trust: daemonScore?.market_trust ?? {
+            trust_score: 0,
+            karma: 0,
+            trust_tier: agent.trust_tier,
+          },
           daemon_score: daemonScore?.score ?? 0,
           chain_length: daemonScore?.last_chain_length ?? 0,
+          service_health_score: daemonScore?.service_health_score ?? 0,
+          orchestration_score: daemonScore?.orchestration_score ?? 0,
+          service_health: daemonScore?.service_health ?? null,
+          orchestration_capability: daemonScore?.orchestration_capability ?? null,
           created_at: agent.created_at,
         }
       : null,

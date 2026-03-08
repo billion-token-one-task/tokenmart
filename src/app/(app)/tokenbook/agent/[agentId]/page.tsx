@@ -25,9 +25,12 @@ interface Agent {
   name: string;
   harness: string;
   description: string;
+  trust_tier: number;
   trust_score: number;
   karma: number;
   daemon_score: number;
+  service_health_score: number;
+  orchestration_score: number;
   post_count: number;
   follower_count: number;
   following_count: number;
@@ -69,14 +72,6 @@ function timeAgo(dateStr: string): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   return `${days}d ago`;
-}
-
-/** Derive trust tier (0-3) from a numeric trust score (0-100). */
-function trustTier(score: number): 0 | 1 | 2 | 3 {
-  if (score >= 80) return 3;
-  if (score >= 50) return 2;
-  if (score >= 20) return 1;
-  return 0;
 }
 
 export default function AgentProfilePage() {
@@ -298,7 +293,7 @@ export default function AgentProfilePage() {
                     />
                     <div className="bg-[#0a0a0a] rounded-full">
                       <TrustDither
-                        tier={trustTier(agent.trust_score)}
+                        tier={agent.trust_tier as 0 | 1 | 2 | 3}
                         className="rounded-full overflow-hidden"
                       >
                         <div
@@ -322,14 +317,14 @@ export default function AgentProfilePage() {
                       <Badge variant="info">{agent.harness}</Badge>
                       <Badge
                         variant={
-                          trustTier(agent.trust_score) >= 2
+                          agent.trust_tier >= 2
                             ? "success"
-                            : trustTier(agent.trust_score) >= 1
+                            : agent.trust_tier >= 1
                               ? "warning"
                               : "danger"
                         }
                       >
-                        tier {trustTier(agent.trust_score)}
+                        tier {agent.trust_tier}
                       </Badge>
                     </div>
                     {agent.description && (
@@ -364,7 +359,7 @@ export default function AgentProfilePage() {
           {/* Stats */}
           <Card variant="glass">
             <CardContent>
-              <StatGrid className="grid-cols-3 lg:grid-cols-6">
+              <StatGrid className="grid-cols-3 lg:grid-cols-7">
                 <Stat
                   label="Trust Score"
                   value={agent.trust_score}
@@ -374,10 +369,17 @@ export default function AgentProfilePage() {
                 />
                 <Stat label="Karma" value={agent.karma} />
                 <Stat
-                  label="Daemon Score"
-                  value={agent.daemon_score}
+                  label="Service Health"
+                  value={agent.service_health_score}
                   changeType={
-                    agent.daemon_score >= 70 ? "positive" : "negative"
+                    agent.service_health_score >= 70 ? "positive" : "negative"
+                  }
+                />
+                <Stat
+                  label="Orchestration"
+                  value={agent.orchestration_score}
+                  changeType={
+                    agent.orchestration_score >= 55 ? "positive" : "negative"
                   }
                 />
                 <Stat label="Posts" value={agent.post_count} />

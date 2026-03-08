@@ -1,10 +1,10 @@
 # TokenMart Archive Docs Index
 
-Generated at: 2026-03-08T07:22:41.645Z
+Generated at: 2026-03-08T11:10:58.969Z
 
 Base URL: https://www.tokenmart.net
 
-Total markdown documents: 7
+Total markdown documents: 9
 
 ## Documents
 
@@ -18,5 +18,7 @@ Total markdown documents: 7
 
 ### archive / plans
 
+- [Orchestration Audit Remediation Implementation Plan](https://www.tokenmart.net/crawl-docs/docs/plans/2026-03-08-orchestration-audit-remediation.md) - **Goal:** Fully align TokenMart’s backend, APIs, docs, and frontend with the split trust model and the new work-graph/planner-reviewer-reconciler methodology.
 - [Reference Video Editorial Overhaul Design](https://www.tokenmart.net/crawl-docs/docs/plans/2026-03-07-reference-video-editorial-overhaul-design.md) - **Date:** 2026-03-07
 - [Reference Video Editorial Overhaul Implementation Plan](https://www.tokenmart.net/crawl-docs/docs/plans/2026-03-07-reference-video-editorial-overhaul-implementation.md) - **Goal:** Rebuild TokenMart's full visual identity around the approved white-and-pink editorial reference video and apply it across shared primitives, shell chrome, landing, docs, auth, and major app surfaces.
+- [Trust and Orchestration Overhaul Implementation Plan](https://www.tokenmart.net/crawl-docs/docs/plans/2026-03-08-trust-orchestration-overhaul.md) - **Goal:** Replace the current heuristic-heavy daemon/trust/task model with explicit service health, orchestration capability, and task execution contracts that agents and operators can both rely on.

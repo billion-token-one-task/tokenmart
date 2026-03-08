@@ -1,119 +1,116 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import {
-  Card,
-  CardHeader,
-  CardContent,
   Badge,
   Button,
+  Card,
+  CardContent,
+  CardHeader,
   Modal,
+  Skeleton,
   Textarea,
   useToast,
-  Skeleton,
 } from "@/components/ui";
-import { useAuthToken, authHeaders } from "@/lib/hooks/use-auth";
+import { authHeaders, useAuthToken } from "@/lib/hooks/use-auth";
 
-interface Agent {
-  id: string;
-  name: string;
-  description: string;
-  harness: string;
-  claimed: boolean;
-  status: string;
-  trust_tier: string;
-  metadata: Record<string, unknown>;
-  created_at?: string;
-}
-
-interface DaemonScore {
-  score: number;
-  heartbeat_regularity: number;
-  challenge_response_rate: number;
-  challenge_median_latency: number;
-  circadian_score: number;
-  last_chain_length: number;
-}
-
-function ScoreBar({
-  label,
-  value,
-  max,
-  color,
-}: {
-  label: string;
+interface ScoreComponent {
   value: number;
   max: number;
-  color: string;
-}) {
-  const pct = Math.min((value / max) * 100, 100);
+  label: string;
+}
+
+interface AgentResponse {
+  agent: {
+    id: string;
+    name: string;
+    description: string | null;
+    harness: string;
+    status: string;
+    trust_tier: number;
+    metadata: Record<string, unknown>;
+  };
+  daemon_score: {
+    score: number;
+    chain_length: number;
+    service_health_score: number;
+    orchestration_score: number;
+    score_confidence: number;
+    runtime_mode: string;
+  } | null;
+  service_health: {
+    score: number;
+    confidence: number;
+    runtime_mode: string;
+    components: {
+      cadence: ScoreComponent;
+      challenge_reliability: ScoreComponent;
+      latency: ScoreComponent;
+      chain_continuity: ScoreComponent;
+    };
+  } | null;
+  orchestration_capability: {
+    score: number;
+    confidence: number;
+    components: {
+      delivery: ScoreComponent;
+      review: ScoreComponent;
+      collaboration: ScoreComponent;
+      planning: ScoreComponent;
+      decomposition_quality: ScoreComponent;
+    };
+  } | null;
+  market_trust: {
+    trust_score: number;
+    karma: number;
+    trust_tier: number;
+  };
+  credits: {
+    balance: number;
+    total_earned: number;
+    total_spent: number;
+  };
+}
+
+function statusVariant(status: string) {
+  switch (status) {
+    case "active":
+      return "success" as const;
+    case "pending":
+      return "warning" as const;
+    case "suspended":
+      return "danger" as const;
+    default:
+      return "outline" as const;
+  }
+}
+
+function MetricBar({ component }: { component: ScoreComponent }) {
+  const width = Math.max(0, Math.min(100, (component.value / component.max) * 100));
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between text-[13px]">
-        <span className="text-[#a1a1a1]">{label}</span>
-        <span className="font-medium font-mono text-[#ededed] tabular-nums">
-          {value.toFixed(1)} / {max}
+    <div className="space-y-2">
+      <div className="flex items-center justify-between font-mono text-[11px] uppercase tracking-[0.08em] text-[#3b342c]">
+        <span>{component.label}</span>
+        <span>
+          {component.value.toFixed(1)} / {component.max}
         </span>
       </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-[rgba(255,255,255,0.06)]">
-        <div
-          className={`h-full rounded-full transition-all duration-500 ${color}`}
-          style={{ width: `${pct}%` }}
-        />
+      <div className="h-2 border border-[#0a0a0a] bg-[#faf7f2]">
+        <div className="h-full bg-[#e5005a]" style={{ width: `${width}%` }} />
       </div>
     </div>
   );
 }
 
-function CircularScore({ score }: { score: number }) {
-  const radius = 54;
-  const circumference = 2 * Math.PI * radius;
-  const progress = (score / 100) * circumference;
-  const offset = circumference - progress;
-
-  const scoreColor =
-    score >= 80
-      ? "text-[#00DC82]"
-      : score >= 50
-        ? "text-[#F5A623]"
-        : "text-[#EE4444]";
-
-  const strokeColor =
-    score >= 80
-      ? "#00DC82"
-      : score >= 50
-        ? "#F5A623"
-        : "#EE4444";
-
+function MetricPanel({ label, value, note }: { label: string; value: string; note?: string }) {
   return (
-    <div className="relative flex items-center justify-center">
-      <svg width="140" height="140" className="-rotate-90">
-        <circle
-          cx="70"
-          cy="70"
-          r={radius}
-          fill="none"
-          stroke="rgba(255,255,255,0.06)"
-          strokeWidth="6"
-        />
-        <circle
-          cx="70"
-          cy="70"
-          r={radius}
-          fill="none"
-          stroke={strokeColor}
-          strokeWidth="6"
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          className="transition-all duration-700"
-        />
-      </svg>
-      <div className="absolute flex flex-col items-center">
-        <span className={`text-3xl font-semibold font-mono tabular-nums ${scoreColor}`}>{score}</span>
-        <span className="text-[12px] text-[#666] font-mono">/ 100</span>
+    <div className="border-2 border-[#0a0a0a] bg-white px-4 py-4">
+      <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#6b6050]">
+        {label}
       </div>
+      <div className="mt-2 font-mono text-[24px] font-bold text-[#0a0a0a]">{value}</div>
+      {note && <div className="mt-2 font-mono text-[11px] text-[#6b6050]">{note}</div>}
     </div>
   );
 }
@@ -122,12 +119,10 @@ export default function AgentProfilePage() {
   const token = useAuthToken();
   const { toast } = useToast();
 
-  const [agent, setAgent] = useState<Agent | null>(null);
-  const [daemonScore, setDaemonScore] = useState<DaemonScore | null>(null);
+  const [data, setData] = useState<AgentResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [editDescription, setEditDescription] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -136,19 +131,10 @@ export default function AgentProfilePage() {
     setLoading(true);
     setError(null);
     try {
-      const [agentRes, scoreRes] = await Promise.all([
-        fetch("/api/v1/agents/me", { headers: authHeaders(token) }),
-        fetch("/api/v1/agents/daemon-score", { headers: authHeaders(token) }),
-      ]);
-
-      if (!agentRes.ok) throw new Error("Failed to load agent profile");
-      if (!scoreRes.ok) throw new Error("Failed to load daemon score");
-
-      const agentJson = await agentRes.json();
-      const scoreJson = await scoreRes.json();
-
-      setAgent(agentJson.agent);
-      setDaemonScore(scoreJson.daemon_score);
+      const res = await fetch("/api/v1/agents/me", { headers: authHeaders(token) });
+      if (!res.ok) throw new Error("Failed to load agent profile");
+      const json = await res.json();
+      setData(json);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -159,13 +145,6 @@ export default function AgentProfilePage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
-  const handleEdit = () => {
-    if (agent) {
-      setEditDescription(agent.description || "");
-    }
-    setEditModalOpen(true);
-  };
 
   const handleSave = async () => {
     if (!token) return;
@@ -179,269 +158,169 @@ export default function AgentProfilePage() {
         },
         body: JSON.stringify({ description: editDescription }),
       });
-
       if (!res.ok) throw new Error("Failed to update profile");
-
-      const updated = await res.json();
-      setAgent(updated.agent);
-      setEditModalOpen(false);
-      toast("Profile updated successfully", "success");
+      toast("Profile updated", "success");
+      setEditOpen(false);
+      fetchData();
     } catch (err) {
-      toast(
-        err instanceof Error ? err.message : "Failed to save changes",
-        "error"
-      );
+      toast(err instanceof Error ? err.message : "Failed to update profile", "error");
     } finally {
       setSaving(false);
     }
   };
 
-  const statusVariant = (status: string) => {
-    switch (status) {
-      case "active":
-        return "success" as const;
-      case "suspended":
-        return "danger" as const;
-      case "pending":
-        return "warning" as const;
-      default:
-        return "default" as const;
-    }
-  };
-
-  const trustTierLabel = (tier: number | string) => {
-    const t = Number(tier);
-    switch (t) {
-      case 0: return "New";
-      case 1: return "Active";
-      case 2: return "Trusted";
-      case 3: return "Established";
-      default: return `Tier ${tier}`;
-    }
-  };
-
-  const trustTierVariant = (tier: number | string) => {
-    const t = Number(tier);
-    switch (t) {
-      case 3: return "success" as const;
-      case 2: return "info" as const;
-      case 1: return "warning" as const;
-      case 0: return "default" as const;
-      default: return "default" as const;
-    }
-  };
-
   return (
-    <div className="max-w-6xl">
+    <div className="max-w-7xl">
       <PageHeader
         title="Agent Profile"
-        description="Manage the agent identity that earns trust, routes credit flow, and represents your operator shell across TokenMart."
+        description="Manage the identity that accumulates market trust while exposing separate service-health and orchestration evidence."
+        section="platform"
         actions={
-          <Button variant="secondary" onClick={handleEdit} disabled={loading}>
-            Edit
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setEditDescription(data?.agent.description ?? "");
+              setEditOpen(true);
+            }}
+            disabled={!data}
+          >
+            Edit Description
           </Button>
         }
       />
 
-      {error && !loading && !agent && (
-        <div className="mb-6 rounded-[8px] border border-[rgba(255,255,255,0.08)] bg-[#0a0a0a] p-8 text-center">
-          <div className="w-16 h-16 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] flex items-center justify-center font-mono text-[#666] text-2xl mx-auto mb-4">
-            ?
-          </div>
-          <h3 className="text-[15px] font-medium text-[#ededed] mb-2">No Agent Identity Online</h3>
-          <p className="text-[13px] text-[#666] mb-4 max-w-sm mx-auto">
-            Register an agent to publish an identity, begin accruing trust, and unlock TokenHall and TokenBook surfaces.
-          </p>
-          <a
-            href="/agent-register"
-            className="inline-block px-4 py-2 rounded-lg bg-white text-black text-[13px] font-medium hover:bg-[#e6e6e6] transition-colors"
-          >
-            Register an Agent
-          </a>
-        </div>
-      )}
-
-      {error && agent && (
-        <div className="mb-6 bg-[rgba(238,68,68,0.06)] border border-[rgba(238,68,68,0.15)] rounded-xl px-4 py-3 text-[13px] text-[#EE4444] font-mono">
+      {error && (
+        <div className="mb-6 border-2 border-[rgba(213,61,90,0.4)] bg-[rgba(213,61,90,0.08)] px-4 py-3 font-mono text-[12px] uppercase tracking-[0.08em] text-[var(--color-error)]">
           {error}
         </div>
       )}
 
-      {(!error || agent) && (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Agent Profile Card */}
-        <Card variant="glass" className="lg:col-span-2">
-          <CardHeader>
-            <h2 className="text-[15px] font-medium text-[#ededed]">Profile</h2>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="flex flex-col gap-4">
-                <Skeleton className="h-7 w-48" />
-                <div className="flex gap-2">
-                  <Skeleton className="h-5 w-20" />
-                  <Skeleton className="h-5 w-16" />
-                  <Skeleton className="h-5 w-24" />
-                </div>
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-32" />
-              </div>
-            ) : agent ? (
-              <div className="flex flex-col gap-5">
+      {loading ? (
+        <div className="grid gap-4">
+          <Skeleton className="h-32 rounded-none" />
+          <Skeleton className="h-80 rounded-none" />
+          <Skeleton className="h-80 rounded-none" />
+        </div>
+      ) : !data ? null : (
+        <>
+          <div className="mb-6 grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+            <Card variant="glass">
+              <CardHeader className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-2xl font-semibold text-[#ededed]">{agent.name}</h3>
-                  <p className="mt-1 text-[12px] font-mono text-[#444]">
-                    {agent.id}
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="info">{agent.harness}</Badge>
-                  <Badge variant={statusVariant(agent.status)}>
-                    {agent.status}
-                  </Badge>
-                  <Badge variant={trustTierVariant(agent.trust_tier)}>
-                    {trustTierLabel(agent.trust_tier)}
-                  </Badge>
-                  {agent.claimed && <Badge variant="success">Claimed</Badge>}
-                </div>
-
-                <div>
-                  <h4 className="text-[13px] font-medium text-[#666] mb-1.5">
-                    Description
-                  </h4>
-                  <p className="text-[13px] text-[#a1a1a1] leading-relaxed">
-                    {agent.description || "No operating brief has been set for this agent yet."}
-                  </p>
-                </div>
-
-                {agent.created_at && (
-                  <div>
-                    <h4 className="text-[13px] font-medium text-[#666] mb-1.5">
-                      Created
-                    </h4>
-                    <p className="text-[13px] text-[#a1a1a1]">
-                      {new Date(agent.created_at).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                    </p>
+                  <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#6b6050]">
+                    Identity
                   </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <Badge variant={statusVariant(data.agent.status)}>{data.agent.status}</Badge>
+                    <Badge variant="outline">tier {data.market_trust.trust_tier}</Badge>
+                    <Badge variant="glass">{data.agent.harness}</Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <div className="text-[20px] font-semibold text-[#0a0a0a]">{data.agent.name}</div>
+                  <p className="mt-2 text-[14px] leading-6 text-[#3b342c]">
+                    {data.agent.description || "No profile description set yet."}
+                  </p>
+                </div>
+                <div className="grid gap-3 md:grid-cols-3">
+                  <MetricPanel label="Trust Score" value={String(Math.round(data.market_trust.trust_score))} />
+                  <MetricPanel label="Karma" value={String(Math.round(data.market_trust.karma))} />
+                  <MetricPanel
+                    label="Credits"
+                    value={String(Math.round(data.credits.balance))}
+                    note={`earned ${Math.round(data.credits.total_earned)}`}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card variant="glass">
+              <CardHeader>
+                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#6b6050]">
+                  Canonical Score Split
+                </div>
+              </CardHeader>
+              <CardContent className="grid gap-3 md:grid-cols-3">
+                <MetricPanel
+                  label="Compat Score"
+                  value={String(Math.round(data.daemon_score?.score ?? 0))}
+                  note={`legacy aggregate, chain ${data.daemon_score?.chain_length ?? 0}`}
+                />
+                <MetricPanel
+                  label="Service Health"
+                  value={String(Math.round(data.service_health?.score ?? 0))}
+                  note={data.service_health?.runtime_mode ?? "undeclared"}
+                />
+                <MetricPanel
+                  label="Orchestration"
+                  value={String(Math.round(data.orchestration_capability?.score ?? 0))}
+                  note={`${Math.round((data.orchestration_capability?.confidence ?? 0) * 100)}% confidence`}
+                />
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card variant="glass">
+              <CardHeader>
+                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#6b6050]">
+                  Service Health
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {data.service_health ? (
+                  <>
+                    <MetricBar component={data.service_health.components.cadence} />
+                    <MetricBar component={data.service_health.components.challenge_reliability} />
+                    <MetricBar component={data.service_health.components.latency} />
+                    <MetricBar component={data.service_health.components.chain_continuity} />
+                  </>
+                ) : (
+                  <div className="font-mono text-[12px] text-[#6b6050]">No service-health snapshot yet.</div>
                 )}
+              </CardContent>
+            </Card>
 
-                {agent.metadata &&
-                  Object.keys(agent.metadata).length > 0 && (
-                    <div>
-                      <h4 className="text-[13px] font-medium text-[#666] mb-2">
-                        Metadata
-                      </h4>
-                      <div className="rounded-lg border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-4">
-                        <pre className="text-[12px] font-mono text-[#a1a1a1] overflow-x-auto">
-                          {JSON.stringify(agent.metadata, null, 2)}
-                        </pre>
-                      </div>
-                    </div>
-                  )}
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
-
-        {/* Daemon Score */}
-        <Card variant="glass">
-          <CardHeader>
-            <h2 className="text-[15px] font-medium text-[#ededed]">Daemon Score</h2>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="flex flex-col items-center gap-6">
-                <Skeleton className="h-36 w-36 rounded-full" />
-                <div className="w-full flex flex-col gap-4">
-                  <Skeleton className="h-6 w-full" />
-                  <Skeleton className="h-6 w-full" />
-                  <Skeleton className="h-6 w-full" />
-                  <Skeleton className="h-6 w-full" />
+            <Card variant="glass">
+              <CardHeader>
+                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#6b6050]">
+                  Orchestration Capability
                 </div>
-              </div>
-            ) : daemonScore ? (
-              <div className="flex flex-col items-center gap-6">
-                <CircularScore score={daemonScore.score} />
-
-                <div className="w-full flex flex-col gap-4">
-                  <ScoreBar
-                    label="Heartbeat Regularity"
-                    value={daemonScore.heartbeat_regularity}
-                    max={30}
-                    color="bg-[#0070f3]"
-                  />
-                  <ScoreBar
-                    label="Challenge Response Rate"
-                    value={daemonScore.challenge_response_rate}
-                    max={30}
-                    color="bg-[#00DC82]"
-                  />
-                  <ScoreBar
-                    label="Latency Score"
-                    value={
-                      daemonScore.challenge_median_latency <= 0
-                        ? 20
-                        : Math.max(
-                            0,
-                            20 - daemonScore.challenge_median_latency / 500
-                          )
-                    }
-                    max={20}
-                    color="bg-[#F5A623]"
-                  />
-                  <ScoreBar
-                    label="Circadian Score"
-                    value={daemonScore.circadian_score}
-                    max={20}
-                    color="bg-purple-500"
-                  />
-                </div>
-
-                <div className="w-full pt-4 border-t border-[rgba(255,255,255,0.06)]">
-                  <div className="flex items-center justify-between text-[13px]">
-                    <span className="text-[#666]">Chain Length</span>
-                    <span className="font-medium font-mono tabular-nums text-[#ededed]">
-                      {daemonScore.last_chain_length}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
-      </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {data.orchestration_capability ? (
+                  <>
+                    <MetricBar component={data.orchestration_capability.components.delivery} />
+                    <MetricBar component={data.orchestration_capability.components.review} />
+                    <MetricBar component={data.orchestration_capability.components.collaboration} />
+                    <MetricBar component={data.orchestration_capability.components.planning} />
+                    <MetricBar component={data.orchestration_capability.components.decomposition_quality} />
+                  </>
+                ) : (
+                  <div className="font-mono text-[12px] text-[#6b6050]">No orchestration snapshot yet.</div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </>
       )}
 
-      {/* Edit Modal */}
-      <Modal
-        open={editModalOpen}
-        onClose={() => setEditModalOpen(false)}
-        title="Edit Agent Profile"
-      >
-        <div className="flex flex-col gap-4">
-          <Textarea
-            label="Description"
-            value={editDescription}
-            onChange={(e) => setEditDescription(e.target.value)}
-            placeholder="Describe your agent..."
-            rows={4}
-          />
-          <div className="flex justify-end gap-3">
-            <Button
-              variant="ghost"
-              onClick={() => setEditModalOpen(false)}
-              disabled={saving}
-            >
+      <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Edit Profile" maxWidth="max-w-xl">
+        <div className="space-y-4">
+          <div>
+            <label className="mb-2 block font-mono text-[10px] uppercase tracking-[0.14em] text-[#6b6050]">
+              Description
+            </label>
+            <Textarea value={editDescription} onChange={(event) => setEditDescription(event.target.value)} rows={6} />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setEditOpen(false)}>
               Cancel
             </Button>
             <Button onClick={handleSave} loading={saving}>
-              Save Changes
+              Save
             </Button>
           </div>
         </div>

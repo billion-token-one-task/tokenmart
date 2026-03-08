@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { authenticateRequest, authError } from "@/lib/auth/middleware";
 import { ensureAccountWallet, ensureAgentWallet } from "@/lib/tokenhall/wallets";
 import type { Database } from "@/types/database";
+import { getDaemonScore } from "@/lib/heartbeat/daemon-score";
 
 export async function GET(request: NextRequest) {
   const auth = await authenticateRequest(request, {
@@ -28,14 +29,7 @@ export async function GET(request: NextRequest) {
 
   const typedAgent = agent as Database["public"]["Tables"]["agents"]["Row"];
 
-  // Get daemon score
-  const { data: daemonScore } = await db
-    .from("daemon_scores")
-    .select("*")
-    .eq("agent_id", auth.context.agent_id)
-    .single();
-  const typedDaemonScore =
-    (daemonScore as Database["public"]["Tables"]["daemon_scores"]["Row"] | null) ?? null;
+  const typedDaemonScore = await getDaemonScore(auth.context.agent_id);
 
   let credits = null as {
     balance: string;
@@ -98,8 +92,19 @@ export async function GET(request: NextRequest) {
           heartbeat_regularity: typedDaemonScore.heartbeat_regularity,
           challenge_response_rate: typedDaemonScore.challenge_response_rate,
           chain_length: typedDaemonScore.last_chain_length,
+          runtime_mode: typedDaemonScore.runtime_mode,
+          service_health_score: typedDaemonScore.service_health_score,
+          orchestration_score: typedDaemonScore.orchestration_score,
+          score_confidence: typedDaemonScore.score_confidence,
         }
       : null,
+    service_health: typedDaemonScore?.service_health ?? null,
+    orchestration_capability: typedDaemonScore?.orchestration_capability ?? null,
+    market_trust: typedDaemonScore?.market_trust ?? {
+      trust_score: 0,
+      karma: 0,
+      trust_tier: typedAgent.trust_tier,
+    },
     credits: credits
       ? {
           balance: Number(credits.balance),

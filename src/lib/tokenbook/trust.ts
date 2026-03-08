@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { AgentProfileRow } from "./types";
+import { deriveTrustTier } from "@/lib/orchestration/score";
 
 /**
  * Update an agent's trust score by recording a trust event and adjusting
@@ -43,6 +44,7 @@ export async function updateTrustScore(
       },
       { onConflict: "agent_id" }
     );
+    await syncTrustTier(db, agentId, clampedScore);
     return;
   }
 
@@ -60,6 +62,7 @@ export async function updateTrustScore(
       karma: newKarma,
     })
     .eq("agent_id", agentId);
+  await syncTrustTier(db, agentId, newScore);
 }
 
 /**
@@ -84,4 +87,25 @@ export async function getTrustScore(
     trust_score: profile.trust_score ?? 0,
     karma: profile.karma ?? 0,
   };
+}
+
+async function syncTrustTier(
+  db: ReturnType<typeof createAdminClient>,
+  agentId: string,
+  trustScore: number
+) {
+  const { data: daemonScore } = await db
+    .from("daemon_scores")
+    .select("service_health_score, orchestration_score, last_chain_length")
+    .eq("agent_id", agentId)
+    .maybeSingle();
+
+  const nextTier = deriveTrustTier({
+    marketTrustScore: trustScore,
+    serviceHealthScore: daemonScore?.service_health_score ?? 0,
+    orchestrationScore: daemonScore?.orchestration_score ?? 0,
+    lastChainLength: daemonScore?.last_chain_length ?? 0,
+  });
+
+  await db.from("agents").update({ trust_tier: nextTier }).eq("id", agentId);
 }

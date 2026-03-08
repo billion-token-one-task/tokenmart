@@ -17,9 +17,9 @@ export interface CrawlDocEntry {
   audience?: CrawlDocAudience;
 }
 
-export const CRAWL_DOCS_GENERATED_AT = "2026-03-08T07:22:41.645Z";
-export const CRAWL_DOCS_COUNT = 14;
-export const CRAWL_DOCS_ARCHIVE_COUNT = 7;
+export const CRAWL_DOCS_GENERATED_AT = "2026-03-08T11:10:58.969Z";
+export const CRAWL_DOCS_COUNT = 15;
+export const CRAWL_DOCS_ARCHIVE_COUNT = 9;
 export const CRAWL_RUNTIME_DOCS_COUNT = 4;
 export const CRAWL_DOCS: CrawlDocEntry[] = [
   {
@@ -161,6 +161,16 @@ export const CRAWL_DOCS: CrawlDocEntry[] = [
     "summary": "A concise repository and product overview for contributors navigating the TokenMart codebase.",
     "order": 140,
     "audience": "maintainers, contributors"
+  },
+  {
+    "path": "docs/ORCHESTRATION_METHODOLOGY.md",
+    "title": "TokenMart Orchestration Methodology",
+    "url": "/crawl-docs/docs/ORCHESTRATION_METHODOLOGY.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "TokenMart decomposes work as a directed acyclic graph of execution nodes. Each node must define:",
+    "order": 900,
+    "audience": "operators"
   }
 ];
 export const CRAWL_DOCS_ARCHIVE: CrawlDocEntry[] = [
@@ -215,6 +225,16 @@ export const CRAWL_DOCS_ARCHIVE: CrawlDocEntry[] = [
     "audience": "internal"
   },
   {
+    "path": "docs/plans/2026-03-08-orchestration-audit-remediation.md",
+    "title": "Orchestration Audit Remediation Implementation Plan",
+    "url": "/crawl-docs/docs/plans/2026-03-08-orchestration-audit-remediation.md",
+    "track": "archive",
+    "category": "plans",
+    "summary": "**Goal:** Fully align TokenMart’s backend, APIs, docs, and frontend with the split trust model and the new work-graph/planner-reviewer-reconciler methodology.",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
     "path": "docs/plans/2026-03-07-reference-video-editorial-overhaul-design.md",
     "title": "Reference Video Editorial Overhaul Design",
     "url": "/crawl-docs/docs/plans/2026-03-07-reference-video-editorial-overhaul-design.md",
@@ -231,6 +251,16 @@ export const CRAWL_DOCS_ARCHIVE: CrawlDocEntry[] = [
     "track": "archive",
     "category": "plans",
     "summary": "**Goal:** Rebuild TokenMart's full visual identity around the approved white-and-pink editorial reference video and apply it across shared primitives, shell chrome, landing, docs, auth, and major app surfaces.",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
+    "path": "docs/plans/2026-03-08-trust-orchestration-overhaul.md",
+    "title": "Trust and Orchestration Overhaul Implementation Plan",
+    "url": "/crawl-docs/docs/plans/2026-03-08-trust-orchestration-overhaul.md",
+    "track": "archive",
+    "category": "plans",
+    "summary": "**Goal:** Replace the current heuristic-heavy daemon/trust/task model with explicit service health, orchestration capability, and task execution contracts that agents and operators can both rely on.",
     "order": 900,
     "audience": "operators"
   }
@@ -419,6 +449,16 @@ export const ALL_CRAWL_DOCS: CrawlDocEntry[] = [
     "audience": "maintainers, contributors"
   },
   {
+    "path": "docs/ORCHESTRATION_METHODOLOGY.md",
+    "title": "TokenMart Orchestration Methodology",
+    "url": "/crawl-docs/docs/ORCHESTRATION_METHODOLOGY.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "TokenMart decomposes work as a directed acyclic graph of execution nodes. Each node must define:",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
     "path": "public/skill.md",
     "title": "TokenMart OpenClaw Operating Skill",
     "url": "/crawl-docs/public/skill.md",
@@ -509,6 +549,16 @@ export const ALL_CRAWL_DOCS: CrawlDocEntry[] = [
     "audience": "internal"
   },
   {
+    "path": "docs/plans/2026-03-08-orchestration-audit-remediation.md",
+    "title": "Orchestration Audit Remediation Implementation Plan",
+    "url": "/crawl-docs/docs/plans/2026-03-08-orchestration-audit-remediation.md",
+    "track": "archive",
+    "category": "plans",
+    "summary": "**Goal:** Fully align TokenMart’s backend, APIs, docs, and frontend with the split trust model and the new work-graph/planner-reviewer-reconciler methodology.",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
     "path": "docs/plans/2026-03-07-reference-video-editorial-overhaul-design.md",
     "title": "Reference Video Editorial Overhaul Design",
     "url": "/crawl-docs/docs/plans/2026-03-07-reference-video-editorial-overhaul-design.md",
@@ -525,6 +575,16 @@ export const ALL_CRAWL_DOCS: CrawlDocEntry[] = [
     "track": "archive",
     "category": "plans",
     "summary": "**Goal:** Rebuild TokenMart's full visual identity around the approved white-and-pink editorial reference video and apply it across shared primitives, shell chrome, landing, docs, auth, and major app surfaces.",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
+    "path": "docs/plans/2026-03-08-trust-orchestration-overhaul.md",
+    "title": "Trust and Orchestration Overhaul Implementation Plan",
+    "url": "/crawl-docs/docs/plans/2026-03-08-trust-orchestration-overhaul.md",
+    "track": "archive",
+    "category": "plans",
+    "summary": "**Goal:** Replace the current heuristic-heavy daemon/trust/task model with explicit service health, orchestration capability, and task execution contracts that agents and operators can both rely on.",
     "order": 900,
     "audience": "operators"
   }

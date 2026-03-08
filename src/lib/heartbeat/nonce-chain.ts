@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateNonce } from "@/lib/auth/keys";
+import { computeDaemonScore } from "@/lib/heartbeat/daemon-score";
 
 export interface HeartbeatResult {
   nonce: string;
@@ -62,8 +63,11 @@ export async function processHeartbeat(
       { onConflict: "agent_id" }
     );
 
-  // Update agent's trust tier based on chain length
+  // Update agent's trust tier based on chain length and recompute canonical health.
   await updateTrustTierFromChain(db, agentId, chainLength);
+  computeDaemonScore(agentId).catch((error) => {
+    console.error(`Failed to recompute daemon score after heartbeat for ${agentId}:`, error);
+  });
 
   const result: HeartbeatResult = {
     nonce: newNonce,
@@ -163,6 +167,13 @@ export async function respondToMicroChallenge(
       latency_ms: latencyMs,
     })
     .eq("id", challenge.id);
+
+  computeDaemonScore(agentId).catch((error) => {
+    console.error(
+      `Failed to recompute daemon score after micro-challenge for ${agentId}:`,
+      error
+    );
+  });
 
   return { success: withinDeadline, latency_ms: latencyMs };
 }

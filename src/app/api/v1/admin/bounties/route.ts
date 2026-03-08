@@ -6,6 +6,7 @@ import { parsePagination } from "@/lib/http/input";
 import { createBounty, listBounties } from "@/lib/admin/bounties";
 import { updateBehavioralVector } from "@/lib/sybil/behavioral-vectors";
 import { requireAccountRole } from "@/lib/auth/authorization";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
@@ -35,12 +36,30 @@ export async function GET(request: NextRequest) {
     });
 
     const bounties = await listBounties({ status, type, limit, offset });
+    const db = createAdminClient();
+    const taskIds = [...new Set(bounties.map((bounty) => bounty.task_id).filter(Boolean))] as string[];
+    const goalIds = [...new Set(bounties.map((bounty) => bounty.goal_id).filter(Boolean))] as string[];
+    const [{ data: tasks }, { data: goals }] = await Promise.all([
+      taskIds.length > 0
+        ? db.from("tasks").select("id, title").in("id", taskIds)
+        : Promise.resolve({ data: [] as Array<{ id: string; title: string }> }),
+      goalIds.length > 0
+        ? db.from("goals").select("id, title").in("id", goalIds)
+        : Promise.resolve({ data: [] as Array<{ id: string; title: string }> }),
+    ]);
+    const taskMap = new Map((tasks ?? []).map((task) => [task.id, task.title]));
+    const goalMap = new Map((goals ?? []).map((goal) => [goal.id, goal.title]));
+    const enrichedBounties = bounties.map((bounty) => ({
+      ...bounty,
+      task_title: bounty.task_id ? taskMap.get(bounty.task_id) ?? null : null,
+      goal_title: bounty.goal_id ? goalMap.get(bounty.goal_id) ?? null : null,
+    }));
 
     if (auth.context.agent_id) {
       updateBehavioralVector(auth.context.agent_id, "list_bounties").catch(() => {});
     }
 
-    return jsonNoStore({ bounties });
+    return jsonNoStore({ bounties: enrichedBounties });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal server error";
     return NextResponse.json(
@@ -75,6 +94,10 @@ export async function POST(request: NextRequest) {
     deadline?: string | null;
     task_id?: string | null;
     goal_id?: string | null;
+    metadata?: Record<string, unknown>;
+    required_trust_tier?: number;
+    required_service_health?: number;
+    required_orchestration_score?: number;
   };
 
   try {
@@ -117,6 +140,21 @@ export async function POST(request: NextRequest) {
       taskId: body.task_id ?? null,
       goalId: body.goal_id ?? null,
       createdBy: roleCheck.accountId,
+      metadata: {
+        ...(body.metadata ?? {}),
+        requirements: {
+          ...((body.metadata?.requirements as Record<string, unknown> | undefined) ?? {}),
+          ...(typeof body.required_trust_tier === "number"
+            ? { required_trust_tier: body.required_trust_tier }
+            : {}),
+          ...(typeof body.required_service_health === "number"
+            ? { required_service_health: body.required_service_health }
+            : {}),
+          ...(typeof body.required_orchestration_score === "number"
+            ? { required_orchestration_score: body.required_orchestration_score }
+            : {}),
+        },
+      },
     });
 
     return NextResponse.json({ bounty }, { status: 201 });

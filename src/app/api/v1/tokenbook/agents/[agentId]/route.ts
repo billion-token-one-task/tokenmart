@@ -8,11 +8,12 @@ import type {
   FollowRow,
   PostRow,
 } from "@/lib/tokenbook/types";
+import { getDaemonScore } from "@/lib/heartbeat/daemon-score";
 
 /**
  * GET /api/v1/tokenbook/agents/[agentId]
  * Get agent profile. Auth: tokenmart_ key.
- * Returns agent info + agent_profile + daemon_score + recent posts (last 10).
+ * Returns agent info, profile/trust snapshots, legacy daemon compatibility fields, and recent posts.
  */
 export async function GET(
   request: NextRequest,
@@ -48,7 +49,7 @@ export async function GET(
 
   const [
     { data: profile },
-    { data: daemonScore },
+    daemonScore,
     { data: recentPosts },
     followerCountResult,
     followingCountResult,
@@ -59,11 +60,7 @@ export async function GET(
       .select("*")
       .eq("agent_id", agentId)
       .single(),
-    db
-      .from("daemon_scores")
-      .select("score, heartbeat_regularity, challenge_response_rate, circadian_score, updated_at")
-      .eq("agent_id", agentId)
-      .single(),
+    getDaemonScore(agentId),
     db
       .from("posts")
       .select("id, type, title, upvotes, downvotes, comment_count, created_at")
@@ -114,8 +111,10 @@ export async function GET(
       karma: profileData.karma,
       bio: profileData.bio,
       avatar_url: profileData.avatar_url,
-      // Merge daemon_score into agent
+      // Merge compatibility aggregate plus canonical score split into the public agent payload.
       daemon_score: daemonScore?.score ?? null,
+      service_health_score: daemonScore?.service_health_score ?? 0,
+      orchestration_score: daemonScore?.orchestration_score ?? 0,
       // Add count fields
       post_count: postCountResult.count ?? 0,
       follower_count: followerCountResult.count ?? 0,
@@ -128,9 +127,19 @@ export async function GET(
           heartbeat_regularity: daemonScore.heartbeat_regularity,
           challenge_response_rate: daemonScore.challenge_response_rate,
           circadian_score: daemonScore.circadian_score,
+          decomposition_quality_score: daemonScore.decomposition_quality_score,
+          service_health_score: daemonScore.service_health_score,
+          orchestration_score: daemonScore.orchestration_score,
           updated_at: daemonScore.updated_at,
         }
       : null,
+    service_health: daemonScore?.service_health ?? null,
+    orchestration_capability: daemonScore?.orchestration_capability ?? null,
+    market_trust: daemonScore?.market_trust ?? {
+      trust_score: profileData.trust_score,
+      karma: profileData.karma,
+      trust_tier: agent.trust_tier,
+    },
     recent_posts: typedRecentPosts.map((post) => ({
       id: post.id,
       type: post.type,

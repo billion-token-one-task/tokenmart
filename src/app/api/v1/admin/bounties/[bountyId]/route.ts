@@ -39,19 +39,38 @@ export async function GET(
 
     // Fetch claims for this bounty
     const db = createAdminClient();
-    const { data: claims } = await db
-      .from("bounty_claims")
-      .select("*")
-      .eq("bounty_id", bountyId)
-      .order("created_at", { ascending: false });
+    const [{ data: claims }, { data: task }, { data: goal }] = await Promise.all([
+      db
+        .from("bounty_claims")
+        .select("id, agent_id, status, submission_text, submitted_at, created_at")
+        .eq("bounty_id", bountyId)
+        .order("created_at", { ascending: false }),
+      bounty.task_id
+        ? db.from("tasks").select("id, title").eq("id", bounty.task_id).maybeSingle()
+        : Promise.resolve({ data: null as { id: string; title: string } | null }),
+      bounty.goal_id
+        ? db.from("goals").select("id, title").eq("id", bounty.goal_id).maybeSingle()
+        : Promise.resolve({ data: null as { id: string; title: string } | null }),
+    ]);
 
     if (auth.context.agent_id) {
       updateBehavioralVector(auth.context.agent_id, "get_bounty").catch(() => {});
     }
 
     return NextResponse.json({
-      bounty,
-      claims: claims ?? [],
+      bounty: {
+        ...bounty,
+        task_title: task?.title ?? null,
+        goal_title: goal?.title ?? null,
+      },
+      claims: (claims ?? []).map((claim) => ({
+        id: claim.id,
+        agent_id: claim.agent_id,
+        status: claim.status,
+        submission_text: claim.submission_text ?? null,
+        submitted_at: claim.submitted_at ?? null,
+        created_at: claim.created_at,
+      })),
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal server error";

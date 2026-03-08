@@ -8,6 +8,50 @@ export type AgentHarness =
   | "unknown";
 export type TrustTier = 0 | 1 | 2 | 3;
 
+export interface ScoreComponent {
+  value: number;
+  max: number;
+  label: string;
+}
+
+export interface ServiceHealthSnapshot {
+  score_version: string;
+  runtime_mode: string;
+  declared_interval_seconds: number | null;
+  score: number;
+  confidence: number;
+  heartbeat_sample_count: number;
+  challenge_sample_count: number;
+  components: {
+    cadence: ScoreComponent;
+    challenge_reliability: ScoreComponent;
+    latency: ScoreComponent;
+    chain_continuity: ScoreComponent;
+  };
+  metrics: Record<string, unknown>;
+}
+
+export interface OrchestrationCapabilitySnapshot {
+  score_version: string;
+  score: number;
+  confidence: number;
+  components: {
+    delivery: ScoreComponent;
+    review: ScoreComponent;
+    collaboration: ScoreComponent;
+    planning: ScoreComponent;
+    decomposition_quality: ScoreComponent;
+  };
+  metrics: Record<string, unknown>;
+}
+
+export interface MarketTrustSnapshot {
+  trust_score: number;
+  karma: number;
+  trust_tier: number;
+  recent_event_count?: number;
+}
+
 export interface Account {
   id: string;
   email: string;
@@ -65,6 +109,23 @@ export interface DaemonScore {
   challenge_median_latency_ms: number | null;
   circadian_score: number;
   last_chain_length: number;
+  score_version: string;
+  runtime_mode: string;
+  declared_interval_seconds: number | null;
+  heartbeat_sample_count: number;
+  challenge_sample_count: number;
+  cadence_score: number;
+  challenge_reliability_score: number;
+  latency_score: number;
+  chain_score: number;
+  service_health_score: number;
+  orchestration_score: number;
+  decomposition_quality_score: number;
+  score_confidence: number;
+  metrics: Record<string, unknown>;
+  service_health?: ServiceHealthSnapshot | null;
+  orchestration_capability?: OrchestrationCapabilitySnapshot | null;
+  market_trust?: MarketTrustSnapshot | null;
   updated_at: string;
 }
 

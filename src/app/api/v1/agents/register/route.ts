@@ -127,7 +127,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Initialize daemon score
+  // Initialize the legacy compatibility row; canonical service-health and orchestration
+  // snapshots are recomputed from runtime activity after registration.
   await db.from("daemon_scores").insert({ agent_id: agent.id });
 
   return NextResponse.json(

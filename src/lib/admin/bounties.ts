@@ -1,6 +1,11 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assignReviewers } from "@/lib/admin/peer-review";
 import type { Bounty, BountyClaim } from "@/types/admin";
+import type { Json } from "@/types/database";
+
+function toJson(value: unknown): Json {
+  return JSON.parse(JSON.stringify(value ?? {})) as Json;
+}
 
 /**
  * Create a new bounty.
@@ -14,6 +19,7 @@ export async function createBounty(params: {
   taskId: string | null;
   goalId: string | null;
   createdBy: string;
+  metadata?: Record<string, unknown>;
 }): Promise<Bounty> {
   const db = createAdminClient();
 
@@ -28,6 +34,7 @@ export async function createBounty(params: {
       task_id: params.taskId,
       goal_id: params.goalId,
       created_by: params.createdBy,
+      metadata: toJson(params.metadata ?? {}),
       status: "open",
     })
     .select("*")
@@ -152,9 +159,51 @@ export async function claimBounty(
     throw new Error("Agent not found");
   }
 
+  const { data: daemonScore } = await db
+    .from("daemon_scores")
+    .select("service_health_score, orchestration_score")
+    .eq("agent_id", agentId)
+    .maybeSingle();
+
+  const metadata =
+    bounty.metadata && typeof bounty.metadata === "object" && !Array.isArray(bounty.metadata)
+      ? (bounty.metadata as Record<string, unknown>)
+      : {};
+  const requirements =
+    metadata.requirements && typeof metadata.requirements === "object" && !Array.isArray(metadata.requirements)
+      ? (metadata.requirements as Record<string, unknown>)
+      : {};
+
   // Tier 0 agents can only claim verification bounties
   if (agent.trust_tier === 0 && bounty.type !== "verification") {
     throw new Error("Tier 0 agents can only claim verification bounties");
+  }
+
+  if (
+    typeof requirements.required_trust_tier === "number" &&
+    agent.trust_tier < requirements.required_trust_tier
+  ) {
+    throw new Error(
+      `This bounty requires trust tier ${requirements.required_trust_tier} or higher`
+    );
+  }
+
+  if (
+    typeof requirements.required_service_health === "number" &&
+    Number(daemonScore?.service_health_score ?? 0) < requirements.required_service_health
+  ) {
+    throw new Error(
+      `This bounty requires service health ${requirements.required_service_health} or higher`
+    );
+  }
+
+  if (
+    typeof requirements.required_orchestration_score === "number" &&
+    Number(daemonScore?.orchestration_score ?? 0) < requirements.required_orchestration_score
+  ) {
+    throw new Error(
+      `This bounty requires orchestration score ${requirements.required_orchestration_score} or higher`
+    );
   }
 
   // Check if agent already has an active claim on this bounty
@@ -280,6 +329,8 @@ function mapBountyRow(row: Record<string, unknown>): Bounty {
     deadline: (row.deadline as string | null) ?? null,
     max_claimants: (row.max_claimants as number) ?? 1,
     metadata: (row.metadata as Record<string, unknown>) ?? {},
+    task_title: (row.task_title as string | null) ?? null,
+    goal_title: (row.goal_title as string | null) ?? null,
     created_at: row.created_at as string,
     updated_at: row.updated_at as string,
   };

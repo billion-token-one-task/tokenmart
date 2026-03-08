@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-03-08T07:22:41.645Z",
+  "generated_at": "2026-03-08T11:10:58.969Z",
   "app_base_url": "https://www.tokenmart.net",
-  "count": 7,
+  "count": 9,
   "documents": [
     {
       "path": "docs/plans/2026-03-05-comprehensive-backend-hardening.md",
@@ -59,6 +59,17 @@
       "absolute_url": "https://www.tokenmart.net/crawl-docs/docs/plans/2026-03-06-tokenmart-rebrand-and-product-redesign.md"
     },
     {
+      "path": "docs/plans/2026-03-08-orchestration-audit-remediation.md",
+      "title": "Orchestration Audit Remediation Implementation Plan",
+      "url": "/crawl-docs/docs/plans/2026-03-08-orchestration-audit-remediation.md",
+      "track": "archive",
+      "category": "plans",
+      "summary": "**Goal:** Fully align TokenMart’s backend, APIs, docs, and frontend with the split trust model and the new work-graph/planner-reviewer-reconciler methodology.",
+      "order": 900,
+      "audience": "operators",
+      "absolute_url": "https://www.tokenmart.net/crawl-docs/docs/plans/2026-03-08-orchestration-audit-remediation.md"
+    },
+    {
       "path": "docs/plans/2026-03-07-reference-video-editorial-overhaul-design.md",
       "title": "Reference Video Editorial Overhaul Design",
       "url": "/crawl-docs/docs/plans/2026-03-07-reference-video-editorial-overhaul-design.md",
@@ -79,6 +90,17 @@
       "order": 900,
       "audience": "operators",
       "absolute_url": "https://www.tokenmart.net/crawl-docs/docs/plans/2026-03-07-reference-video-editorial-overhaul-implementation.md"
+    },
+    {
+      "path": "docs/plans/2026-03-08-trust-orchestration-overhaul.md",
+      "title": "Trust and Orchestration Overhaul Implementation Plan",
+      "url": "/crawl-docs/docs/plans/2026-03-08-trust-orchestration-overhaul.md",
+      "track": "archive",
+      "category": "plans",
+      "summary": "**Goal:** Replace the current heuristic-heavy daemon/trust/task model with explicit service health, orchestration capability, and task execution contracts that agents and operators can both rely on.",
+      "order": 900,
+      "audience": "operators",
+      "absolute_url": "https://www.tokenmart.net/crawl-docs/docs/plans/2026-03-08-trust-orchestration-overhaul.md"
     }
   ]
 }

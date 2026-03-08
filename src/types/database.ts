@@ -350,6 +350,20 @@ export interface Database {
           challenge_median_latency_ms: number | null;
           circadian_score: number;
           last_chain_length: number;
+          score_version: string;
+          runtime_mode: string;
+          declared_interval_seconds: number | null;
+          heartbeat_sample_count: number;
+          challenge_sample_count: number;
+          cadence_score: number;
+          challenge_reliability_score: number;
+          latency_score: number;
+          chain_score: number;
+          service_health_score: number;
+          orchestration_score: number;
+          decomposition_quality_score: number;
+          score_confidence: number;
+          metrics: Json;
           updated_at: string;
         };
         Insert: {
@@ -360,6 +374,20 @@ export interface Database {
           challenge_median_latency_ms?: number | null;
           circadian_score?: number;
           last_chain_length?: number;
+          score_version?: string;
+          runtime_mode?: string;
+          declared_interval_seconds?: number | null;
+          heartbeat_sample_count?: number;
+          challenge_sample_count?: number;
+          cadence_score?: number;
+          challenge_reliability_score?: number;
+          latency_score?: number;
+          chain_score?: number;
+          service_health_score?: number;
+          orchestration_score?: number;
+          decomposition_quality_score?: number;
+          score_confidence?: number;
+          metrics?: Json;
           updated_at?: string;
         };
         Update: {
@@ -370,6 +398,20 @@ export interface Database {
           challenge_median_latency_ms?: number | null;
           circadian_score?: number;
           last_chain_length?: number;
+          score_version?: string;
+          runtime_mode?: string;
+          declared_interval_seconds?: number | null;
+          heartbeat_sample_count?: number;
+          challenge_sample_count?: number;
+          cadence_score?: number;
+          challenge_reliability_score?: number;
+          latency_score?: number;
+          chain_score?: number;
+          service_health_score?: number;
+          orchestration_score?: number;
+          decomposition_quality_score?: number;
+          score_confidence?: number;
+          metrics?: Json;
           updated_at?: string;
         };
         Relationships: [
@@ -820,10 +862,20 @@ export interface Database {
           title: string;
           description: string | null;
           status: string;
+          priority: number;
           passing_spec: string | null;
           credit_reward: string;
           created_by: string | null;
           assigned_to: string | null;
+          methodology_version: string;
+          metadata: Json;
+          input_spec: Json;
+          output_spec: Json;
+          retry_policy: Json;
+          verification_method: string | null;
+          verification_target: string | null;
+          estimated_minutes: number | null;
+          actual_minutes: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -832,10 +884,20 @@ export interface Database {
           title: string;
           description?: string | null;
           status?: string;
+          priority?: number;
           passing_spec?: string | null;
           credit_reward?: string;
           created_by?: string | null;
           assigned_to?: string | null;
+          methodology_version?: string;
+          metadata?: Json;
+          input_spec?: Json;
+          output_spec?: Json;
+          retry_policy?: Json;
+          verification_method?: string | null;
+          verification_target?: string | null;
+          estimated_minutes?: number | null;
+          actual_minutes?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -844,10 +906,20 @@ export interface Database {
           title?: string;
           description?: string | null;
           status?: string;
+          priority?: number;
           passing_spec?: string | null;
           credit_reward?: string;
           created_by?: string | null;
           assigned_to?: string | null;
+          methodology_version?: string;
+          metadata?: Json;
+          input_spec?: Json;
+          output_spec?: Json;
+          retry_policy?: Json;
+          verification_method?: string | null;
+          verification_target?: string | null;
+          estimated_minutes?: number | null;
+          actual_minutes?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -864,6 +936,21 @@ export interface Database {
           status: string;
           passing_spec: string | null;
           requires_all_subgoals: boolean;
+          assigned_agent_id: string | null;
+          credit_reward: string;
+          metadata: Json;
+          evidence: Json;
+          input_spec: Json;
+          output_spec: Json;
+          retry_policy: Json;
+          verification_method: string | null;
+          verification_target: string | null;
+          orchestration_role: string;
+          node_type: string;
+          blocked_reason: string | null;
+          completion_confidence: number | null;
+          estimated_minutes: number | null;
+          actual_minutes: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -877,6 +964,21 @@ export interface Database {
           status?: string;
           passing_spec?: string | null;
           requires_all_subgoals?: boolean;
+          assigned_agent_id?: string | null;
+          credit_reward?: string;
+          metadata?: Json;
+          evidence?: Json;
+          input_spec?: Json;
+          output_spec?: Json;
+          retry_policy?: Json;
+          verification_method?: string | null;
+          verification_target?: string | null;
+          orchestration_role?: string;
+          node_type?: string;
+          blocked_reason?: string | null;
+          completion_confidence?: number | null;
+          estimated_minutes?: number | null;
+          actual_minutes?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -890,15 +992,381 @@ export interface Database {
           status?: string;
           passing_spec?: string | null;
           requires_all_subgoals?: boolean;
+          assigned_agent_id?: string | null;
+          credit_reward?: string;
+          metadata?: Json;
+          evidence?: Json;
+          input_spec?: Json;
+          output_spec?: Json;
+          retry_policy?: Json;
+          verification_method?: string | null;
+          verification_target?: string | null;
+          orchestration_role?: string;
+          node_type?: string;
+          blocked_reason?: string | null;
+          completion_confidence?: number | null;
+          estimated_minutes?: number | null;
+          actual_minutes?: number | null;
           created_at?: string;
           updated_at?: string;
         };
         Relationships: [
           {
+            foreignKeyName: "goals_assigned_agent_id_fkey";
+            columns: ["assigned_agent_id"];
+            isOneToOne: false;
+            referencedRelation: "agents";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "goals_task_id_fkey";
             columns: ["task_id"];
             isOneToOne: false;
             referencedRelation: "tasks";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      goal_dependencies: {
+        Row: {
+          id: string;
+          goal_id: string;
+          depends_on_goal_id: string;
+          dependency_kind: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          goal_id: string;
+          depends_on_goal_id: string;
+          dependency_kind?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          goal_id?: string;
+          depends_on_goal_id?: string;
+          dependency_kind?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "goal_dependencies_depends_on_goal_id_fkey";
+            columns: ["depends_on_goal_id"];
+            isOneToOne: false;
+            referencedRelation: "goals";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "goal_dependencies_goal_id_fkey";
+            columns: ["goal_id"];
+            isOneToOne: false;
+            referencedRelation: "goals";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      execution_plans: {
+        Row: {
+          id: string;
+          task_id: string;
+          created_by: string | null;
+          agent_id: string | null;
+          status: string;
+          methodology_version: string;
+          summary: string | null;
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          task_id: string;
+          created_by?: string | null;
+          agent_id?: string | null;
+          status?: string;
+          methodology_version?: string;
+          summary?: string | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          task_id?: string;
+          created_by?: string | null;
+          agent_id?: string | null;
+          status?: string;
+          methodology_version?: string;
+          summary?: string | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "execution_plans_agent_id_fkey";
+            columns: ["agent_id"];
+            isOneToOne: false;
+            referencedRelation: "agents";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "execution_plans_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "execution_plans_task_id_fkey";
+            columns: ["task_id"];
+            isOneToOne: false;
+            referencedRelation: "tasks";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      execution_plan_nodes: {
+        Row: {
+          id: string;
+          plan_id: string;
+          goal_id: string | null;
+          parent_node_id: string | null;
+          node_key: string;
+          title: string;
+          description: string | null;
+          node_type: string;
+          orchestration_role: string;
+          status: string;
+          assigned_agent_id: string | null;
+          priority: number;
+          confidence: number | null;
+          budget_credits: string | null;
+          budget_minutes: number | null;
+          actual_minutes: number | null;
+          passing_spec: string | null;
+          evidence: Json;
+          input_spec: Json;
+          output_spec: Json;
+          retry_policy: Json;
+          verification_method: string | null;
+          verification_target: string | null;
+          rework_count: number;
+          handoff_count: number;
+          successful_handoff_count: number;
+          duplicate_overlap_score: number | null;
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          plan_id: string;
+          goal_id?: string | null;
+          parent_node_id?: string | null;
+          node_key: string;
+          title: string;
+          description?: string | null;
+          node_type?: string;
+          orchestration_role?: string;
+          status?: string;
+          assigned_agent_id?: string | null;
+          priority?: number;
+          confidence?: number | null;
+          budget_credits?: string | null;
+          budget_minutes?: number | null;
+          actual_minutes?: number | null;
+          passing_spec?: string | null;
+          evidence?: Json;
+          input_spec?: Json;
+          output_spec?: Json;
+          retry_policy?: Json;
+          verification_method?: string | null;
+          verification_target?: string | null;
+          rework_count?: number;
+          handoff_count?: number;
+          successful_handoff_count?: number;
+          duplicate_overlap_score?: number | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          plan_id?: string;
+          goal_id?: string | null;
+          parent_node_id?: string | null;
+          node_key?: string;
+          title?: string;
+          description?: string | null;
+          node_type?: string;
+          orchestration_role?: string;
+          status?: string;
+          assigned_agent_id?: string | null;
+          priority?: number;
+          confidence?: number | null;
+          budget_credits?: string | null;
+          budget_minutes?: number | null;
+          actual_minutes?: number | null;
+          passing_spec?: string | null;
+          evidence?: Json;
+          input_spec?: Json;
+          output_spec?: Json;
+          retry_policy?: Json;
+          verification_method?: string | null;
+          verification_target?: string | null;
+          rework_count?: number;
+          handoff_count?: number;
+          successful_handoff_count?: number;
+          duplicate_overlap_score?: number | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "execution_plan_nodes_assigned_agent_id_fkey";
+            columns: ["assigned_agent_id"];
+            isOneToOne: false;
+            referencedRelation: "agents";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "execution_plan_nodes_goal_id_fkey";
+            columns: ["goal_id"];
+            isOneToOne: false;
+            referencedRelation: "goals";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "execution_plan_nodes_parent_node_id_fkey";
+            columns: ["parent_node_id"];
+            isOneToOne: false;
+            referencedRelation: "execution_plan_nodes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "execution_plan_nodes_plan_id_fkey";
+            columns: ["plan_id"];
+            isOneToOne: false;
+            referencedRelation: "execution_plans";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      execution_plan_edges: {
+        Row: {
+          id: string;
+          plan_id: string;
+          from_node_id: string;
+          to_node_id: string;
+          edge_type: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          plan_id: string;
+          from_node_id: string;
+          to_node_id: string;
+          edge_type?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          plan_id?: string;
+          from_node_id?: string;
+          to_node_id?: string;
+          edge_type?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "execution_plan_edges_from_node_id_fkey";
+            columns: ["from_node_id"];
+            isOneToOne: false;
+            referencedRelation: "execution_plan_nodes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "execution_plan_edges_plan_id_fkey";
+            columns: ["plan_id"];
+            isOneToOne: false;
+            referencedRelation: "execution_plans";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "execution_plan_edges_to_node_id_fkey";
+            columns: ["to_node_id"];
+            isOneToOne: false;
+            referencedRelation: "execution_plan_nodes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      execution_plan_reviews: {
+        Row: {
+          id: string;
+          plan_id: string;
+          review_type: string;
+          reviewer_agent_id: string | null;
+          reviewer_account_id: string | null;
+          decision: string;
+          score: number | null;
+          summary: string | null;
+          evidence_findings: Json;
+          metadata: Json;
+          created_at: string;
+          submitted_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          plan_id: string;
+          review_type?: string;
+          reviewer_agent_id?: string | null;
+          reviewer_account_id?: string | null;
+          decision?: string;
+          score?: number | null;
+          summary?: string | null;
+          evidence_findings?: Json;
+          metadata?: Json;
+          created_at?: string;
+          submitted_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          plan_id?: string;
+          review_type?: string;
+          reviewer_agent_id?: string | null;
+          reviewer_account_id?: string | null;
+          decision?: string;
+          score?: number | null;
+          summary?: string | null;
+          evidence_findings?: Json;
+          metadata?: Json;
+          created_at?: string;
+          submitted_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "execution_plan_reviews_plan_id_fkey";
+            columns: ["plan_id"];
+            isOneToOne: false;
+            referencedRelation: "execution_plans";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "execution_plan_reviews_reviewer_account_id_fkey";
+            columns: ["reviewer_account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "execution_plan_reviews_reviewer_agent_id_fkey";
+            columns: ["reviewer_agent_id"];
+            isOneToOne: false;
+            referencedRelation: "agents";
             referencedColumns: ["id"];
           },
         ];
@@ -914,6 +1382,7 @@ export interface Database {
           status: string;
           credit_reward: string;
           deadline: string | null;
+          metadata: Json;
           created_by: string | null;
           created_at: string;
           updated_at: string;
@@ -928,6 +1397,7 @@ export interface Database {
           status?: string;
           credit_reward?: string;
           deadline?: string | null;
+          metadata?: Json;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -942,6 +1412,7 @@ export interface Database {
           status?: string;
           credit_reward?: string;
           deadline?: string | null;
+          metadata?: Json;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
