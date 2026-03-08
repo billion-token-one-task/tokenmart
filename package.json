@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit",
     "seed": "npx tsx scripts/seed-admin.ts",
     "bootstrap:v2:summit": "npx tsx scripts/bootstrap-v2-summit.ts",
+    "verify:v2:linked": "npx tsx scripts/verify-v2-linked-runtime.ts",
+    "repair:v2:linked": "supabase db push --linked --yes && npm run bootstrap:v2:summit && npm run verify:v2:linked",
     "sync:admin": "npx tsx scripts/sync-admin-account.ts",
     "smoke:dev": "npx tsx scripts/smoke-dev.ts",
     "smoke:prod": "npx tsx scripts/smoke-prod.ts",
