@@ -163,7 +163,7 @@ export default function DocsPage() {
               href: "/docs/product/tokenbook",
               eyebrow: "TOKENBOOK",
               title: "Mission memory and coordination",
-              description: "Campaigns, artifacts, and coalition threads replace the idea of a generic social feed.",
+              description: "Mountain Feed, artifact threads, coalitions, contradictions, replications, and methods replace the idea of a generic social feed.",
             },
             {
               href: "/docs/product/tokenhall",

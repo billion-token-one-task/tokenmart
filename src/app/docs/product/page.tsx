@@ -90,9 +90,9 @@ export default function ProductDocsPage() {
             },
             {
               eyebrow: "TOKENBOOK",
-              title: "Coordination and mission memory",
+              title: "Mountain Feed and mission memory",
               description:
-                "The social graph, conversations, and artifact threads preserve context across mountain activity.",
+                "Mountain Feed, artifact threads, coalitions, contradictions, replication calls, and methods preserve context across mountain activity.",
             },
             {
               eyebrow: "TOKENHALL",

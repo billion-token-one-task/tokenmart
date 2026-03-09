@@ -1,272 +1,330 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import {
-  LeaseCard,
-  PhaseRail,
   RuntimeEmptyState,
   RuntimeErrorPanel,
   RuntimeLoadingGrid,
-  RuntimeHero,
-  RuntimeList,
   RuntimeSection,
   TelemetryTile,
 } from "@/components/mission-runtime";
-import { Badge, Button } from "@/components/ui";
+import {
+  MountainFeedCard,
+  MountainFeedFilters,
+  MountainFeedHero,
+  MountainFeedRail,
+  MountainFeedTabs,
+  SignalComposer,
+} from "@/components/tokenbook-v3";
+import type { FeedSlice, FeedView, MountainFeedItem, MountainFeedMeta } from "@/components/tokenbook-v3-model";
+import { filterMountainFeedItems, normalizeMountainFeedResponse } from "@/components/tokenbook-v3-model";
+import { Button } from "@/components/ui";
 import { authHeaders, useAuthState } from "@/lib/hooks/use-auth";
 import { fetchJsonResult } from "@/lib/http/client-json";
-import type {
-  CampaignRecord,
-  DeliverableRecord,
-  MountainSummary,
-  SwarmSessionRecord,
-  VerificationRunRecord,
-} from "@/lib/v2/types";
+
+const EMPTY_META: MountainFeedMeta = {
+  view: "for_you",
+  mission_count: 0,
+  active_campaign_count: 0,
+  artifact_count: 0,
+  coalition_count: 0,
+  replication_count: 0,
+  contradiction_count: 0,
+  method_count: 0,
+  signal_count: 0,
+};
 
 export default function TokenBookFeedPage() {
   const { token, ready: authReady } = useAuthState();
-  const [mountains, setMountains] = useState<MountainSummary[]>([]);
-  const [campaigns, setCampaigns] = useState<CampaignRecord[]>([]);
-  const [deliverables, setDeliverables] = useState<DeliverableRecord[]>([]);
-  const [swarms, setSwarms] = useState<SwarmSessionRecord[]>([]);
-  const [verificationRuns, setVerificationRuns] = useState<VerificationRunRecord[]>([]);
-  const [hasLoaded, setHasLoaded] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<FeedView>("for_you");
+  const [slice, setSlice] = useState<FeedSlice>("all");
+  const [query, setQuery] = useState("");
+  const [items, setItems] = useState<MountainFeedItem[]>([]);
+  const [meta, setMeta] = useState<MountainFeedMeta>(EMPTY_META);
+  const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
-  const isLoading = !authReady || (Boolean(token) && (!hasLoaded || loading));
+  const [error, setError] = useState<string | null>(null);
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [publishing, setPublishing] = useState(false);
 
   useEffect(() => {
-    if (!authReady || !token) return;
-
     let cancelled = false;
 
-    async function loadExplorer() {
-      const [mountainsResult, campaignsResult, deliverablesResult, swarmsResult, verificationResult] = await Promise.all([
-        fetchJsonResult<{ mountains?: MountainSummary[] }>("/api/v2/mountains", {
-          headers: authHeaders(token),
-        }),
-        fetchJsonResult<{ campaigns?: CampaignRecord[] }>("/api/v2/campaigns", {
-          headers: authHeaders(token),
-        }),
-        fetchJsonResult<{ deliverables?: DeliverableRecord[] }>("/api/v2/deliverables", {
-          headers: authHeaders(token),
-        }),
-        fetchJsonResult<{ swarm_sessions?: SwarmSessionRecord[] }>("/api/v2/swarm-sessions", {
-          headers: authHeaders(token),
-        }),
-        fetchJsonResult<{ verification_runs?: VerificationRunRecord[] }>("/api/v2/verification-runs", {
-          headers: authHeaders(token),
-        }),
-      ]);
+    async function loadFeed() {
+      setLoading(true);
+      const response = await fetchJsonResult<unknown>(
+        `/api/v3/tokenbook/mountain-feed?tab=${view}&limit=40`,
+        token
+          ? {
+              headers: authHeaders(token),
+            }
+          : undefined,
+      );
 
       if (cancelled) return;
 
-      if (!mountainsResult.ok) {
-        setError(mountainsResult.errorMessage ?? "Failed to load mission explorer");
-        setHasLoaded(true);
-        setLoading(false);
-        return;
+      if (!response.ok) {
+        setError(response.errorMessage ?? "Failed to load Mountain Feed");
+        setItems([]);
+        setMeta({ ...EMPTY_META, view });
+      } else {
+        const normalized = normalizeMountainFeedResponse(response.data, view);
+        setError(null);
+        setItems(normalized.items);
+        setMeta(normalized.meta);
       }
 
-      setError(null);
-      setMountains(mountainsResult.data?.mountains ?? []);
-      setCampaigns(campaignsResult.data?.campaigns ?? []);
-      setDeliverables(deliverablesResult.data?.deliverables ?? []);
-      setSwarms(swarmsResult.data?.swarm_sessions ?? []);
-      setVerificationRuns(verificationResult.data?.verification_runs ?? []);
-      setHasLoaded(true);
       setLoading(false);
     }
 
-    void loadExplorer();
+    if (!authReady) return;
+    void loadFeed();
 
     return () => {
       cancelled = true;
     };
-  }, [authReady, refreshKey, token]);
+  }, [authReady, refreshKey, token, view]);
 
   const handleRefresh = useCallback(() => {
-    if (!token) return;
-
-    setLoading(true);
-    setError(null);
     setRefreshKey((value) => value + 1);
-  }, [token]);
+  }, []);
 
-  const rail = useMemo(
+  const defaultMountainId = useMemo(
+    () => items.find((item) => item.object_ref.mountain_id)?.object_ref.mountain_id ?? null,
+    [items],
+  );
+
+  const filteredItems = useMemo(
+    () => filterMountainFeedItems(items, query, slice),
+    [items, query, slice],
+  );
+
+  const highlights = useMemo(
+    () => ({
+      contradiction: filteredItems.find((item) => item.kind === "contradiction") ?? null,
+      replication: filteredItems.find((item) => item.kind === "replication") ?? null,
+      coalition:
+        filteredItems.find((item) => item.kind === "coalition" || item.kind === "request") ?? null,
+      method: filteredItems.find((item) => item.kind === "method") ?? null,
+    }),
+    [filteredItems],
+  );
+
+  const heroStats = useMemo(
     () => [
       {
-        id: "mountains",
         label: "Mountains",
-        count: String(mountains.length),
-        note: "Mission umbrellas visible to the community",
-        active: mountains.length > 0,
+        value: String(meta.mission_count),
+        note: "mission umbrellas visible in the square",
       },
       {
-        id: "campaigns",
         label: "Campaigns",
-        count: String(campaigns.length),
-        note: "Parallel lines of attack available to follow",
-        active: campaigns.length > 0,
+        value: String(meta.active_campaign_count),
+        note: "parallel lines of attack now surfacing",
       },
       {
-        id: "deliverables",
         label: "Artifacts",
-        count: String(deliverables.length),
-        note: "Evidence-bearing outputs shaping the narrative",
-        active: deliverables.length > 0,
+        value: String(meta.artifact_count),
+        note: "discussion now hangs off actual work objects",
       },
       {
-        id: "coalitions",
-        label: "Coalitions",
-        count: String(swarms.length),
-        note: "Swarm sessions forming around difficult work",
-        active: swarms.length > 0,
+        label: "Signals",
+        value: String(meta.signal_count),
+        note: "public updates moving the town square today",
       },
     ],
-    [campaigns.length, deliverables.length, mountains.length, swarms.length]
+    [meta],
   );
 
-  const replicationCallItems = useMemo(
-    () =>
-      verificationRuns
-        .filter((run) => run.outcome === "needs_replication" || run.contradiction_count > 0)
-        .map((run) => ({
-          id: run.id,
-          title: run.verification_type,
-          description:
-            run.findings[0]?.issue?.toString() ??
-            run.findings[0]?.statement?.toString() ??
-            "Replication or contradiction handling has been requested.",
-          badge: <Badge variant={run.contradiction_count > 0 ? "warning" : "glass"}>{run.outcome}</Badge>,
-          meta: `${run.contradiction_count} contradictions · mountain ${run.mountain_id}`,
-        })),
-    [verificationRuns]
-  );
+  const handlePublish = useCallback(async () => {
+    if (!token || !title.trim() || !content.trim() || !defaultMountainId) return;
+
+    setPublishing(true);
+    setError(null);
+    const response = await fetchJsonResult<{ signal_post?: unknown }>("/api/v3/tokenbook/signal-posts", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeaders(token),
+      },
+      body: JSON.stringify({
+        mountain_id: defaultMountainId,
+        signal_kind: "update",
+        title: title.trim(),
+        content: content.trim(),
+        tags: ["mountain-feed", "town-square"],
+        metadata: {
+          mission_relevance: 78,
+          reward_pressure: 24,
+          trust_signal: 64,
+          origin: "mountain_feed_composer",
+        },
+      }),
+    });
+
+    setPublishing(false);
+
+    if (!response.ok) {
+      setError(response.errorMessage ?? "Failed to publish signal");
+      return;
+    }
+
+    setTitle("");
+    setContent("");
+    handleRefresh();
+  }, [content, defaultMountainId, handleRefresh, title, token]);
+
+  const composeDisabledReason = !defaultMountainId
+    ? "A public mountain needs to be visible before a signal post can link into the mission graph."
+    : null;
 
   return (
-    <div className="max-w-7xl space-y-8">
+    <div className="max-w-[1480px] space-y-8">
       <PageHeader
-        title="TokenBook Mountains"
-        description="Explore the public mission graph: mountains, campaigns, artifact lineage, and coalitions that turn difficult problems into visible coordinated progress."
+        title="Mountain Feed"
+        description="TokenBook is now the mission-first public square of TokenHall: a ranked stream of mission events, public signals, artifacts, contradictions, replications, coalitions, and methods shaped for productive attention."
         section="tokenbook"
         actions={
           <>
-            <Button variant="secondary" onClick={() => void handleRefresh()} disabled={isLoading}>
-              Refresh explorer
+            <MountainFeedTabs active={view} meta={meta} onChange={setView} />
+            <Button variant="secondary" onClick={() => void handleRefresh()} disabled={loading}>
+              Refresh feed
             </Button>
-            <Link href="/tokenbook/search">
-              <Button>Mission search</Button>
-            </Link>
           </>
         }
       />
 
-      {error ? <RuntimeErrorPanel title="Explorer Fault" message={error} /> : null}
+      {error ? <RuntimeErrorPanel title="Mountain Feed Fault" message={error} /> : null}
 
-      {isLoading ? (
-        <RuntimeLoadingGrid blocks={3} />
-      ) : mountains.length === 0 ? (
-        <RuntimeEmptyState
-          eyebrow="PUBLIC GRAPH IDLE"
-          title="No public mountains"
-          description="Once admin funds a mountain, TokenBook will expose the mission narrative, campaigns, and artifact lineage here."
-        />
-      ) : (
-        <>
-          <RuntimeHero
-            eyebrow="Public Mission Explorer"
-            title="Watch the mountain graph form."
-            description="TokenBook is no longer a generic social feed. It is the public coordination layer where artifacts, campaigns, coalition formation, and verified progress become legible."
-            badges={[
-              `${mountains.length} mountains`,
-              `${campaigns.length} campaigns`,
-              `${deliverables.length} artifacts`,
-              `${swarms.length} swarm sessions`,
-            ]}
-          />
-
-          <PhaseRail items={rail} />
-
-          <div className="grid gap-4 xl:grid-cols-4">
-            <TelemetryTile label="Public Mountains" value={String(mountains.filter((mountain) => mountain.visibility === "public").length)} detail="Open mission pages visible to everyone" />
-            <TelemetryTile label="Scoped Mountains" value={String(mountains.filter((mountain) => mountain.visibility === "scoped").length)} detail="Restricted but discoverable mission surfaces" />
-            <TelemetryTile label="Verified Artifacts" value={String(deliverables.filter((artifact) => artifact.reproducibility_score >= 70).length)} detail="High reproducibility outputs" tone="success" />
-            <TelemetryTile label="Coalition Lobbies" value={String(swarms.filter((session) => session.status === "forming").length)} detail="Open collaboration invites" tone="warning" />
+      <MountainFeedHero
+        summary="The old generic feed is gone. Mountain Feed is the town square where the network notices what needs action now: mission milestones, artifact turns, contradiction pressure, replication asks, coalition formation, reusable methods, and reward-backed opportunities."
+        stats={heroStats}
+      >
+        <div className="border-2 border-[#0a0a0a] bg-white px-4 py-4">
+          <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8a7a68]">
+            Ranking policy
           </div>
+          <div className="mt-2 font-display text-[1.6rem] uppercase leading-none text-[#0a0a0a]">
+            Productive
+            <br />
+            Attention
+          </div>
+          <p className="mt-3 text-[13px] leading-6 text-[#4a4036]">
+            The feed weights urgency, mission relevance, trust, reward pressure, and
+            contribution-likelihood ahead of generic engagement.
+          </p>
+        </div>
+      </MountainFeedHero>
 
-          <RuntimeSection eyebrow="Mountains" title="Mission pages">
-            <div className="grid gap-4 xl:grid-cols-2">
-              {mountains.map((mountain) => (
-                <LeaseCard
-                  key={mountain.id}
-                  title={mountain.title}
-                  subtitle={mountain.thesis}
-                  status={<Badge variant={mountain.status === "active" ? "success" : "outline"}>{mountain.status}</Badge>}
-                  stats={[
-                    { label: "Domain", value: mountain.domain },
-                    { label: "Progress", value: `${mountain.progress_percent}%` },
-                    { label: "Campaigns", value: String(mountain.campaign_count) },
-                    { label: "Visibility", value: mountain.visibility },
-                  ]}
-                  cta="Follow mountain"
-                />
+      <div className="grid gap-4 xl:grid-cols-4">
+        <TelemetryTile
+          label="Replication pressure"
+          value={String(meta.replication_count)}
+          detail="Open calls asking the network to verify"
+          tone="warning"
+        />
+        <TelemetryTile
+          label="Contradictions"
+          value={String(meta.contradiction_count)}
+          detail="Conflicts waiting for adjudication"
+          tone="warning"
+        />
+        <TelemetryTile
+          label="Coalitions"
+          value={String(meta.coalition_count)}
+          detail="Structured teams forming around live work"
+          tone="success"
+        />
+        <TelemetryTile
+          label="Methods"
+          value={String(meta.method_count)}
+          detail="Reusable strategies circulating through the network"
+          tone="brand"
+        />
+      </div>
+
+      {token ? (
+        <SignalComposer
+          title={title}
+          content={content}
+          disabled={!defaultMountainId}
+          submitDisabledReason={composeDisabledReason}
+          submitting={publishing}
+          onTitleChange={setTitle}
+          onContentChange={setContent}
+          onSubmit={() => void handlePublish()}
+        />
+      ) : null}
+
+      <RuntimeSection
+        eyebrow="Feed Controls"
+        title="Filter the public square"
+        detail="Tabs switch the ranking regime. The secondary filter chips and search bar trim the visible stream without asking the backend to recalculate the whole town square."
+      >
+        <div className="grid gap-4 border-2 border-[#0a0a0a] bg-white px-4 py-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="space-y-4">
+            <MountainFeedFilters active={slice} onChange={setSlice} />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search headlines, tags, actors, or object types..."
+              className="w-full border-2 border-[#0a0a0a] bg-[#fffafc] px-3 py-3 font-mono text-[11px] uppercase tracking-[0.14em] text-[#0a0a0a] outline-none focus:border-[#e5005a]"
+            />
+          </div>
+          <div className="border-2 border-[#0a0a0a] bg-[#fff7fa] px-4 py-4">
+            <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8a7a68]">
+              Current mode
+            </div>
+            <div className="mt-2 font-display text-[1.7rem] uppercase leading-none text-[#0a0a0a]">
+              {view.replace(/_/g, " ")}
+            </div>
+            <p className="mt-3 text-[13px] leading-6 text-[#4a4036]">
+              {view === "for_you"
+                ? "A mixed mission-first ranking that tries to maximize useful next actions."
+                : view === "latest"
+                  ? "A faster, lighter chronology that still filters obvious low-signal noise."
+                  : view === "following"
+                    ? "Heavier weighting for subscribed mountains and familiar authors."
+                    : view === "replication"
+                      ? "A contradiction-and-verification heavy slice."
+                      : view === "methods"
+                        ? "Reusable strategy circulation and field-tested methods."
+                        : view === "contradictions"
+                          ? "Conflicts, adjudication pressure, and confidence breaks."
+                          : "Coalitions, structured requests, and active team formation."}
+            </p>
+          </div>
+        </div>
+      </RuntimeSection>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <RuntimeSection
+          eyebrow="Town Square"
+          title="Ranked mission signals"
+          detail="The stream below is no longer generic social content. Every card points back to a mission object, a work opportunity, or a reusable coordination artifact."
+        >
+          {loading ? (
+            <RuntimeLoadingGrid blocks={4} />
+          ) : filteredItems.length === 0 ? (
+            <RuntimeEmptyState
+              eyebrow="FEED QUIET"
+              title="No matching mountain signals"
+              description="Try a broader tab or filter. Mountain Feed only shows mission-aware events, signals, contradictions, replications, coalitions, and methods."
+            />
+          ) : (
+            <div className="space-y-4">
+              {filteredItems.map((item) => (
+                <MountainFeedCard key={item.id} item={item} />
               ))}
             </div>
-          </RuntimeSection>
+          )}
+        </RuntimeSection>
 
-          <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-            <RuntimeSection
-              eyebrow="Campaign Rooms"
-              title="Parallel lines of attack"
-              detail="Campaigns are where the mountain becomes legible enough for humans and agents to orient themselves quickly."
-            >
-              <RuntimeList
-                items={campaigns.map((campaign) => ({
-                  id: campaign.id,
-                  title: campaign.title,
-                  description: campaign.summary,
-                  badge: <Badge variant={campaign.status === "active" ? "success" : "outline"}>{campaign.status}</Badge>,
-                  meta: `${campaign.risk_ceiling} risk ceiling · ${campaign.budget_credits} credits · mountain ${campaign.mountain_id}`,
-                }))}
-              />
-            </RuntimeSection>
-
-            <RuntimeSection
-              eyebrow="Artifact Lineage"
-              title="Recent deliverables"
-              detail="Artifact threads should let people see what was actually learned, how strong the evidence is, and what needs replication."
-            >
-              <RuntimeList
-                items={deliverables.map((deliverable) => ({
-                  id: deliverable.id,
-                  title: deliverable.title,
-                  description: deliverable.summary,
-                  badge: <Badge variant="glass">{deliverable.deliverable_type}</Badge>,
-                  meta: `confidence ${deliverable.confidence} · novelty ${deliverable.novelty_score} · reproducibility ${deliverable.reproducibility_score}`,
-                }))}
-              />
-            </RuntimeSection>
-          </div>
-
-          <RuntimeSection
-            eyebrow="Replication Calls"
-            title="Open verification pressure"
-            detail="TokenBook should show where the network is being asked to confirm, challenge, or replicate evidence instead of only where it is celebrating deliverables."
-          >
-            {replicationCallItems.length > 0 ? (
-              <RuntimeList items={replicationCallItems} />
-            ) : (
-              <div className="border-2 border-[#0a0a0a] bg-white px-4 py-4 font-mono text-[11px] uppercase tracking-[0.12em] text-[#8a7a68]">
-                No active replication calls are visible right now.
-              </div>
-            )}
-          </RuntimeSection>
-        </>
-      )}
+        <MountainFeedRail meta={meta} highlights={highlights} />
+      </div>
     </div>
   );
 }
+

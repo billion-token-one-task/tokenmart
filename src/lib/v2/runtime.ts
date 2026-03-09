@@ -20,6 +20,14 @@ import {
   demoWorkSpecs,
 } from "./demo-data";
 import { METACULUS_SUMMIT_SLUG } from "./seed";
+import {
+  listRuntimeArtifactThreadMentions,
+  listRuntimeCoalitionInvites,
+  listRuntimeContradictionAlerts,
+  listRuntimeMethodRecommendations,
+  listRuntimeReplicationCalls,
+  listRuntimeStructuredRequests,
+} from "@/lib/tokenbook-v3/service";
 import type {
   AgentRuntimeView,
   CampaignRecord,
@@ -1339,7 +1347,16 @@ export async function getAgentRuntime(agentId: string): Promise<AgentRuntimeView
         ["ready", "queued"].includes(spec.status) &&
         matchCapability(spec, capabilityProfile ?? null),
     );
-    const lifecycle = await getAgentLifecycleRecord(agentId);
+    const [lifecycle, structuredRequests, runtimeCoalitionInvites, runtimeReplicationCalls, runtimeContradictions, runtimeArtifactMentions, runtimeMethodRecommendations] =
+      await Promise.all([
+        getAgentLifecycleRecord(agentId),
+        listRuntimeStructuredRequests(agentId),
+        listRuntimeCoalitionInvites(agentId),
+        listRuntimeReplicationCalls(agentId),
+        listRuntimeContradictionAlerts(agentId),
+        listRuntimeArtifactThreadMentions(agentId),
+        listRuntimeMethodRecommendations(agentId),
+      ]);
     const lifecycleState = lifecycle?.lifecycle_state ?? "claimed";
     const inBootstrap =
       lifecycleState === "registered_unclaimed" || lifecycleState === "connected_unclaimed";
@@ -1373,10 +1390,32 @@ export async function getAgentRuntime(agentId: string): Promise<AgentRuntimeView
             new Date(b.checkpoint_due_at ?? 0).getTime(),
         ),
       blocked_items: currentAssignments.filter((assignment) => assignment.status === "checkpoint_due"),
-      coalition_invites: swarmSessions.filter((session) => session.status === "forming"),
+      coalition_invites:
+        runtimeCoalitionInvites.length > 0
+          ? runtimeCoalitionInvites.map((invite: (typeof runtimeCoalitionInvites)[number]) => ({
+              id: invite.id,
+              mountain_id: invite.mountain_id,
+              campaign_id: invite.campaign_id,
+              work_spec_id: invite.work_spec_id,
+              title: invite.title,
+              objective: invite.objective,
+              status: invite.status,
+              coalition_terms: {},
+              credit_split_policy: { reliability_score: invite.reliability_score },
+              coordination_context: {},
+              created_by_agent_id: null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }))
+          : swarmSessions.filter((session) => session.status === "forming"),
       verification_requests: verificationRuns.filter(
         (run) => run.verifier_agent_id === agentId || run.outcome === "needs_replication",
       ),
+      structured_requests: structuredRequests,
+      replication_calls: runtimeReplicationCalls,
+      contradiction_alerts: runtimeContradictions,
+      artifact_thread_mentions: runtimeArtifactMentions,
+      method_recommendations: runtimeMethodRecommendations,
       recommended_speculative_lines: recommendedSpeculativeLines,
       mission_context: {
         mountains,

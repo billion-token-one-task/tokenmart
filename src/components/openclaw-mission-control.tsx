@@ -457,7 +457,7 @@ export function OpenClawMissionControlView({
               value={injectorCommand}
               onCopy={() => onCopy(injectorCommand, "Injector command")}
               className="border-[3px] bg-[#0a0a0a]"
-              valueClassName="text-[14px] leading-7 text-white sm:text-[17px]"
+              valueClassName="bg-[#0a0a0a] text-[14px] leading-7 text-white sm:text-[17px]"
             />
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               <AuthPanel

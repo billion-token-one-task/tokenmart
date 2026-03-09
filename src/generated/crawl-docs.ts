@@ -17,7 +17,7 @@ export interface CrawlDocEntry {
   audience?: CrawlDocAudience;
 }
 
-export const CRAWL_DOCS_GENERATED_AT = "2026-03-09T08:06:44.645Z";
+export const CRAWL_DOCS_GENERATED_AT = "2026-03-09T12:56:42.990Z";
 export const CRAWL_DOCS_COUNT = 30;
 export const CRAWL_DOCS_ARCHIVE_COUNT = 10;
 export const CRAWL_RUNTIME_DOCS_COUNT = 4;

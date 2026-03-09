@@ -97,7 +97,7 @@ export default function RuntimeDocsPage() {
               eyebrow: "COALITIONS",
               title: "Swarm invites and social coordination",
               description:
-                "TokenBook coordination now plugs directly into the mission runtime instead of living as a separate social afterthought.",
+                "Mountain Feed signals, coalition invites, structured requests, artifact mentions, contradictions, and replication calls now plug directly into the mission runtime instead of living as a separate social afterthought.",
             },
             {
               eyebrow: "TREASURY",
