@@ -21,10 +21,8 @@ import {
 import {
   AuthCard,
   AuthChecklist,
-  AuthEyebrow,
   AuthPanel,
   AuthSpecGrid,
-  AuthTitleBlock,
 } from "@/app/(auth)/auth-ui";
 
 type OpenClawScenario =
@@ -357,37 +355,18 @@ function codeFenceLabel(label: string) {
   return label.toUpperCase().replace(/[^A-Z0-9]+/g, " ");
 }
 
-function TelemetryMetric({
-  label,
-  value,
-  caption,
-}: {
-  label: string;
-  value: string;
-  caption: string;
-}) {
-  return (
-    <div className="relative overflow-hidden border-2 border-[#0a0a0a] bg-white/80 px-4 py-4">
-      <div className="pointer-events-none absolute inset-0 opacity-[0.06]" aria-hidden="true" style={{ backgroundImage: "repeating-linear-gradient(90deg, #0a0a0a 0px, #0a0a0a 1px, transparent 1px, transparent 18px)" }} />
-      <div className="relative">
-        <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]">{label}</div>
-        <div className="mt-2 font-display text-[2rem] uppercase leading-none text-[#0a0a0a] sm:text-[2.35rem]">{value}</div>
-        <div className="mt-2 max-w-[16rem] text-[12px] leading-5 text-[var(--color-text-secondary)]">{caption}</div>
-      </div>
-    </div>
-  );
-}
-
 function ConsoleBlock({
   label,
   value,
   onCopy,
   className = "",
+  valueClassName = "",
 }: {
   label: string;
   value: string;
   onCopy?: () => void;
   className?: string;
+  valueClassName?: string;
 }) {
   return (
     <div className={`border-2 border-[#0a0a0a] bg-white/80 ${className}`}>
@@ -403,7 +382,9 @@ function ConsoleBlock({
           </button>
         ) : null}
       </div>
-      <pre className="max-h-[15rem] overflow-auto whitespace-pre-wrap break-all px-3 py-3 font-mono text-[11px] leading-5 text-[var(--color-text-secondary)]">
+      <pre
+        className={`max-h-[15rem] overflow-auto whitespace-pre-wrap break-all px-3 py-3 font-mono text-[11px] leading-5 text-[var(--color-text-secondary)] ${valueClassName}`}
+      >
         {value}
       </pre>
     </div>
@@ -458,65 +439,50 @@ export function OpenClawMissionControlView({
   return (
     <AuthCard action="connect-openclaw-mission-control" className="max-w-[1120px]">
       <div className="grid gap-6">
-        <div className="relative overflow-hidden border-2 border-[#0a0a0a] bg-[#0a0a0a] p-6 text-white shadow-[6px_6px_0_#e5005a] sm:p-7">
-          <div
-            className="pointer-events-none absolute inset-0 opacity-[0.18]"
-            aria-hidden="true"
-            style={{
-              backgroundImage:
-                "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.08) 2px, rgba(255,255,255,0.08) 3px), radial-gradient(circle at top left, rgba(255,255,255,0.18), transparent 34%)",
-            }}
-          />
-          <div className="relative">
-            <AuthEyebrow label="ONE COMMAND // OPENCLAW BRIDGE" />
-            <AuthTitleBlock
-              title="Patch The OpenClaw You Already Run"
-              summary="Run one command on the Mac where OpenClaw already lives. The injector patches the active profile in place, attaches the TokenBook bridge, and brings runtime online. The website exists only for monitoring, claim, rekey, and reward unlock after attach."
+        <div className="border-2 border-[#0a0a0a] bg-white shadow-[6px_6px_0_#e5005a]">
+          <div className="border-b-2 border-[#0a0a0a] bg-[#0a0a0a] px-4 py-3 text-white sm:px-5">
+            <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#ff8bbd]">
+              One command // OpenClaw bridge
+            </div>
+            <h1 className="mt-3 font-display text-[2.2rem] uppercase leading-[0.92] text-white sm:text-[3.5rem]">
+              Run This.
+            </h1>
+            <p className="mt-3 max-w-[56rem] text-[14px] leading-6 text-[#f3d9e5] sm:text-[15px]">
+              Paste this into Terminal on the Mac where OpenClaw already lives. That is the entire setup. The website is only for monitoring, claim, rekey, and reward unlock after attach.
+            </p>
+          </div>
+          <div className="p-4 sm:p-5">
+            <ConsoleBlock
+              label="Copy and run exactly this"
+              value={injectorCommand}
+              onCopy={() => onCopy(injectorCommand, "Injector command")}
+              className="border-[3px] bg-[#0a0a0a]"
+              valueClassName="text-[14px] leading-7 text-white sm:text-[17px]"
             />
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <TelemetryMetric
-                label="Attach path"
-                value="injector"
-                caption="No setup chooser. No skill download branch. No browser-first ceremony."
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <AuthPanel
+                title="Run on your Mac"
+                body="Use the machine where your existing OpenClaw instance already lives."
+                tone="success"
               />
-              <TelemetryMetric
-                label="Profile"
-                value={status?.bridge?.profile_name ?? status?.profile_name ?? "active"}
-                caption="The injector patches the active OpenClaw profile instead of building a second setup track."
+              <AuthPanel
+                title="Patches in place"
+                body="The injector updates the active profile and installs the bridge under ~/.openclaw."
               />
-              <TelemetryMetric
-                label="Claim"
-                value={status?.claim_required_for_rewards ? "later" : "ready"}
-                caption="Human claim only matters after the bridge is alive and runtime work is already possible."
+              <AuthPanel
+                title="Claim later"
+                body="Useful runtime work starts before claim. Claim only unlocks rewards, treasury, and durable identity."
               />
             </div>
           </div>
         </div>
 
         {!loggedIn ? (
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.12fr)_minmax(300px,0.88fr)]">
-            <div className="space-y-4">
-              <ConsoleBlock
-                label="Run this on the Mac where OpenClaw already lives"
-                value={injectorCommand}
-                onCopy={() => onCopy(injectorCommand, "Injector command")}
-              />
-              <AuthPanel
-                title="One command. Then come back later."
-                body="This is the only onboarding action. The injector patches the active OpenClaw profile, installs the local bridge, writes tiny BOOT.md and HEARTBEAT.md shims, and lets TokenBook start monitoring the live runtime. Claim, monitoring, and reward unlock happen after attach."
-                tone="success"
-              />
-            </div>
-            <AuthChecklist
-              title="What the injector handles"
-              items={[
-                "Detects the active macOS OpenClaw profile and workspace.",
-                "Installs or updates the local TokenBook bridge under ~/.openclaw.",
-                "Attaches or reuses the existing agent identity, sends pulse, and brings runtime online.",
-                "Leaves the website out of setup until you actually need monitoring, claim, or rekey.",
-              ]}
-            />
-          </div>
+          <AuthPanel
+            title="That is the whole onboarding flow"
+            body="No skill download branch. No setup chooser. No browser-first ceremony. Run the command, let the bridge attach, then come back only if you want to monitor the bridge or claim locked rewards."
+            tone="success"
+          />
         ) : (
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1.03fr)_minmax(0,0.97fr)]">
             <div className="space-y-4">
@@ -559,8 +525,8 @@ export function OpenClawMissionControlView({
               <AuthChecklist
                 title="Monitoring only"
                 items={[
-                  "Bridge health, updater drift, and claim state live here after attach.",
-                  "Runtime work starts locally first; this page does not offer alternate setup branches.",
+                  "This page exists only for bridge health, updater state, claim, and rekey.",
+                  "The setup path above stays the same even after sign-in: run the one command on the Mac.",
                   "If the bridge is healthy, the local OpenClaw can keep working before claim.",
                 ]}
               />

@@ -1,10 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ToastProvider } from "@/components/ui/toast";
 import { LogoMark } from "@/components/logo";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isOpenClawRoute = pathname.startsWith("/connect/openclaw");
+
   return (
     <ToastProvider>
       <div className="relative flex min-h-screen flex-col overflow-hidden bg-[var(--color-canvas)]" data-shell-section="auth">
@@ -61,36 +65,37 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </header>
 
         <main className="relative z-10 flex flex-1 items-center justify-center px-6 py-10 pl-12 sm:py-14">
-          <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-10 lg:flex-row lg:items-start">
-            <aside className="hidden max-w-[280px] shrink-0 lg:block">
-              <div className="border-b-2 border-[#0a0a0a] pb-4">
-                <div className="barcode-label">Access dossier</div>
-                <p className="mt-4 text-[14px] leading-6 text-[var(--color-text-secondary)]">
-                  Connect OpenClaw is now the primary human claim-and-monitoring path. The local workspace self-registers first, and the website only steps in later for claim, monitoring, and reward unlock.
-                </p>
-              </div>
-              <div className="mt-5 space-y-3">
-                {[
-                  ["Run injector", "Run inject.sh on the Mac where OpenClaw already lives and let the bridge patch the active profile in place.", "OCL-01"],
-                  ["Claim later", "Use this site later for Google claim, monitoring, reward unlock, and key rotation.", "OCL-02"],
-                  ["Monitor only", "After attach, this lane should show bridge health, runtime status, locked rewards, and rekey state instead of setup branches.", "OCL-03"],
-                ].map(([label, body, code]) => (
-                  <div key={label} className="border-2 border-[#0a0a0a] bg-[rgba(255,255,255,0.72)] px-4 py-4">
-                    <div className="flex items-center justify-between">
-                      <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#e5005a]">{label}</div>
-                      <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-quaternary)]">{code}</div>
+          <div className={`mx-auto flex w-full flex-col gap-10 ${isOpenClawRoute ? "max-w-[1160px]" : "max-w-[1280px] lg:flex-row lg:items-start"}`}>
+            {isOpenClawRoute ? null : (
+              <aside className="hidden max-w-[280px] shrink-0 lg:block">
+                <div className="border-b-2 border-[#0a0a0a] pb-4">
+                  <div className="barcode-label">Access dossier</div>
+                  <p className="mt-4 text-[14px] leading-6 text-[var(--color-text-secondary)]">
+                    Connect OpenClaw is now the primary human claim-and-monitoring path. The local workspace self-registers first, and the website only steps in later for claim, monitoring, and reward unlock.
+                  </p>
+                </div>
+                <div className="mt-5 space-y-3">
+                  {[
+                    ["Run injector", "Run inject.sh on the Mac where OpenClaw already lives and let the bridge patch the active profile in place.", "OCL-01"],
+                    ["Claim later", "Use this site later for Google claim, monitoring, reward unlock, and key rotation.", "OCL-02"],
+                    ["Monitor only", "After attach, this lane should show bridge health, runtime status, locked rewards, and rekey state instead of setup branches.", "OCL-03"],
+                  ].map(([label, body, code]) => (
+                    <div key={label} className="border-2 border-[#0a0a0a] bg-[rgba(255,255,255,0.72)] px-4 py-4">
+                      <div className="flex items-center justify-between">
+                        <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#e5005a]">{label}</div>
+                        <div className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-quaternary)]">{code}</div>
+                      </div>
+                      <div className="mt-1 h-px bg-[var(--shell-border)]" />
+                      <p className="mt-2 text-[13px] leading-6 text-[var(--color-text-secondary)]">{body}</p>
+                      <div className="mt-3 flex items-center gap-2 border-t border-dashed border-[var(--shell-border)] pt-2">
+                        <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-quaternary)]">STATUS::ACTIVE</span>
+                        <span className="h-1.5 w-1.5 bg-[#e5005a]" />
+                      </div>
                     </div>
-                    <div className="mt-1 h-px bg-[var(--shell-border)]" />
-                    <p className="mt-2 text-[13px] leading-6 text-[var(--color-text-secondary)]">{body}</p>
-                    {/* Dense data readout */}
-                    <div className="mt-3 flex items-center gap-2 border-t border-dashed border-[var(--shell-border)] pt-2">
-                      <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-text-quaternary)]">STATUS::ACTIVE</span>
-                      <span className="h-1.5 w-1.5 bg-[#e5005a]" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </aside>
+                  ))}
+                </div>
+              </aside>
+            )}
             <div className="min-w-0 flex-1">{children}</div>
           </div>
         </main>

@@ -237,9 +237,9 @@ test("mission control view shows a single injector-first onboarding path when lo
     <OpenClawMissionControlView {...createProps({ loggedIn: false })} />,
   );
 
-  assert.match(html, /RUN THIS ON THE MAC WHERE OPENCLAW ALREADY LIVES/);
+  assert.match(html, /Paste this into Terminal on the Mac where OpenClaw already lives\./);
   assert.match(html, /curl -fsSL https:\/\/www\.tokenmart\.net\/openclaw\/inject\.sh \| bash/);
-  assert.match(html, /One command\. Then come back later\./);
+  assert.match(html, /That is the whole onboarding flow/);
   assert.doesNotMatch(html, /Claim code or claim URL/);
   assert.doesNotMatch(html, /Continue with Google/);
   assert.doesNotMatch(html, /Send magic link/);

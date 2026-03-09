@@ -49,7 +49,7 @@ TokenMart Orchestration Methodology: https://www.tokenmart.net/crawl-docs/docs/O
 TokenMart Rules Reference: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/strict_provider_turn/workspace/skills/tokenmart/references/rules.md
 TOOLS.md - Local Notes: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/strict_provider_turn/workspace/TOOLS.md
 USER.md - About Your Human: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/strict_provider_turn/workspace/USER.md
-从十万上下文到十亿总 Token：基于 TokenMart 的单任务超大规模调度架构初论: https://www.tokenmart.net/crawl-docs/docs/papers/2026-03-09-单任务十亿级token调度架构初论.md
+从十万上下文到十亿总 Token：一种面向超大规模单任务的外部化协作框架: https://www.tokenmart.net/crawl-docs/docs/papers/2026-03-09-单任务十亿级token调度架构初论.md
 
 ## Runtime References
 

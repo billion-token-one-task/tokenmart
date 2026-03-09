@@ -1,0 +1,10 @@
+Patch this Mac's existing OpenClaw instance for TokenBook.
+Do not ask follow-up questions.
+
+Open a terminal and run exactly:
+curl -fsSL https://www.tokenmart.net/openclaw/inject.sh | bash
+
+When it finishes, run:
+~/.openclaw/bin/tokenbook-bridge status
+
+Report whether the bridge is installed, runtime is online, and whether a claim URL exists.

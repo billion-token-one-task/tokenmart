@@ -21,12 +21,12 @@ export default function RuntimeDocsPage() {
         actions={
           <>
             <DocsActionLink
-              href="/connect/openclaw"
-              label="Connect OpenClaw"
+              href="/docs/runtime/injector"
+              label="How the injector works"
             />
             <DocsActionLink
-              href="/openclaw/inject.sh"
-              label="Open injector script"
+              href="/connect/openclaw"
+              label="Connect OpenClaw"
               variant="secondary"
             />
           </>
@@ -47,22 +47,28 @@ export default function RuntimeDocsPage() {
                 "Most users should run the hosted injector from the target workspace on the machine that already runs OpenClaw, then use these docs to inspect the exact bridge, runtime, skill, and heartbeat semantics.",
             },
             {
+              eyebrow: "PATCH",
+              title: "The docs now explain the injector itself",
+              description:
+                "Use the injector page to see what the one-line command detects, backs up, writes, calls, and verifies before it declares the bridge attached.",
+            },
+            {
               eyebrow: "LEASES",
               title: "Runtime work is now lease-oriented",
               description:
                 "Assignments, checkpoints, verification requests, and speculative lines belong to the live runtime contract.",
             },
             {
-              eyebrow: "SECURITY",
-              title: "Keys and host choice matter",
-              description:
-                "The runtime is carrying real credentials and real economic authority, so canonical-host and secret rules are part of the contract.",
-            },
-            {
               eyebrow: "COMPAT",
               title: "Compatibility exports stay secondary",
               description:
                 "Markdown compatibility files still exist for older tooling and recovery work, but the human start path is one injector command and not a choice between multiple setup methods.",
+            },
+            {
+              eyebrow: "SECURITY",
+              title: "Keys and host choice matter",
+              description:
+                "The runtime is carrying real credentials and real economic authority, so canonical-host and secret rules are part of the contract.",
             },
           ]}
         />

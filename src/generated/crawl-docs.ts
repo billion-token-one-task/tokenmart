@@ -17,7 +17,7 @@ export interface CrawlDocEntry {
   audience?: CrawlDocAudience;
 }
 
-export const CRAWL_DOCS_GENERATED_AT = "2026-03-09T07:27:31.978Z";
+export const CRAWL_DOCS_GENERATED_AT = "2026-03-09T08:06:44.645Z";
 export const CRAWL_DOCS_COUNT = 30;
 export const CRAWL_DOCS_ARCHIVE_COUNT = 10;
 export const CRAWL_RUNTIME_DOCS_COUNT = 4;
@@ -314,11 +314,11 @@ export const CRAWL_DOCS: CrawlDocEntry[] = [
   },
   {
     "path": "docs/papers/2026-03-09-单任务十亿级token调度架构初论.md",
-    "title": "从十万上下文到十亿总 Token：基于 TokenMart 的单任务超大规模调度架构初论",
+    "title": "从十万上下文到十亿总 Token：一种面向超大规模单任务的外部化协作框架",
     "url": "/crawl-docs/docs/papers/2026-03-09-单任务十亿级token调度架构初论.md",
     "track": "technical",
     "category": "reference",
-    "summary": "本文讨论一个看似矛盾、实则可以被架构化解的问题：如果单个智能体会话通常只能稳定使用约十万 token 级别的上下文，那么单个任务是否仍可能在总体上调度到十亿 token，甚至进一步逼近“十亿 token 级任务”的求解门槛？本文的核心论点是：答案是肯定的，但前提不是把单个会话无限拉长，而是把“任务状态、协作关系、验证义务、奖励结算与信用约束”从单次会话内部外部化，沉淀为一个可持续的任务图、通信图与结算图。",
+    "summary": "这篇文章讨论一个常被说反的问题：单个代理会话只能稳定使用十万 token 左右，并不等于单个任务也只能停在这个量级。真正的分界线，不在会话窗口，而在于系统能不能把长期状态、协作关系、验证责任和奖励结算，从代理脑内搬到外部结构里。",
     "order": 900,
     "audience": "operators"
   }
@@ -760,11 +760,11 @@ export const ALL_CRAWL_DOCS: CrawlDocEntry[] = [
   },
   {
     "path": "docs/papers/2026-03-09-单任务十亿级token调度架构初论.md",
-    "title": "从十万上下文到十亿总 Token：基于 TokenMart 的单任务超大规模调度架构初论",
+    "title": "从十万上下文到十亿总 Token：一种面向超大规模单任务的外部化协作框架",
     "url": "/crawl-docs/docs/papers/2026-03-09-单任务十亿级token调度架构初论.md",
     "track": "technical",
     "category": "reference",
-    "summary": "本文讨论一个看似矛盾、实则可以被架构化解的问题：如果单个智能体会话通常只能稳定使用约十万 token 级别的上下文，那么单个任务是否仍可能在总体上调度到十亿 token，甚至进一步逼近“十亿 token 级任务”的求解门槛？本文的核心论点是：答案是肯定的，但前提不是把单个会话无限拉长，而是把“任务状态、协作关系、验证义务、奖励结算与信用约束”从单次会话内部外部化，沉淀为一个可持续的任务图、通信图与结算图。",
+    "summary": "这篇文章讨论一个常被说反的问题：单个代理会话只能稳定使用十万 token 左右，并不等于单个任务也只能停在这个量级。真正的分界线，不在会话窗口，而在于系统能不能把长期状态、协作关系、验证责任和奖励结算，从代理脑内搬到外部结构里。",
     "order": 900,
     "audience": "operators"
   },

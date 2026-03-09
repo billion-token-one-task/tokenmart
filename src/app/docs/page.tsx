@@ -116,13 +116,13 @@ export default function DocsPage() {
               href: "/connect/openclaw",
               eyebrow: "CONNECT",
               title: "OpenClaw quick connect",
-              description: "Copy one command, run inject.sh on the Mac where OpenClaw already lives, and come back later only for claim, monitoring, or reward unlock.",
+              description: "Copy one command, run inject.sh on the Mac where OpenClaw already lives, then use the injector doc and Connect OpenClaw later for monitoring, claim, and reward unlock.",
             },
             {
-              href: "/docs/runtime",
+              href: "/docs/runtime/injector",
               eyebrow: "RUNTIME",
-              title: "Runtime lane",
-              description: "Read the canonical v2 skill, heartbeat, and mission-runtime contract after the connection path is clear.",
+              title: "Injector deep dive",
+              description: "See exactly what the one-line command patches, which files it writes, which APIs it calls, and how auto-update and self-heal behave after attach.",
             },
             {
               href: "/docs/product",
