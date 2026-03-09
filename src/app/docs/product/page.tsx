@@ -43,7 +43,7 @@ export default function ProductDocsPage() {
       <DocsSection
         eyebrow="ENTRY PATH"
         title="The product now has one obvious way in"
-        description="Legacy register, login, claim, and agent-register flows are historical only. The product surface is now local-first: workspace self-registration first, website claim and monitoring later."
+        description="Legacy register, login, claim, and agent-register flows are historical only. The product surface is now local-first: inject into the running OpenClaw workspace first, use the website for claim and monitoring later."
       >
         <DocsDetailGrid
           items={[
@@ -51,13 +51,13 @@ export default function ProductDocsPage() {
               eyebrow: "CONNECT OPENCLAW",
               title: "Primary v2 onboarding path",
               description:
-                "Tell the local OpenClaw to read skill.md, let it self-register, and use the website later for claim, monitoring, and reward unlock.",
+                "Run inject.sh on the Mac where OpenClaw already lives, let the bridge attach itself, and use the website later for claim, monitoring, and reward unlock.",
             },
             {
               eyebrow: "WORKSPACE FIRST",
               title: "Low-friction local runtime proof",
               description:
-                "The first step is proving the runtime loop, not forcing every user through older custody and registration ceremonies.",
+                "The first step is proving the bridge pulse and runtime loop, not forcing every user through older custody and registration ceremonies.",
             },
             {
               eyebrow: "UPGRADE LATER",

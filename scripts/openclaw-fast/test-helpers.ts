@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
 import { chmod, mkdir, readFile, symlink, writeFile } from "node:fs/promises";
 import http, { type IncomingMessage, type ServerResponse } from "node:http";
@@ -17,6 +18,7 @@ export interface FixtureServerOptions {
 export interface FixtureServer {
   baseUrl: string;
   registerCalls: number;
+  attachCalls: number;
   requests: string[];
   close(): Promise<void>;
 }
@@ -106,7 +108,30 @@ function respondText(response: ServerResponse, statusCode: number, text: string)
 
 export async function createFixtureServer(options: FixtureServerOptions = {}): Promise<FixtureServer> {
   let registerCalls = 0;
+  let attachCalls = 0;
   const requests: string[] = [];
+  const bridgeAsset = `#!/usr/bin/env bash
+set -euo pipefail
+command_name="\${1:-status}"
+case "$command_name" in
+  attach)
+    printf 'attached\\n'
+    ;;
+  pulse)
+    printf 'pulse-ok\\n'
+    ;;
+  self-update)
+    printf 'self-update-ok\\n'
+    ;;
+  status)
+    printf 'status-ok\\n'
+    ;;
+  *)
+    printf 'ok\\n'
+    ;;
+esac
+`;
+  const bridgeChecksum = createHash("sha256").update(bridgeAsset).digest("hex");
 
   const server = http.createServer(async (request, response) => {
     const requestUrl = new URL(request.url ?? "/", "http://127.0.0.1");
@@ -114,6 +139,20 @@ export async function createFixtureServer(options: FixtureServerOptions = {}): P
 
     if (request.method === "GET" && requestUrl.pathname === "/skill.md") {
       respondText(response, 200, `Install from ${CANONICAL_HOST} and heartbeat at ${CANONICAL_HOST}/heartbeat.md`);
+      return;
+    }
+
+    if (request.method === "GET" && requestUrl.pathname.startsWith("/api/v3/openclaw/bridge/manifest")) {
+      respondJson(response, 200, {
+        bridge_version: "3.0.0-test",
+        bridge_asset_url: `${requestUrl.origin}/assets/tokenbook-bridge.sh`,
+        bridge_asset_checksum: bridgeChecksum,
+      });
+      return;
+    }
+
+    if (request.method === "GET" && requestUrl.pathname.startsWith("/assets/tokenbook-bridge.sh")) {
+      respondText(response, 200, bridgeAsset);
       return;
     }
 
@@ -146,6 +185,49 @@ export async function createFixtureServer(options: FixtureServerOptions = {}): P
       const payload = await readJsonBody<RegisterPayload>(request);
       respondJson(response, 200, {
         identity_file_content: buildIdentityFileContent(payload, registerCalls),
+      });
+      return;
+    }
+
+    if (request.method === "POST" && requestUrl.pathname.startsWith("/api/v3/openclaw/bridge/attach")) {
+      attachCalls += 1;
+      const payload = await readJsonBody<RegisterPayload & { profile_name?: string; openclaw_home?: string }>(request);
+      const fingerprint = payload.workspace_fingerprint?.slice(0, 12) ?? `fingerprint-${attachCalls}`;
+      if (options.malformedRegistration) {
+        respondJson(response, 200, {
+          attached: true,
+          agent: { id: `agent-${fingerprint}`, name: `tokenmart-${fingerprint}` },
+          credentials: {},
+          bridge_paths: {},
+          templates: {},
+        });
+        return;
+      }
+
+      respondJson(response, 200, {
+        attached: true,
+        rekey_required: false,
+        agent: {
+          id: `agent-${fingerprint}`,
+          name: payload.name ?? `tokenmart-${fingerprint}`,
+          claim_url: `${requestUrl.origin}/connect/openclaw?claim_code=claim-${fingerprint}`,
+        },
+        credentials: {
+          api_key: `tokenmart_${fingerprint}`,
+          agent_id: `agent-${fingerprint}`,
+          claim_code: `claim-${fingerprint}`,
+          claim_url: `${requestUrl.origin}/connect/openclaw?claim_code=claim-${fingerprint}`,
+        },
+        bridge_paths: {
+          bridge_entrypoint: payload.openclaw_home
+            ? `${payload.openclaw_home}/tokenbook-bridge/tokenbook-bridge.sh`
+            : "/tmp/openclaw/tokenbook-bridge.sh",
+        },
+        templates: {
+          boot_md: `Bridge boot for ${requestUrl.origin}`,
+          heartbeat_md: `Ping ${requestUrl.origin}/api/v1/agents/heartbeat and read ${requestUrl.origin}/api/v2/agents/me/runtime`,
+          local_skill_shim: `Local bridge shim from ${requestUrl.origin}`,
+        },
       });
       return;
     }
@@ -184,6 +266,9 @@ export async function createFixtureServer(options: FixtureServerOptions = {}): P
     baseUrl: `http://127.0.0.1:${address.port}`,
     get registerCalls() {
       return registerCalls;
+    },
+    get attachCalls() {
+      return attachCalls;
     },
     requests,
     close() {
@@ -265,7 +350,7 @@ export async function runInstaller(options: {
 }) {
   const installScriptPath = path.join(process.cwd(), "public", "openclaw", "install.sh");
   return runProcess(
-    process.env.SHELL && process.env.SHELL.length > 0 ? process.env.SHELL : "/bin/bash",
+    "/bin/bash",
     [
       installScriptPath,
       "--workspace",

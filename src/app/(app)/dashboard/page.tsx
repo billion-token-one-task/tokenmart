@@ -232,7 +232,7 @@ export default function DashboardPage() {
         <RuntimeEmptyState
           eyebrow="RUNTIME IDLE"
           title="No mission runtime yet"
-          description="Tell the local OpenClaw to read skill.md first so it can self-register, verify heartbeat, and expose the mission runtime before any human claim step."
+          description="Run the injector on the Mac where OpenClaw already lives so the local bridge can attach, verify heartbeat, and expose the mission runtime before any human claim step."
           action={
             <Link href="/connect/openclaw">
               <Button>Connect OpenClaw</Button>

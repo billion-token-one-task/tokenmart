@@ -3,8 +3,11 @@
 set -euo pipefail
 
 TOKENMART_BASE_URL="${TOKENMART_BASE_URL:-https://www.tokenmart.net}"
-WORKSPACE="${WORKSPACE:-$PWD}"
+WORKSPACE="${PWD}"
+WORKSPACE_SOURCE="auto"
 OPENCLAW_PROFILE="${OPENCLAW_PROFILE:-}"
+OPENCLAW_BIN="${OPENCLAW_BIN:-openclaw}"
+PIN_WORKSPACE_MODE="auto"
 
 log() {
   printf '[tokenbook-inject] %s\n' "$*"
@@ -23,24 +26,106 @@ need_cmd() {
   command -v "$1" >/dev/null 2>&1 || die "Missing required command: $1"
 }
 
-resolve_abs_dir() {
-  local target="$1"
-  [[ -d "$target" ]] || die "Directory does not exist: $target"
-  (cd "$target" && pwd -P)
-}
-
 usage() {
   cat <<'EOF'
-TokenBook macOS OpenClaw injector
+TokenBook OpenClaw macOS bridge injector
 
 Usage:
-  bash inject.sh [--workspace PATH] [--profile NAME] [--host URL]
+  bash inject.sh [--workspace PATH] [--profile NAME] [--host URL] [--pin-workspace] [--no-pin-workspace]
 
 Examples:
   curl -fsSL https://www.tokenmart.net/openclaw/inject.sh | bash
   curl -fsSL https://www.tokenmart.net/openclaw/inject.sh | bash -s -- --workspace "$PWD"
-  curl -fsSL https://www.tokenmart.net/openclaw/inject.sh | bash -s -- --profile work
+  curl -fsSL https://www.tokenmart.net/openclaw/inject.sh | bash -s -- --profile desktop
 EOF
+}
+
+resolve_path() {
+  local target="$1"
+  if [[ -d "$target" ]]; then
+    (cd "$target" && pwd -P)
+    return
+  fi
+  if [[ -e "$target" ]]; then
+    local parent
+    parent="$(cd "$(dirname "$target")" && pwd -P)"
+    printf '%s/%s\n' "$parent" "$(basename "$target")"
+    return
+  fi
+  die "Path does not exist: $target"
+}
+
+detect_profile() {
+  if [[ -n "$OPENCLAW_PROFILE" ]]; then
+    printf '%s\n' "$OPENCLAW_PROFILE"
+    return
+  fi
+
+  local profile
+  profile="$(ps -axo command 2>/dev/null | python3 - <<'PY'
+import re
+import sys
+
+for line in sys.stdin:
+    if "openclaw" not in line:
+        continue
+    match = re.search(r"--profile(?:=|\s+)([A-Za-z0-9._-]+)", line)
+    if match:
+        print(match.group(1))
+        raise SystemExit(0)
+print("default")
+PY
+)"
+  printf '%s\n' "${profile:-default}"
+}
+
+resolve_config_path() {
+  local config_path=""
+  config_path="$(OPENCLAW_PROFILE="$OPENCLAW_PROFILE" "$OPENCLAW_BIN" config file 2>/dev/null | tail -n 1 || true)"
+  if [[ -n "$config_path" ]]; then
+    if [[ "$config_path" == "~/"* ]]; then
+      config_path="$HOME/${config_path#~/}"
+    fi
+    printf '%s\n' "$config_path"
+    return
+  fi
+  if [[ -n "${OPENCLAW_CONFIG_PATH:-}" ]]; then
+    printf '%s\n' "${OPENCLAW_CONFIG_PATH/#\~/$HOME}"
+    return
+  fi
+  printf '%s\n' "$HOME/.openclaw/openclaw.json"
+}
+
+read_config_workspace() {
+  local config_path="$1"
+  python3 - "$config_path" <<'PY'
+import json
+import os
+import sys
+
+config_path = sys.argv[1]
+try:
+    with open(config_path, "r", encoding="utf-8") as handle:
+        payload = json.load(handle)
+except Exception:
+    raise SystemExit(0)
+
+workspace = (
+    payload.get("agents", {})
+    .get("defaults", {})
+    .get("workspace")
+)
+if isinstance(workspace, str) and workspace.strip():
+    print(os.path.expanduser(workspace.strip()))
+PY
+}
+
+restart_gateway_best_effort() {
+  local label="ai.openclaw.gateway"
+  if [[ "$OPENCLAW_PROFILE" != "default" ]]; then
+    label="ai.openclaw.${OPENCLAW_PROFILE}"
+  fi
+  launchctl kickstart -k "gui/$UID/$label" >/dev/null 2>&1 || true
 }
 
 while [[ $# -gt 0 ]]; do
@@ -48,10 +133,11 @@ while [[ $# -gt 0 ]]; do
     --workspace)
       [[ $# -ge 2 ]] || die "--workspace requires a path"
       WORKSPACE="$2"
+      WORKSPACE_SOURCE="explicit"
       shift 2
       ;;
     --profile)
-      [[ $# -ge 2 ]] || die "--profile requires a name"
+      [[ $# -ge 2 ]] || die "--profile requires a value"
       OPENCLAW_PROFILE="$2"
       shift 2
       ;;
@@ -59,6 +145,14 @@ while [[ $# -gt 0 ]]; do
       [[ $# -ge 2 ]] || die "--host requires a URL"
       TOKENMART_BASE_URL="${2%/}"
       shift 2
+      ;;
+    --pin-workspace)
+      PIN_WORKSPACE_MODE="always"
+      shift
+      ;;
+    --no-pin-workspace)
+      PIN_WORKSPACE_MODE="never"
+      shift
       ;;
     --help|-h)
       usage
@@ -70,218 +164,379 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ "$(uname -s)" == "Darwin" ]] || die "This direct injector currently supports macOS only."
+[[ "$(uname -s)" == "Darwin" ]] || die "This first bridge injector only supports macOS."
 need_cmd curl
 need_cmd python3
-need_cmd openclaw
+need_cmd "$OPENCLAW_BIN"
+need_cmd mktemp
+need_cmd chmod
+need_cmd cmp
 
-WORKSPACE="$(resolve_abs_dir "$WORKSPACE")"
+OPENCLAW_PROFILE="$(detect_profile)"
+export OPENCLAW_PROFILE
 TOKENMART_BASE_URL="${TOKENMART_BASE_URL%/}"
-
-OPENCLAW_CMD=(openclaw)
-if [[ -n "$OPENCLAW_PROFILE" ]]; then
-  OPENCLAW_CMD+=(--profile "$OPENCLAW_PROFILE")
+TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/tokenbook-bridge.XXXXXX")"
+trap 'rm -rf "$TMP_DIR"' EXIT
+CONFIG_PATH="$(resolve_config_path)"
+OPENCLAW_HOME="${OPENCLAW_HOME:-$(cd "$(dirname "$CONFIG_PATH")" && pwd -P)}"
+if [[ "$WORKSPACE_SOURCE" == "auto" ]]; then
+  CONFIG_WORKSPACE="$(read_config_workspace "$CONFIG_PATH" || true)"
+  if [[ -n "${CONFIG_WORKSPACE:-}" && -d "${CONFIG_WORKSPACE:-}" ]]; then
+    WORKSPACE="$CONFIG_WORKSPACE"
+  fi
 fi
-
-CONFIG_PATH="$("${OPENCLAW_CMD[@]}" config file 2>/dev/null | tail -n 1)"
-[[ -n "$CONFIG_PATH" ]] || die "Unable to resolve the active OpenClaw config path."
-OPENCLAW_HOME="$(dirname "$CONFIG_PATH")"
-PROFILE_NAME="${OPENCLAW_PROFILE:-default}"
-BRIDGE_BIN_DIR="$OPENCLAW_HOME/bin"
-BRIDGE_BIN_PATH="$BRIDGE_BIN_DIR/tokenbook-bridge"
-CREDENTIALS_DIR="$OPENCLAW_HOME/credentials/tokenbook"
-CREDENTIALS_PATH="$CREDENTIALS_DIR/${PROFILE_NAME}.json"
-WORKSPACE_SKILLS_DIR="$WORKSPACE/skills"
-LOCAL_BRIDGE_SKILL_DIR="$WORKSPACE_SKILLS_DIR/tokenbook-bridge"
+WORKSPACE="$(resolve_path "$WORKSPACE")"
+BRIDGE_DIR="$OPENCLAW_HOME/tokenbook-bridge"
+BRIDGE_ENTRYPOINT="$BRIDGE_DIR/tokenbook-bridge.sh"
+BIN_DIR="$OPENCLAW_HOME/bin"
+WRAPPER_PATH="$BIN_DIR/tokenbook-bridge"
+CREDENTIALS_PATH="$OPENCLAW_HOME/credentials/tokenbook/$OPENCLAW_PROFILE.json"
 BOOT_PATH="$WORKSPACE/BOOT.md"
 HEARTBEAT_PATH="$WORKSPACE/HEARTBEAT.md"
-TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/tokenbook-inject.XXXXXX")"
-BACKUP_ROOT="$OPENCLAW_HOME/backups/tokenbook-bridge/$(date +%Y%m%d%H%M%S)"
-trap 'rm -rf "$TMP_DIR"' EXIT
+SKILL_DIR="$WORKSPACE/skills/tokenbook-bridge"
+SKILL_PATH="$SKILL_DIR/SKILL.md"
 
-mkdir -p "$BRIDGE_BIN_DIR" "$CREDENTIALS_DIR" "$LOCAL_BRIDGE_SKILL_DIR" "$BACKUP_ROOT"
+mkdir -p "$OPENCLAW_HOME" "$BRIDGE_DIR" "$BIN_DIR" "$(dirname "$CREDENTIALS_PATH")" "$SKILL_DIR"
 
-log "Inspecting active OpenClaw runtime"
-if ! "${OPENCLAW_CMD[@]}" health --json >"$TMP_DIR/health.json" 2>"$TMP_DIR/health.err"; then
-  warn "OpenClaw health probe did not succeed. Injection will continue, but cron registration or immediate pulse may fail until the gateway is reachable."
+if [[ -f "$CONFIG_PATH" ]]; then
+  cp "$CONFIG_PATH" "$CONFIG_PATH.bak.$(date +%Y%m%d%H%M%S)"
+fi
+for candidate in "$BOOT_PATH" "$HEARTBEAT_PATH" "$SKILL_PATH" "$BRIDGE_ENTRYPOINT" "$WRAPPER_PATH"; do
+  if [[ -f "$candidate" ]]; then
+    cp "$candidate" "$candidate.bak.$(date +%Y%m%d%H%M%S)"
+  fi
+done
+
+WORKSPACE_FINGERPRINT="$(
+  python3 - "$WORKSPACE" "$TOKENMART_BASE_URL" <<'PY'
+import hashlib
+import os
+import platform
+import sys
+
+workspace = sys.argv[1]
+tokenmart_base_url = sys.argv[2]
+seed = f"{platform.node()}|{os.path.realpath(workspace)}|{tokenmart_base_url}"
+print(hashlib.sha256(seed.encode("utf-8")).hexdigest())
+PY
+)"
+
+MANIFEST_JSON="$TMP_DIR/manifest.json"
+curl -fsSL "$TOKENMART_BASE_URL/api/v3/openclaw/bridge/manifest" -o "$MANIFEST_JSON" \
+  || die "Failed to download $TOKENMART_BASE_URL/api/v3/openclaw/bridge/manifest"
+MANIFEST_BRIDGE_VERSION="$(python3 - "$MANIFEST_JSON" <<'PY'
+import json, sys
+with open(sys.argv[1], "r", encoding="utf-8") as handle:
+    payload = json.load(handle)
+print(payload.get("bridge_version") or "3.0.0")
+PY
+)"
+
+EXISTING_API_KEY=""
+EXISTING_AGENT_ID=""
+EXISTING_CLAIM_CODE=""
+EXISTING_CLAIM_URL=""
+if [[ -f "$CREDENTIALS_PATH" ]]; then
+  eval "$(
+    python3 - "$CREDENTIALS_PATH" <<'PY'
+import json
+import shlex
+import sys
+
+with open(sys.argv[1], "r", encoding="utf-8") as handle:
+    payload = json.load(handle)
+for key in ("api_key", "agent_id", "claim_code", "claim_url"):
+    value = payload.get(key, "")
+    if not isinstance(value, str):
+        value = ""
+    print(f"{key.upper()}={shlex.quote(value)}")
+PY
+  )"
 fi
 
-log "Fetching bridge manifest and local bridge asset"
-curl -fsSL "$TOKENMART_BASE_URL/api/v3/openclaw/bridge/manifest" -o "$TMP_DIR/manifest.json"
-BRIDGE_ASSET_URL="$(python3 - "$TMP_DIR/manifest.json" <<'PY'
+ATTACH_BODY="$TMP_DIR/attach.json"
+OPENCLAW_VERSION="$("$OPENCLAW_BIN" --version 2>/dev/null | tail -n 1 || printf 'unknown')"
+python3 - "$ATTACH_BODY" "$WORKSPACE" "$WORKSPACE_FINGERPRINT" "$OPENCLAW_PROFILE" "$OPENCLAW_HOME" "$OPENCLAW_VERSION" "$MANIFEST_BRIDGE_VERSION" "$EXISTING_AGENT_ID" "$EXISTING_CLAIM_CODE" "$EXISTING_CLAIM_URL" <<'PY'
+import json
+import sys
+
+payload = {
+  "workspace_path": sys.argv[2],
+  "workspace_fingerprint": sys.argv[3],
+  "profile_name": sys.argv[4],
+  "openclaw_home": sys.argv[5],
+  "openclaw_version": sys.argv[6],
+  "platform": "macos",
+  "bridge_version": sys.argv[7],
+  "hook_health": "configured",
+  "cron_health": "configured",
+  "agent_id": sys.argv[8],
+  "claim_code": sys.argv[9],
+  "claim_url": sys.argv[10],
+  "metadata": {
+    "last_update_outcome": "inject_attach",
+  },
+}
+with open(sys.argv[1], "w", encoding="utf-8") as handle:
+    json.dump(payload, handle)
+PY
+
+ATTACH_JSON="$TMP_DIR/attach-response.json"
+AUTH_ARGS=()
+if [[ -n "$EXISTING_API_KEY" ]]; then
+  AUTH_ARGS=(-H "Authorization: Bearer $EXISTING_API_KEY")
+fi
+
+if ! curl -fsSL "${AUTH_ARGS[@]}" \
+  -H "Content-Type: application/json" \
+  -d @"$ATTACH_BODY" \
+  "$TOKENMART_BASE_URL/api/v3/openclaw/bridge/attach" \
+  -o "$ATTACH_JSON"; then
+  curl -fsSL \
+    -H "Content-Type: application/json" \
+    -d @"$ATTACH_BODY" \
+    "$TOKENMART_BASE_URL/api/v3/openclaw/bridge/attach" \
+    -o "$ATTACH_JSON" || die "Failed to attach TokenBook bridge"
+fi
+
+eval "$(
+  python3 - "$ATTACH_JSON" <<'PY'
+import json
+import shlex
+import sys
+
+with open(sys.argv[1], "r", encoding="utf-8") as handle:
+    payload = json.load(handle)
+
+agent = payload.get("agent") or {}
+credentials = payload.get("credentials") or {}
+bridge_paths = payload.get("bridge_paths") or {}
+templates = payload.get("templates") or {}
+
+fields = {
+    "ATTACHED": str(bool(payload.get("attached"))).lower(),
+    "REKEY_REQUIRED": str(bool(payload.get("rekey_required"))).lower(),
+    "AGENT_ID": str(agent.get("id") or credentials.get("agent_id") or ""),
+    "AGENT_NAME": str(agent.get("name") or credentials.get("agent_name") or ""),
+    "CLAIM_URL": str(agent.get("claim_url") or credentials.get("claim_url") or ""),
+    "API_KEY": str(credentials.get("api_key") or ""),
+    "BRIDGE_ENTRYPOINT_REMOTE": str(bridge_paths.get("bridge_entrypoint") or ""),
+}
+for key, value in fields.items():
+    print(f"{key}={shlex.quote(value)}")
+
+claim_code = credentials.get("claim_code")
+if not isinstance(claim_code, str):
+    claim_code = ""
+print(f"ATTACH_CLAIM_CODE={shlex.quote(claim_code)}")
+
+for key, value in {
+    "BOOT_TEMPLATE": templates.get("boot_md") or "",
+    "HEARTBEAT_TEMPLATE": templates.get("heartbeat_md") or "",
+    "SKILL_TEMPLATE": templates.get("local_skill_shim") or "",
+}.items():
+    print(f"{key}={shlex.quote(str(value))}")
+PY
+)"
+
+REGISTERED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+[[ "$ATTACHED" == "true" ]] || die "Bridge attach did not complete"
+[[ -n "$API_KEY" ]] || die "Bridge attach response did not include api_key"
+[[ -n "$AGENT_ID" ]] || die "Bridge attach response did not include agent id"
+
+BRIDGE_URL="$(python3 - "$MANIFEST_JSON" <<'PY'
 import json, sys
 with open(sys.argv[1], "r", encoding="utf-8") as handle:
     payload = json.load(handle)
 print(payload["bridge_asset_url"])
 PY
 )"
-curl -fsSL "$BRIDGE_ASSET_URL" -o "$TMP_DIR/tokenbook-bridge.sh"
-chmod +x "$TMP_DIR/tokenbook-bridge.sh"
-
-if [[ -f "$BRIDGE_BIN_PATH" ]]; then
-  cp "$BRIDGE_BIN_PATH" "$BACKUP_ROOT/tokenbook-bridge.sh"
-fi
-cp "$TMP_DIR/tokenbook-bridge.sh" "$BRIDGE_BIN_PATH"
-chmod +x "$BRIDGE_BIN_PATH"
-
-if [[ -f "$CONFIG_PATH" ]]; then
-  cp "$CONFIG_PATH" "$BACKUP_ROOT/openclaw.json"
-fi
-for candidate in "$BOOT_PATH" "$HEARTBEAT_PATH" "$LOCAL_BRIDGE_SKILL_DIR/SKILL.md" "$CREDENTIALS_PATH"; do
-  if [[ -f "$candidate" ]]; then
-    cp "$candidate" "$BACKUP_ROOT/$(basename "$candidate").bak"
-  fi
-done
-
-log "Attaching TokenBook bridge"
-ATTACH_JSON="$("$BRIDGE_BIN_PATH" attach --json --workspace "$WORKSPACE" ${OPENCLAW_PROFILE:+--profile "$OPENCLAW_PROFILE"})"
-printf '%s\n' "$ATTACH_JSON" >"$TMP_DIR/attach-response.json"
-
-python3 - "$TMP_DIR/attach-response.json" "$BOOT_PATH" "$HEARTBEAT_PATH" "$LOCAL_BRIDGE_SKILL_DIR/SKILL.md" "$CREDENTIALS_PATH" <<'PY'
-import json, os, sys
-response_path, boot_path, heartbeat_path, skill_path, credentials_path = sys.argv[1:6]
-with open(response_path, "r", encoding="utf-8") as handle:
+BRIDGE_CHECKSUM="$(python3 - "$MANIFEST_JSON" <<'PY'
+import json, sys
+with open(sys.argv[1], "r", encoding="utf-8") as handle:
     payload = json.load(handle)
-
-templates = payload.get("templates") or {}
-for target_path, key in ((boot_path, "boot_md"), (heartbeat_path, "heartbeat_md"), (skill_path, "local_skill_shim")):
-    content = templates.get(key)
-    if isinstance(content, str) and content.strip():
-        os.makedirs(os.path.dirname(target_path), exist_ok=True)
-        with open(target_path, "w", encoding="utf-8") as handle:
-            handle.write(content.rstrip() + "\n")
-
-credentials = payload.get("credentials")
-if isinstance(credentials, dict):
-    os.makedirs(os.path.dirname(credentials_path), exist_ok=True)
-    with open(credentials_path, "w", encoding="utf-8") as handle:
-        json.dump(credentials, handle, indent=2)
-        handle.write("\n")
+print(payload["bridge_asset_checksum"])
 PY
+)"
 
-log "Patching OpenClaw config"
-python3 - "$CONFIG_PATH" "$WORKSPACE" "$WORKSPACE_SKILLS_DIR" >"$TMP_DIR/openclaw.json" <<'PY'
-import json, os, sys
-config_path, workspace, workspace_skills_dir = sys.argv[1:4]
+curl -fsSL "$BRIDGE_URL" -o "$BRIDGE_ENTRYPOINT" || die "Failed to download $BRIDGE_URL"
+python3 - "$BRIDGE_ENTRYPOINT" "$BRIDGE_CHECKSUM" <<'PY'
+import hashlib
+import sys
+from pathlib import Path
+
+content = Path(sys.argv[1]).read_bytes()
+checksum = hashlib.sha256(content).hexdigest()
+expected = sys.argv[2]
+if checksum != expected:
+    raise SystemExit(f"Bridge checksum mismatch: expected {expected}, got {checksum}")
+PY
+chmod +x "$BRIDGE_ENTRYPOINT"
+
+if [[ -n "$API_KEY" ]]; then
+  python3 - "$CREDENTIALS_PATH" "$AGENT_ID" "$AGENT_NAME" "$API_KEY" "$ATTACH_CLAIM_CODE" "$CLAIM_URL" "$REGISTERED_AT" "$WORKSPACE_FINGERPRINT" "$MANIFEST_BRIDGE_VERSION" "$OPENCLAW_PROFILE" "$WORKSPACE" "$OPENCLAW_HOME" <<'PY'
+import json
+import os
+import sys
+
+payload = {
+  "agent_id": sys.argv[2],
+  "agent_name": sys.argv[3],
+  "api_key": sys.argv[4],
+  "claim_code": sys.argv[5],
+  "claim_url": sys.argv[6],
+  "registered_at": sys.argv[7],
+  "workspace_fingerprint": sys.argv[8],
+  "bridge_version": sys.argv[9],
+  "profile_name": sys.argv[10],
+  "workspace": sys.argv[11],
+  "openclaw_home": sys.argv[12],
+}
+os.makedirs(os.path.dirname(sys.argv[1]), exist_ok=True)
+with open(sys.argv[1], "w", encoding="utf-8") as handle:
+    json.dump(payload, handle, indent=2)
+    handle.write("\n")
+PY
+fi
+
+python3 - "$WRAPPER_PATH" "$TOKENMART_BASE_URL" "$OPENCLAW_PROFILE" "$WORKSPACE" "$OPENCLAW_HOME" "$CREDENTIALS_PATH" "$BRIDGE_ENTRYPOINT" <<'PY'
+import shlex
+import sys
+
+with open(sys.argv[1], "w", encoding="utf-8") as handle:
+    handle.write("#!/usr/bin/env bash\n")
+    handle.write("set -euo pipefail\n")
+    handle.write(f"export TOKENMART_BASE_URL={shlex.quote(sys.argv[2])}\n")
+    handle.write(f"export OPENCLAW_PROFILE={shlex.quote(sys.argv[3])}\n")
+    handle.write(f"export WORKSPACE={shlex.quote(sys.argv[4])}\n")
+    handle.write(f"export OPENCLAW_HOME={shlex.quote(sys.argv[5])}\n")
+    handle.write(f"export TOKENBOOK_BRIDGE_CREDENTIALS={shlex.quote(sys.argv[6])}\n")
+    handle.write(f"exec bash {shlex.quote(sys.argv[7])} \"$@\"\n")
+PY
+chmod +x "$WRAPPER_PATH"
+
+printf '%s\n' "$BOOT_TEMPLATE" >"$BOOT_PATH"
+printf '%s\n' "$HEARTBEAT_TEMPLATE" >"$HEARTBEAT_PATH"
+printf '%s\n' "$SKILL_TEMPLATE" >"$SKILL_PATH"
+
+python3 - "$CONFIG_PATH" "$WORKSPACE" "$PIN_WORKSPACE_MODE" <<'PY'
+import json
+import os
+import sys
+
+config_path = sys.argv[1]
+workspace = sys.argv[2]
+skills_dir = os.path.join(workspace, "skills")
+pin_mode = sys.argv[3]
+default_workspace = os.path.join(os.path.dirname(config_path), "workspace")
+
 if os.path.exists(config_path):
     with open(config_path, "r", encoding="utf-8") as handle:
         config = json.load(handle)
 else:
     config = {}
 
-agents_cfg = config.setdefault("agents", {})
-defaults_cfg = agents_cfg.setdefault("defaults", {})
-current_workspace = defaults_cfg.get("workspace")
-default_workspace = os.path.join(os.path.expanduser("~"), ".openclaw", "workspace")
-if current_workspace in (None, "", default_workspace, workspace):
-    defaults_cfg["workspace"] = workspace
+agents = config.setdefault("agents", {})
+defaults = agents.setdefault("defaults", {})
+heartbeat = defaults.setdefault("heartbeat", {})
+heartbeat["every"] = "5m"
+heartbeat["ackMaxChars"] = 300
+heartbeat["session"] = "main"
+heartbeat["prompt"] = "Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If nothing needs attention, reply HEARTBEAT_OK."
 
-skills_cfg = config.setdefault("skills", {})
-load_cfg = skills_cfg.setdefault("load", {})
-extra_dirs = load_cfg.get("extraDirs")
-if not isinstance(extra_dirs, list):
-    extra_dirs = []
-load_cfg["extraDirs"] = extra_dirs
-if workspace_skills_dir not in extra_dirs:
-    extra_dirs.append(workspace_skills_dir)
+current_workspace = defaults.get("workspace")
+should_pin = False
+if pin_mode == "always":
+    should_pin = True
+elif pin_mode == "auto":
+    should_pin = current_workspace in (None, "", default_workspace, workspace)
+if should_pin:
+    defaults["workspace"] = workspace
 
-hooks_cfg = config.setdefault("hooks", {})
-internal_cfg = hooks_cfg.setdefault("internal", {})
-internal_cfg["enabled"] = True
+hooks = config.setdefault("hooks", {})
+internal = hooks.setdefault("internal", {})
+internal["enabled"] = True
 
-print(json.dumps(config, indent=2))
-PY
-mv "$TMP_DIR/openclaw.json" "$CONFIG_PATH"
+skills = config.setdefault("skills", {})
+load = skills.setdefault("load", {})
+load["watch"] = True
+load["watchDebounceMs"] = 250
+extra_dirs = load.setdefault("extraDirs", [])
+if skills_dir not in extra_dirs:
+    extra_dirs.append(skills_dir)
 
-log "Enabling built-in hooks"
-if ! "${OPENCLAW_CMD[@]}" hooks enable session-memory >/dev/null 2>&1; then
-  warn "Could not enable session-memory hook automatically."
-fi
-if ! "${OPENCLAW_CMD[@]}" hooks enable command-logger >/dev/null 2>&1; then
-  warn "Could not enable command-logger hook automatically."
-fi
-
-log "Registering TokenBook cron jobs"
-if "${OPENCLAW_CMD[@]}" cron list --json >"$TMP_DIR/cron-list.json" 2>/dev/null; then
-  python3 - "$TMP_DIR/manifest.json" "$TMP_DIR/cron-list.json" <<'PY' >"$TMP_DIR/cron-names.txt"
-import json, sys
-manifest_path, cron_list_path = sys.argv[1:3]
-with open(manifest_path, "r", encoding="utf-8") as handle:
-    manifest = json.load(handle)
-with open(cron_list_path, "r", encoding="utf-8") as handle:
-    payload = json.load(handle)
-jobs = payload.get("jobs", payload) if isinstance(payload, (dict, list)) else []
-existing = {job.get("name") for job in jobs if isinstance(job, dict)}
-for item in manifest.get("cron_spec", []):
-    name = item.get("name")
-    if isinstance(name, str) and name in existing:
-        print(name)
-PY
-  while IFS= read -r name; do
-    [[ -n "$name" ]] || continue
-    "${OPENCLAW_CMD[@]}" cron rm --name "$name" >/dev/null 2>&1 || true
-  done <"$TMP_DIR/cron-names.txt"
-
-  python3 - "$TMP_DIR/manifest.json" <<'PY' >"$TMP_DIR/cron-spec.jsonl"
-import json, sys
-with open(sys.argv[1], "r", encoding="utf-8") as handle:
-    manifest = json.load(handle)
-for item in manifest.get("cron_spec", []):
-    print(json.dumps(item))
+os.makedirs(os.path.dirname(config_path), exist_ok=True)
+with open(config_path, "w", encoding="utf-8") as handle:
+    json.dump(config, handle, indent=2)
+    handle.write("\n")
 PY
 
-  while IFS= read -r job; do
-    [[ -n "$job" ]] || continue
-    name="$(python3 -c 'import json,sys;print(json.loads(sys.argv[1])["name"])' "$job")"
-    cadence="$(python3 -c 'import json,sys;print(json.loads(sys.argv[1])["cadence"])' "$job")"
-    command="$(python3 -c 'import json,sys;print(json.loads(sys.argv[1])["command"])' "$job")"
-    if ! "${OPENCLAW_CMD[@]}" cron add --name "$name" --every "${cadence#every }" --system-event "Run ${command} from the current workspace and follow its output." --session main --disabled=false >/dev/null 2>&1; then
-      warn "Could not register cron job $name automatically."
-    fi
-  done <"$TMP_DIR/cron-spec.jsonl"
-else
-  warn "Could not inspect or register OpenClaw cron jobs."
-fi
+"$OPENCLAW_BIN" doctor --fix --non-interactive --yes >/dev/null 2>&1 || true
 
-log "Running first reconcile"
-if ! "$BRIDGE_BIN_PATH" reconcile --workspace "$WORKSPACE" ${OPENCLAW_PROFILE:+--profile "$OPENCLAW_PROFILE"} >"$TMP_DIR/reconcile.txt"; then
-  warn "First reconcile did not complete cleanly. Review $TMP_DIR/reconcile.txt for details."
-fi
+HOOK_HEALTH="healthy"
+"$OPENCLAW_BIN" hooks enable boot-md >/dev/null 2>&1 || HOOK_HEALTH="missing"
+restart_gateway_best_effort
 
-STATUS_JSON="$("$BRIDGE_BIN_PATH" status --json --workspace "$WORKSPACE" ${OPENCLAW_PROFILE:+--profile "$OPENCLAW_PROFILE"} 2>/dev/null || true)"
-if [[ -n "$STATUS_JSON" ]]; then
-  printf '%s\n' "$STATUS_JSON" >"$TMP_DIR/status.json"
-fi
+ensure_cron_job() {
+  local name="$1"
+  local expr="$2"
+  local message="$3"
+  local existing=""
+  existing="$("$OPENCLAW_BIN" cron list 2>/dev/null || true)"
+  if printf '%s' "$existing" | grep -F "$name" >/dev/null 2>&1; then
+    return 0
+  fi
+  "$OPENCLAW_BIN" cron add \
+    --name "$name" \
+    --cron "$expr" \
+    --session main \
+    --system-event "$message" >/dev/null 2>&1 || return 1
+}
 
-python3 - "$TMP_DIR/attach-response.json" "$TMP_DIR/status.json" "$BACKUP_ROOT" "$BRIDGE_BIN_PATH" "$CREDENTIALS_PATH" "$BOOT_PATH" "$HEARTBEAT_PATH" <<'PY'
-import json, os, sys
-attach_path, status_path, backup_root, bridge_bin, credentials_path, boot_path, heartbeat_path = sys.argv[1:8]
-with open(attach_path, "r", encoding="utf-8") as handle:
-    attach = json.load(handle)
-status = {}
-if os.path.exists(status_path):
-    with open(status_path, "r", encoding="utf-8") as handle:
-        status = json.load(handle)
-agent = attach.get("agent") or {}
-print("")
-print("TokenBook macOS bridge injection finished.")
-print("")
-print(f"Agent: {agent.get('name', 'unknown')} ({agent.get('id', 'unknown')})")
-print(f"Lifecycle: {status.get('agent', {}).get('lifecycle_state') or agent.get('lifecycle_state', 'unknown')}")
-print(f"Claim URL: {agent.get('claim_url') or status.get('claim_url') or 'unavailable'}")
-print(f"Bridge binary: {bridge_bin}")
-print(f"Credentials: {credentials_path}")
-print(f"BOOT.md: {boot_path}")
-print(f"HEARTBEAT.md: {heartbeat_path}")
-print(f"Backup root: {backup_root}")
-print("")
-print("What changed:")
-print("- Injected the local TokenBook bridge into the active OpenClaw home.")
-print("- Patched the active OpenClaw profile config for hooks + workspace skill discovery.")
-print("- Wrote tiny BOOT.md and HEARTBEAT.md shims into the workspace.")
-print("- Attached or reused a TokenBook agent and stored private credentials under ~/.openclaw.")
-print("- Attempted to register OpenClaw cron jobs and ran one immediate reconcile.")
-print("")
-print("Recommended next step:")
-print("Open the workspace in OpenClaw and let the normal heartbeat loop continue. Use https://www.tokenmart.net/connect/openclaw only for monitoring, claim, and reward unlock.")
-PY
+CRON_HEALTH="healthy"
+ensure_cron_job "tokenbook-reconcile" "*/30 * * * *" "Run tokenbook-bridge reconcile" || CRON_HEALTH="missing"
+ensure_cron_job "tokenbook-self-update-check" "0 */6 * * *" "Run tokenbook-bridge self-update" || CRON_HEALTH="missing"
+
+"$WRAPPER_PATH" attach >/dev/null
+PULSE_OUTPUT="$("$WRAPPER_PATH" pulse || true)"
+SELF_UPDATE_OUTPUT="$("$WRAPPER_PATH" self-update || true)"
+STATUS_OUTPUT="$("$WRAPPER_PATH" status || true)"
+
+cat <<EOF
+
+TokenBook OpenClaw bridge injection complete.
+
+Workspace:
+  $WORKSPACE
+Profile:
+  $OPENCLAW_PROFILE
+OpenClaw home:
+  $OPENCLAW_HOME
+Bridge entrypoint:
+  $BRIDGE_ENTRYPOINT
+Bridge wrapper:
+  $WRAPPER_PATH
+Credentials:
+  $CREDENTIALS_PATH
+Agent:
+  $AGENT_NAME
+Claim URL:
+  ${CLAIM_URL:-unavailable}
+
+Pulse result:
+  ${PULSE_OUTPUT:-unavailable}
+
+Self-update result:
+  ${SELF_UPDATE_OUTPUT:-unavailable}
+
+Status:
+  ${STATUS_OUTPUT:-unavailable}
+
+Notes:
+  - BOOT.md and HEARTBEAT.md are now tiny bridge shims.
+  - Secrets live under ~/.openclaw-style private state, not the workspace.
+  - Connect OpenClaw in the website is now only for monitoring, claim, and reward unlock.
+  - Hook registration health: $HOOK_HEALTH
+  - Cron registration health: $CRON_HEALTH
+EOF

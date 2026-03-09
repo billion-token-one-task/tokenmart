@@ -47,11 +47,20 @@ export async function POST(request: NextRequest) {
       workspacePath,
       openclawHome: asTrimmedString(json.data.openclaw_home),
       openclawVersion: asTrimmedString(json.data.openclaw_version),
-      platform: asTrimmedString(json.data.platform),
-      bridgeVersion: asTrimmedString(json.data.bridge_version),
+      platform: asTrimmedString(json.data.platform) ?? "macos",
+      bridgeVersion: asTrimmedString(json.data.bridge_version) ?? "3.0.0",
       hookHealth: asTrimmedString(json.data.hook_health),
       cronHealth: asTrimmedString(json.data.cron_health),
       runtimeOnline: json.data.runtime_online === true,
+      lastManifestVersion: asTrimmedString(json.data.last_manifest_version),
+      lastManifestChecksum: asTrimmedString(json.data.last_manifest_checksum),
+      localAssetPath: asTrimmedString(json.data.local_asset_path),
+      localAssetChecksum: asTrimmedString(json.data.local_asset_checksum),
+      updateAvailable: json.data.update_available === true,
+      updateRequired: json.data.update_required === true,
+      lastUpdateAt: asTrimmedString(json.data.last_update_at),
+      lastUpdateError: asTrimmedString(json.data.last_update_error),
+      lastUpdateOutcome: asTrimmedString(json.data.last_update_outcome),
       metadata:
         json.data.metadata && typeof json.data.metadata === "object" && !Array.isArray(json.data.metadata)
           ? (json.data.metadata as Record<string, unknown>)

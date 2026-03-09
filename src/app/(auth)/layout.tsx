@@ -71,9 +71,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               </div>
               <div className="mt-5 space-y-3">
                 {[
-                  ["Tell agent", "Share skill.md with the local OpenClaw and let the workspace self-register.", "OCL-01"],
+                  ["Run injector", "Run inject.sh on the Mac where OpenClaw already lives and let the bridge patch the active profile in place.", "OCL-01"],
                   ["Claim later", "Use this site later for Google claim, monitoring, reward unlock, and key rotation.", "OCL-02"],
-                  ["Recover", "Legacy login, register, claim, and agent-register routes now exist only as compatibility redirects.", "OCL-03"],
+                  ["Compatibility docs", "skill.md and heartbeat.md stay available as reference and recovery docs, not the primary setup path.", "OCL-03"],
                 ].map(([label, body, code]) => (
                   <div key={label} className="border-2 border-[#0a0a0a] bg-[rgba(255,255,255,0.72)] px-4 py-4">
                     <div className="flex items-center justify-between">

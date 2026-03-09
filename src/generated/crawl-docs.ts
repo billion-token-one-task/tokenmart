@@ -17,8 +17,8 @@ export interface CrawlDocEntry {
   audience?: CrawlDocAudience;
 }
 
-export const CRAWL_DOCS_GENERATED_AT = "2026-03-08T23:58:32.347Z";
-export const CRAWL_DOCS_COUNT = 16;
+export const CRAWL_DOCS_GENERATED_AT = "2026-03-09T00:53:35.855Z";
+export const CRAWL_DOCS_COUNT = 27;
 export const CRAWL_DOCS_ARCHIVE_COUNT = 10;
 export const CRAWL_RUNTIME_DOCS_COUNT = 4;
 export const CRAWL_DOCS: CrawlDocEntry[] = [
@@ -163,6 +163,36 @@ export const CRAWL_DOCS: CrawlDocEntry[] = [
     "audience": "maintainers, contributors"
   },
   {
+    "path": ".tmp/openclaw-suite/fresh_install/workspace/AGENTS.md",
+    "title": "AGENTS.md - Your Workspace",
+    "url": "/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/AGENTS.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "This folder is home. Treat it that way.",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
+    "path": ".tmp/openclaw-suite/fresh_install/workspace/BOOTSTRAP.md",
+    "title": "BOOTSTRAP.md - Hello, World",
+    "url": "/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/BOOTSTRAP.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "_You just woke up. Time to figure out who you are._",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
+    "path": ".tmp/openclaw-suite/fresh_install/workspace/IDENTITY.md",
+    "title": "IDENTITY.md - Who Am I?",
+    "url": "/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/IDENTITY.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "_Fill this in during your first conversation. Make it yours._",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
     "path": "research/openclaw-research.md",
     "title": "OpenClaw Research: Complete Architecture & Systems Deep Dive",
     "url": "/crawl-docs/research/openclaw-research.md",
@@ -173,12 +203,92 @@ export const CRAWL_DOCS: CrawlDocEntry[] = [
     "audience": "operators"
   },
   {
+    "path": ".tmp/openclaw-suite/fresh_install/workspace/SOUL.md",
+    "title": "SOUL.md - Who You Are",
+    "url": "/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/SOUL.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "_You're not a chatbot. You're becoming someone._",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
+    "path": ".tmp/openclaw-suite/fresh_install/workspace/HEARTBEAT.md",
+    "title": "TokenBook HEARTBEAT Compatibility",
+    "url": "/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/HEARTBEAT.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "--- name: tokenbook-bridge-heartbeat-compat version: 3.0.0 description: Minimal compatibility heartbeat for the TokenBook OpenClaw bridge. ---",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
+    "path": ".tmp/openclaw-suite/fresh_install/workspace/skills/tokenmart/HEARTBEAT.md",
+    "title": "TokenBook HEARTBEAT Compatibility",
+    "url": "/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/skills/tokenmart/HEARTBEAT.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "--- name: tokenbook-bridge-heartbeat-compat version: 3.0.0 description: Minimal compatibility heartbeat for the TokenBook OpenClaw bridge. ---",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
+    "path": ".tmp/openclaw-suite/fresh_install/workspace/skills/tokenmart/SKILL.md",
+    "title": "TokenBook OpenClaw Compatibility Skill",
+    "url": "/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/skills/tokenmart/SKILL.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "--- name: tokenmart-compat version: 3.0.0 description: Compatibility contract for TokenBook's direct-injection OpenClaw bridge. Use the injector first; treat this file as a fallback reference. homepage: http://127.0.0.1:3359 ---",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
+    "path": ".tmp/openclaw-suite/fresh_install/workspace/skills/tokenmart/references/messaging.md",
+    "title": "TokenMart Messaging Reference",
+    "url": "/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/skills/tokenmart/references/messaging.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "Consent lifecycle:",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
     "path": "docs/ORCHESTRATION_METHODOLOGY.md",
     "title": "TokenMart Orchestration Methodology",
     "url": "/crawl-docs/docs/ORCHESTRATION_METHODOLOGY.md",
     "track": "technical",
     "category": "reference",
     "summary": "TokenMart decomposes work as a directed acyclic graph of execution nodes. Each node must define:",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
+    "path": ".tmp/openclaw-suite/fresh_install/workspace/skills/tokenmart/references/rules.md",
+    "title": "TokenMart Rules Reference",
+    "url": "/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/skills/tokenmart/references/rules.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "Update a key RPM limit:",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
+    "path": ".tmp/openclaw-suite/fresh_install/workspace/TOOLS.md",
+    "title": "TOOLS.md - Local Notes",
+    "url": "/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/TOOLS.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "Skills define _how_ tools work. This file is for _your_ specifics — the stuff that's unique to your setup.",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
+    "path": ".tmp/openclaw-suite/fresh_install/workspace/USER.md",
+    "title": "USER.md - About Your Human",
+    "url": "/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/USER.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "_Learn about the person you're helping. Update this as you go._",
     "order": 900,
     "audience": "operators"
   }
@@ -469,6 +579,36 @@ export const ALL_CRAWL_DOCS: CrawlDocEntry[] = [
     "audience": "maintainers, contributors"
   },
   {
+    "path": ".tmp/openclaw-suite/fresh_install/workspace/AGENTS.md",
+    "title": "AGENTS.md - Your Workspace",
+    "url": "/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/AGENTS.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "This folder is home. Treat it that way.",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
+    "path": ".tmp/openclaw-suite/fresh_install/workspace/BOOTSTRAP.md",
+    "title": "BOOTSTRAP.md - Hello, World",
+    "url": "/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/BOOTSTRAP.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "_You just woke up. Time to figure out who you are._",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
+    "path": ".tmp/openclaw-suite/fresh_install/workspace/IDENTITY.md",
+    "title": "IDENTITY.md - Who Am I?",
+    "url": "/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/IDENTITY.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "_Fill this in during your first conversation. Make it yours._",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
     "path": "research/openclaw-research.md",
     "title": "OpenClaw Research: Complete Architecture & Systems Deep Dive",
     "url": "/crawl-docs/research/openclaw-research.md",
@@ -479,12 +619,92 @@ export const ALL_CRAWL_DOCS: CrawlDocEntry[] = [
     "audience": "operators"
   },
   {
+    "path": ".tmp/openclaw-suite/fresh_install/workspace/SOUL.md",
+    "title": "SOUL.md - Who You Are",
+    "url": "/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/SOUL.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "_You're not a chatbot. You're becoming someone._",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
+    "path": ".tmp/openclaw-suite/fresh_install/workspace/HEARTBEAT.md",
+    "title": "TokenBook HEARTBEAT Compatibility",
+    "url": "/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/HEARTBEAT.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "--- name: tokenbook-bridge-heartbeat-compat version: 3.0.0 description: Minimal compatibility heartbeat for the TokenBook OpenClaw bridge. ---",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
+    "path": ".tmp/openclaw-suite/fresh_install/workspace/skills/tokenmart/HEARTBEAT.md",
+    "title": "TokenBook HEARTBEAT Compatibility",
+    "url": "/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/skills/tokenmart/HEARTBEAT.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "--- name: tokenbook-bridge-heartbeat-compat version: 3.0.0 description: Minimal compatibility heartbeat for the TokenBook OpenClaw bridge. ---",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
+    "path": ".tmp/openclaw-suite/fresh_install/workspace/skills/tokenmart/SKILL.md",
+    "title": "TokenBook OpenClaw Compatibility Skill",
+    "url": "/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/skills/tokenmart/SKILL.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "--- name: tokenmart-compat version: 3.0.0 description: Compatibility contract for TokenBook's direct-injection OpenClaw bridge. Use the injector first; treat this file as a fallback reference. homepage: http://127.0.0.1:3359 ---",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
+    "path": ".tmp/openclaw-suite/fresh_install/workspace/skills/tokenmart/references/messaging.md",
+    "title": "TokenMart Messaging Reference",
+    "url": "/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/skills/tokenmart/references/messaging.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "Consent lifecycle:",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
     "path": "docs/ORCHESTRATION_METHODOLOGY.md",
     "title": "TokenMart Orchestration Methodology",
     "url": "/crawl-docs/docs/ORCHESTRATION_METHODOLOGY.md",
     "track": "technical",
     "category": "reference",
     "summary": "TokenMart decomposes work as a directed acyclic graph of execution nodes. Each node must define:",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
+    "path": ".tmp/openclaw-suite/fresh_install/workspace/skills/tokenmart/references/rules.md",
+    "title": "TokenMart Rules Reference",
+    "url": "/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/skills/tokenmart/references/rules.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "Update a key RPM limit:",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
+    "path": ".tmp/openclaw-suite/fresh_install/workspace/TOOLS.md",
+    "title": "TOOLS.md - Local Notes",
+    "url": "/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/TOOLS.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "Skills define _how_ tools work. This file is for _your_ specifics — the stuff that's unique to your setup.",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
+    "path": ".tmp/openclaw-suite/fresh_install/workspace/USER.md",
+    "title": "USER.md - About Your Human",
+    "url": "/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/USER.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "_Learn about the person you're helping. Update this as you go._",
     "order": 900,
     "audience": "operators"
   },

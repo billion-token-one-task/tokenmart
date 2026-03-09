@@ -152,6 +152,14 @@ export interface Database {
           last_attach_at: string;
           last_pulse_at: string | null;
           last_self_check_at: string | null;
+          last_manifest_version: string | null;
+          last_manifest_checksum: string | null;
+          local_asset_path: string | null;
+          local_asset_checksum: string | null;
+          update_available: boolean;
+          update_required: boolean;
+          last_update_at: string | null;
+          last_update_error: string | null;
           metadata: Json;
           created_at: string;
           updated_at: string;
@@ -173,6 +181,14 @@ export interface Database {
           last_attach_at?: string;
           last_pulse_at?: string | null;
           last_self_check_at?: string | null;
+          last_manifest_version?: string | null;
+          last_manifest_checksum?: string | null;
+          local_asset_path?: string | null;
+          local_asset_checksum?: string | null;
+          update_available?: boolean;
+          update_required?: boolean;
+          last_update_at?: string | null;
+          last_update_error?: string | null;
           metadata?: Json;
           created_at?: string;
           updated_at?: string;
@@ -194,6 +210,14 @@ export interface Database {
           last_attach_at?: string;
           last_pulse_at?: string | null;
           last_self_check_at?: string | null;
+          last_manifest_version?: string | null;
+          last_manifest_checksum?: string | null;
+          local_asset_path?: string | null;
+          local_asset_checksum?: string | null;
+          update_available?: boolean;
+          update_required?: boolean;
+          last_update_at?: string | null;
+          last_update_error?: string | null;
           metadata?: Json;
           created_at?: string;
           updated_at?: string;
@@ -261,80 +285,6 @@ export interface Database {
             columns: ["account_id"];
             isOneToOne: false;
             referencedRelation: "accounts";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      openclaw_bridge_instances: {
-        Row: {
-          id: string;
-          agent_id: string;
-          workspace_fingerprint: string;
-          bridge_mode: string;
-          bridge_version: string;
-          profile_name: string;
-          workspace_path: string;
-          openclaw_home: string;
-          openclaw_version: string | null;
-          platform: string;
-          cron_health: string;
-          hook_health: string;
-          runtime_online: boolean;
-          last_attach_at: string;
-          last_pulse_at: string | null;
-          last_self_check_at: string | null;
-          metadata: Json;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          agent_id: string;
-          workspace_fingerprint: string;
-          bridge_mode?: string;
-          bridge_version: string;
-          profile_name: string;
-          workspace_path: string;
-          openclaw_home: string;
-          openclaw_version?: string | null;
-          platform?: string;
-          cron_health?: string;
-          hook_health?: string;
-          runtime_online?: boolean;
-          last_attach_at?: string;
-          last_pulse_at?: string | null;
-          last_self_check_at?: string | null;
-          metadata?: Json;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          agent_id?: string;
-          workspace_fingerprint?: string;
-          bridge_mode?: string;
-          bridge_version?: string;
-          profile_name?: string;
-          workspace_path?: string;
-          openclaw_home?: string;
-          openclaw_version?: string | null;
-          platform?: string;
-          cron_health?: string;
-          hook_health?: string;
-          runtime_online?: boolean;
-          last_attach_at?: string;
-          last_pulse_at?: string | null;
-          last_self_check_at?: string | null;
-          metadata?: Json;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "openclaw_bridge_instances_agent_id_fkey";
-            columns: ["agent_id"];
-            isOneToOne: false;
-            referencedRelation: "agents";
             referencedColumns: ["id"];
           },
         ];

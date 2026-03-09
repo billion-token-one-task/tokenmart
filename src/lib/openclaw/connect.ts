@@ -26,7 +26,6 @@ import {
 } from "@/lib/v2/contracts";
 import type {
   OpenClawBridgeAttachResult,
-  OpenClawBridgeInstanceRecord,
   OpenClawBridgeManifest,
   OpenClawBridgeStatusView,
   OpenClawClaimStatus,
@@ -35,6 +34,7 @@ import type {
   OpenClawRegisterResult,
   OpenClawStatusView,
 } from "@/lib/v2/types";
+import type { Json } from "@/types/database";
 
 const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "") || "https://www.tokenmart.net";
@@ -87,6 +87,14 @@ interface OpenClawBridgeInstanceRow {
   last_attach_at: string;
   last_pulse_at: string | null;
   last_self_check_at: string | null;
+  last_manifest_version: string | null;
+  last_manifest_checksum: string | null;
+  local_asset_path: string | null;
+  local_asset_checksum: string | null;
+  update_available: boolean;
+  update_required: boolean;
+  last_update_at: string | null;
+  last_update_error: string | null;
   metadata: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
@@ -103,6 +111,7 @@ interface AttachOpenClawBridgeInput {
   openclawVersion?: string | null;
   platform?: string | null;
   bridgeVersion?: string | null;
+  bridgeMode?: string | null;
   cronHealth?: string | null;
   hookHealth?: string | null;
   metadata?: Record<string, unknown> | null;
@@ -116,7 +125,7 @@ interface RecordBridgeSelfUpdateInput {
   agentId: string;
   workspaceFingerprint: string;
   profileName?: string | null;
-  bridgeVersion: string;
+  bridgeVersion?: string | null;
   runtimeOnline: boolean;
   workspacePath?: string | null;
   openclawHome?: string | null;
@@ -125,6 +134,15 @@ interface RecordBridgeSelfUpdateInput {
   cronHealth?: string | null;
   hookHealth?: string | null;
   metadata?: Record<string, unknown>;
+  lastManifestVersion?: string | null;
+  lastManifestChecksum?: string | null;
+  localAssetPath?: string | null;
+  localAssetChecksum?: string | null;
+  updateAvailable?: boolean;
+  updateRequired?: boolean;
+  lastUpdateAt?: string | null;
+  lastUpdateError?: string | null;
+  lastUpdateOutcome?: string | null;
 }
 
 interface RecordBridgePulseInput {
@@ -138,6 +156,7 @@ interface RecordBridgePulseInput {
   platform?: string | null;
   cronHealth?: string | null;
   hookHealth?: string | null;
+  localAssetChecksum?: string | null;
 }
 
 interface RewardSplitAmountRow {
@@ -251,6 +270,21 @@ function bridgeTemplates(bridgeEntrypoint: string) {
 
 function buildBridgeStatus(instance: OpenClawBridgeInstanceRow | null): OpenClawBridgeStatusView | null {
   if (!instance) return null;
+  const metadata = instance.metadata ?? {};
+  const currentChecksum =
+    instance.local_asset_checksum
+    ?? (typeof metadata.current_checksum === "string" ? metadata.current_checksum : null);
+  const localAssetPath =
+    instance.local_asset_path
+    ?? (typeof metadata.local_asset_path === "string" ? metadata.local_asset_path : null);
+  const lastUpdateAt =
+    instance.last_update_at
+    ?? (typeof metadata.last_update_at === "string" ? metadata.last_update_at : null);
+  const lastUpdateError =
+    instance.last_update_error
+    ?? (typeof metadata.last_update_error === "string" ? metadata.last_update_error : null);
+  const lastUpdateOutcome =
+    typeof metadata.last_update_outcome === "string" ? metadata.last_update_outcome : null;
   return {
     bridge_mode: instance.bridge_mode,
     bridge_version: instance.bridge_version,
@@ -264,7 +298,16 @@ function buildBridgeStatus(instance: OpenClawBridgeInstanceRow | null): OpenClaw
     cron_health: instance.cron_health,
     hook_health: instance.hook_health,
     runtime_online: instance.runtime_online,
-    rekey_required: Boolean(instance.metadata?.rekey_required),
+    rekey_required: Boolean(metadata.rekey_required),
+    update_available: instance.update_available || metadata.update_available === true,
+    update_required: instance.update_required || metadata.update_required === true,
+    last_update_at: lastUpdateAt,
+    last_update_error: lastUpdateError,
+    last_update_outcome: lastUpdateOutcome,
+    current_checksum: currentChecksum,
+    local_asset_path: localAssetPath,
+    last_manifest_version: instance.last_manifest_version,
+    last_manifest_checksum: instance.last_manifest_checksum,
   };
 }
 
@@ -275,10 +318,10 @@ function buildBridgeDiagnostics(bridge: OpenClawBridgeStatusView | null, runtime
     hooks_registered: Boolean(bridge?.hook_health && bridge.hook_health !== "missing"),
     cron_registered: Boolean(bridge?.cron_health && bridge.cron_health !== "missing"),
     runtime_reachable: runtimeReachable,
-    last_error:
-      bridge?.rekey_required
+    last_error: bridge?.last_update_error
+      ?? (bridge?.rekey_required
         ? "The local TokenBook bridge needs a claimed-owner rekey before runtime work can resume."
-        : null,
+        : null),
   };
 }
 
@@ -328,7 +371,7 @@ function buildIdentityFileContent(input: {
 
 function readBridgeAssetChecksum() {
   const bridgeAsset = readFileSync(
-    path.join(process.cwd(), "public", "openclaw", "tokenbook-bridge.py"),
+    path.join(process.cwd(), "public", "openclaw", "bridge", "tokenbook-bridge.sh"),
     "utf8",
   );
   return createHash("sha256").update(bridgeAsset).digest("hex");
@@ -466,17 +509,28 @@ async function loadAgentById(agentId: string, db: AdminClient): Promise<OpenClaw
 
 async function loadBridgeInstanceByAgentId(
   agentId: string,
+  options: {
+    profileName?: string | null;
+    workspaceFingerprint?: string | null;
+  } = {},
   db: AdminClient,
 ): Promise<OpenClawBridgeInstanceRow | null> {
-  const { data } = await db
+  let query = db
     .from("openclaw_bridge_instances")
     .select(
-      "id, agent_id, workspace_fingerprint, bridge_mode, bridge_version, profile_name, workspace_path, openclaw_home, openclaw_version, platform, cron_health, hook_health, runtime_online, last_attach_at, last_pulse_at, last_self_check_at, metadata, created_at, updated_at",
+      "id, agent_id, workspace_fingerprint, bridge_mode, bridge_version, profile_name, workspace_path, openclaw_home, openclaw_version, platform, cron_health, hook_health, runtime_online, last_attach_at, last_pulse_at, last_self_check_at, last_manifest_version, last_manifest_checksum, local_asset_path, local_asset_checksum, update_available, update_required, last_update_at, last_update_error, metadata, created_at, updated_at",
     )
     .eq("agent_id", agentId)
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .order("updated_at", { ascending: false });
+
+  if (options.profileName?.trim()) {
+    query = query.eq("profile_name", normalizeProfileName(options.profileName));
+  }
+  if (options.workspaceFingerprint?.trim()) {
+    query = query.eq("workspace_fingerprint", options.workspaceFingerprint.trim());
+  }
+
+  const { data } = await query.limit(1).maybeSingle();
 
   return (data as OpenClawBridgeInstanceRow | null) ?? null;
 }
@@ -495,6 +549,14 @@ async function upsertBridgeInstance(
     runtimeOnline?: boolean;
     bridgeVersion?: string;
     metadata?: Record<string, unknown>;
+    lastManifestVersion?: string | null;
+    lastManifestChecksum?: string | null;
+    localAssetPath?: string | null;
+    localAssetChecksum?: string | null;
+    updateAvailable?: boolean;
+    updateRequired?: boolean;
+    lastUpdateAt?: string | null;
+    lastUpdateError?: string | null;
     touchPulse?: boolean;
     touchSelfCheck?: boolean;
   },
@@ -503,7 +565,7 @@ async function upsertBridgeInstance(
   const now = new Date().toISOString();
   const { data: existing } = await db
     .from("openclaw_bridge_instances")
-    .select("last_pulse_at, last_self_check_at")
+    .select("last_pulse_at, last_self_check_at, metadata, update_available, update_required, last_update_at, last_update_error, last_manifest_version, last_manifest_checksum, local_asset_path, local_asset_checksum")
     .eq("agent_id", input.agentId)
     .eq("workspace_fingerprint", input.workspaceFingerprint)
     .eq("profile_name", normalizeProfileName(input.profileName))
@@ -525,7 +587,18 @@ async function upsertBridgeInstance(
     last_attach_at: now,
     last_pulse_at: input.touchPulse ? now : existing?.last_pulse_at ?? null,
     last_self_check_at: input.touchSelfCheck ? now : existing?.last_self_check_at ?? null,
-    metadata: input.metadata ?? {},
+    last_manifest_version: input.lastManifestVersion ?? existing?.last_manifest_version ?? null,
+    last_manifest_checksum: input.lastManifestChecksum ?? existing?.last_manifest_checksum ?? null,
+    local_asset_path: input.localAssetPath ?? existing?.local_asset_path ?? null,
+    local_asset_checksum: input.localAssetChecksum ?? existing?.local_asset_checksum ?? null,
+    update_available: input.updateAvailable ?? existing?.update_available ?? false,
+    update_required: input.updateRequired ?? existing?.update_required ?? false,
+    last_update_at: input.lastUpdateAt ?? existing?.last_update_at ?? null,
+    last_update_error: input.lastUpdateError ?? existing?.last_update_error ?? null,
+    metadata: {
+      ...(((existing?.metadata as Record<string, unknown> | null) ?? {})),
+      ...(input.metadata ?? {}),
+    } as Json,
     updated_at: now,
   };
 
@@ -536,7 +609,7 @@ async function upsertBridgeInstance(
       ignoreDuplicates: false,
     })
     .select(
-      "id, agent_id, workspace_fingerprint, bridge_mode, bridge_version, profile_name, workspace_path, openclaw_home, openclaw_version, platform, cron_health, hook_health, runtime_online, last_attach_at, last_pulse_at, last_self_check_at, metadata, created_at, updated_at",
+      "id, agent_id, workspace_fingerprint, bridge_mode, bridge_version, profile_name, workspace_path, openclaw_home, openclaw_version, platform, cron_health, hook_health, runtime_online, last_attach_at, last_pulse_at, last_self_check_at, last_manifest_version, last_manifest_checksum, local_asset_path, local_asset_checksum, update_available, update_required, last_update_at, last_update_error, metadata, created_at, updated_at",
     )
     .single();
 
@@ -635,6 +708,15 @@ function buildDisconnectedStatus(): OpenClawStatusView {
     cron_health: null,
     hook_health: null,
     rekey_required: false,
+    update_available: false,
+    update_required: false,
+    last_update_at: null,
+    last_update_error: null,
+    last_update_outcome: null,
+    current_checksum: null,
+    local_asset_path: null,
+    last_manifest_version: null,
+    last_manifest_checksum: null,
     diagnostics: buildBridgeDiagnostics(bridge, false),
     bridge,
   };
@@ -656,13 +738,6 @@ export function getOpenClawBridgeManifest(): OpenClawBridgeManifest {
     status_endpoint: `${APP_URL}/api/v2/openclaw/status`,
     cron_spec: [
       {
-        name: "tokenbook-pulse",
-        cadence: "every 5m",
-        session: "main",
-        mode: "systemEvent",
-        command: `${V3_OPENCLAW_BRIDGE_COMMAND} pulse`,
-      },
-      {
         name: "tokenbook-reconcile",
         cadence: "every 30m",
         session: "main",
@@ -677,10 +752,19 @@ export function getOpenClawBridgeManifest(): OpenClawBridgeManifest {
         command: `${V3_OPENCLAW_BRIDGE_COMMAND} self-update`,
       },
     ],
+    hook_spec: [
+      {
+        name: "boot-md",
+        required: true,
+        install_mode: "internal_enable",
+        purpose: "Run tokenbook-bridge attach and status at gateway startup.",
+      },
+    ],
     config_patch: {
       hooks_internal_enabled: true,
       pin_workspace_mode: "safe_auto",
       watch_skills: true,
+      enable_boot_md: true,
     },
     templates: bridgeTemplates(buildBridgeEntrypoint("~/.openclaw")),
   };
@@ -773,10 +857,16 @@ export async function attachOpenClawBridge(
       hookHealth: input.hookHealth ?? "staged",
       runtimeOnline: false,
       bridgeVersion: input.bridgeVersion ?? OPENCLAW_BRIDGE_VERSION,
+      lastManifestVersion: OPENCLAW_BRIDGE_VERSION,
+      lastManifestChecksum: readBridgeAssetChecksum(),
+      localAssetPath: bridgeEntrypoint,
+      updateAvailable: false,
+      updateRequired: false,
       metadata: {
         ...(input.metadata ?? {}),
         rekey_required: rekeyRequired,
         claim_required_for_rewards: agent.lifecycle_state !== "claimed",
+        last_update_outcome: "attached",
       },
     },
     db,
@@ -844,7 +934,7 @@ export async function recordOpenClawBridgeSelfUpdate(
     {
       agentId: input.agentId,
       workspaceFingerprint: input.workspaceFingerprint,
-      profileName: input.profileName,
+      profileName: input.profileName ?? "default",
       workspacePath: input.workspacePath?.trim() || "",
       openclawHome: input.openclawHome?.trim() || "~/.openclaw",
       openclawVersion: input.openclawVersion ?? null,
@@ -852,8 +942,19 @@ export async function recordOpenClawBridgeSelfUpdate(
       cronHealth: input.cronHealth ?? "unknown",
       hookHealth: input.hookHealth ?? "unknown",
       runtimeOnline: input.runtimeOnline,
-      bridgeVersion: input.bridgeVersion,
-      metadata: input.metadata ?? {},
+      bridgeVersion: input.bridgeVersion ?? undefined,
+      lastManifestVersion: input.lastManifestVersion ?? OPENCLAW_BRIDGE_VERSION,
+      lastManifestChecksum: input.lastManifestChecksum ?? readBridgeAssetChecksum(),
+      localAssetPath: input.localAssetPath ?? buildBridgeEntrypoint(input.openclawHome),
+      localAssetChecksum: input.localAssetChecksum ?? null,
+      updateAvailable: input.updateAvailable ?? false,
+      updateRequired: input.updateRequired ?? false,
+      lastUpdateAt: input.lastUpdateAt ?? new Date().toISOString(),
+      lastUpdateError: input.lastUpdateError ?? null,
+      metadata: {
+        ...(input.metadata ?? {}),
+        ...(input.lastUpdateOutcome ? { last_update_outcome: input.lastUpdateOutcome } : {}),
+      },
       touchSelfCheck: true,
       touchPulse: Boolean(input.runtimeOnline),
     },
@@ -884,7 +985,10 @@ export async function recordOpenClawBridgePulse(
       hookHealth: input.hookHealth ?? "healthy",
       runtimeOnline: true,
       bridgeVersion: input.bridgeVersion ?? OPENCLAW_BRIDGE_VERSION,
-      metadata: {},
+      localAssetChecksum: input.localAssetChecksum ?? null,
+      metadata: {
+        last_update_outcome: "pulse_ok",
+      },
       touchPulse: true,
     },
     db,
@@ -1046,6 +1150,8 @@ export async function getOpenClawClaimStatus(input: {
 export async function getOpenClawStatus(input: {
   accountId?: string | null;
   agentId?: string | null;
+  profileName?: string | null;
+  workspaceFingerprint?: string | null;
 }): Promise<OpenClawStatusView> {
   const db = createAdminClient();
 
@@ -1072,7 +1178,14 @@ export async function getOpenClawStatus(input: {
       skillVersion(),
       getAgentLifecycleRecord(selected.id, db),
       getPendingLockedRewards(selected.id, db),
-      loadBridgeInstanceByAgentId(selected.id, db),
+      loadBridgeInstanceByAgentId(
+        selected.id,
+        {
+          profileName: input.profileName,
+          workspaceFingerprint: input.workspaceFingerprint,
+        },
+        db,
+      ),
     ]);
 
   const heartbeatRecent =
@@ -1120,6 +1233,15 @@ export async function getOpenClawStatus(input: {
     cron_health: bridge?.cron_health ?? null,
     hook_health: bridge?.hook_health ?? null,
     rekey_required: bridge?.rekey_required ?? false,
+    update_available: bridge?.update_available ?? false,
+    update_required: bridge?.update_required ?? false,
+    last_update_at: bridge?.last_update_at ?? null,
+    last_update_error: bridge?.last_update_error ?? null,
+    last_update_outcome: bridge?.last_update_outcome ?? null,
+    current_checksum: bridge?.current_checksum ?? null,
+    local_asset_path: bridge?.local_asset_path ?? null,
+    last_manifest_version: bridge?.last_manifest_version ?? null,
+    last_manifest_checksum: bridge?.last_manifest_checksum ?? null,
     diagnostics,
     bridge,
   };
@@ -1293,6 +1415,7 @@ export async function recoverOpenClawAgent(input: {
 export function openClawApiReference() {
   return {
     injector_url: `${APP_URL}${V2_OPENCLAW_INJECTOR_PATH}`,
+    bridge_asset_url: `${APP_URL}${V3_OPENCLAW_BRIDGE_SCRIPT_PATH}`,
     register_endpoint: `${APP_URL}${V2_OPENCLAW_REGISTER_ENDPOINT}`,
     claim_status_endpoint: `${APP_URL}${V2_OPENCLAW_CLAIM_STATUS_ENDPOINT}`,
     claim_endpoint: `${APP_URL}${V2_OPENCLAW_CLAIM_ENDPOINT}`,

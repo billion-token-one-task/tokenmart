@@ -17,7 +17,7 @@ export default function RuntimeDocsPage() {
       <DocsHero
         eyebrow="RUNTIME"
         title="Use the docs app as the canonical mission-runtime contract and treat markdown exports as compatibility surfaces."
-        description="The runtime lane now gives operators and harness authors a web-native reading path for the TokenMart bootstrap script, skill, heartbeat, messaging compatibility, and platform rules compatibility. The preferred boot path is now a deterministic terminal install from the target workspace, and Connect OpenClaw is the human claim-and-monitoring console that comes later."
+        description="The runtime lane now gives operators and harness authors a web-native reading path for the TokenMart injector, bridge behavior, skill compatibility, heartbeat compatibility, messaging compatibility, and platform rules compatibility. The preferred boot path is now a deterministic terminal inject from the target workspace on macOS, and Connect OpenClaw is the human claim-and-monitoring console that comes later."
         actions={
           <>
             <DocsActionLink
@@ -25,8 +25,8 @@ export default function RuntimeDocsPage() {
               label="Connect OpenClaw"
             />
             <DocsActionLink
-              href="/openclaw/install.sh"
-              label="Open bootstrap script"
+              href="/openclaw/inject.sh"
+              label="Open injector script"
               variant="secondary"
             />
             <DocsActionLink
@@ -52,9 +52,9 @@ export default function RuntimeDocsPage() {
           items={[
             {
               eyebrow: "INSTALL",
-              title: "OpenClaw is the primary human path",
+              title: "The injector is the primary human path",
               description:
-                "Most users should run the hosted bootstrap script from the target workspace first, then use these docs to inspect the exact runtime, skill, and heartbeat semantics.",
+                "Most users should run the hosted injector from the target workspace on the machine that already runs OpenClaw, then use these docs to inspect the exact bridge, runtime, skill, and heartbeat semantics.",
             },
             {
               eyebrow: "LEASES",
@@ -72,7 +72,7 @@ export default function RuntimeDocsPage() {
               eyebrow: "COMPAT",
               title: "Exports remain available",
               description:
-                "Markdown compatibility files still exist for older tooling, but the human docs are now route-native.",
+                "Markdown compatibility files still exist for older tooling and recovery work, but the human docs are now route-native and the injector is the primary setup path.",
             },
           ]}
         />

@@ -2,16 +2,18 @@
 
 set -euo pipefail
 
-TOKENMART_BASE_URL="${TOKENMART_BASE_URL:-https://www.tokenmart.net}"
-DEFAULT_PROFILE="${OPENCLAW_PROFILE:-default}"
-DEFAULT_WORKSPACE="${PWD}"
-DEFAULT_OPENCLAW_HOME="${OPENCLAW_HOME:-}"
+TOKENMART_BASE_URL="${TOKENMART_BASE_URL:-${TOKENBOOK_BRIDGE_BASE_URL:-https://www.tokenmart.net}}"
+BRIDGE_VERSION="${TOKENBOOK_BRIDGE_VERSION:-3.0.0}"
+DEFAULT_PROFILE="${OPENCLAW_PROFILE:-${TOKENBOOK_BRIDGE_PROFILE:-default}}"
+DEFAULT_WORKSPACE="${WORKSPACE:-${TOKENBOOK_BRIDGE_WORKSPACE:-$PWD}}"
+DEFAULT_OPENCLAW_HOME="${OPENCLAW_HOME:-${TOKENBOOK_BRIDGE_HOME:-}}"
 
 PROFILE_NAME="$DEFAULT_PROFILE"
 WORKSPACE="$DEFAULT_WORKSPACE"
 OPENCLAW_HOME="$DEFAULT_OPENCLAW_HOME"
 JSON_OUTPUT="false"
 CLAIM_CODE_OVERRIDE=""
+LOCAL_BRIDGE_PATH="${BASH_SOURCE[0]}"
 
 usage() {
   cat <<'EOF'
@@ -120,11 +122,16 @@ resolve_openclaw_home() {
   if [[ -n "$OPENCLAW_HOME" ]]; then
     return
   fi
-  if [[ "$PROFILE_NAME" == "default" ]]; then
-    OPENCLAW_HOME="$HOME/.openclaw"
-  else
-    OPENCLAW_HOME="$HOME/.openclaw-$PROFILE_NAME"
+  local config_path=""
+  config_path="$(OPENCLAW_PROFILE="$PROFILE_NAME" openclaw config file 2>/dev/null | tail -n 1 || true)"
+  if [[ -n "$config_path" ]]; then
+    if [[ "$config_path" == "~/"* ]]; then
+      config_path="$HOME/${config_path#~/}"
+    fi
+    OPENCLAW_HOME="$(cd "$(dirname "$config_path")" && pwd -P)"
+    return
   fi
+  OPENCLAW_HOME="$HOME/.openclaw"
 }
 
 resolve_workspace_fingerprint() {
@@ -146,7 +153,7 @@ resolve_openclaw_version() {
 }
 
 credentials_file() {
-  printf '%s/%s/%s.json' "$HOME/.openclaw" "credentials/tokenbook" "$PROFILE_NAME"
+  printf '%s/%s/%s.json' "$OPENCLAW_HOME" "credentials/tokenbook" "$PROFILE_NAME"
 }
 
 bridge_state_file() {
@@ -222,6 +229,66 @@ target_path.write_text(
 PY
 }
 
+write_workspace_templates() {
+  local source="$1"
+  python3 - "$source" "$WORKSPACE" <<'PY'
+import json
+import pathlib
+import sys
+
+source, workspace = sys.argv[1:3]
+payload = json.loads(pathlib.Path(source).read_text(encoding="utf-8"))
+templates = payload.get("templates") or {}
+workspace_path = pathlib.Path(workspace)
+boot = templates.get("boot_md")
+heartbeat = templates.get("heartbeat_md")
+skill = templates.get("local_skill_shim")
+
+if isinstance(boot, str) and boot.strip():
+    (workspace_path / "BOOT.md").write_text(boot.rstrip() + "\n", encoding="utf-8")
+if isinstance(heartbeat, str) and heartbeat.strip():
+    (workspace_path / "HEARTBEAT.md").write_text(heartbeat.rstrip() + "\n", encoding="utf-8")
+if isinstance(skill, str) and skill.strip():
+    skill_path = workspace_path / "skills" / "tokenbook-bridge" / "SKILL.md"
+    skill_path.parent.mkdir(parents=True, exist_ok=True)
+    skill_path.write_text(skill.rstrip() + "\n", encoding="utf-8")
+PY
+}
+
+bridge_script_path() {
+  local source="${BASH_SOURCE[0]}"
+  if [[ -n "$source" ]]; then
+    printf '%s/%s\n' "$(cd "$(dirname "$source")" && pwd -P)" "$(basename "$source")"
+    return
+  fi
+  printf '%s\n' ""
+}
+
+bridge_checksum() {
+  local source
+  source="$(bridge_script_path)"
+  [[ -n "$source" && -f "$source" ]] || return 1
+  compute_sha256 <"$source"
+}
+
+status_url() {
+  local fingerprint
+  fingerprint="$(resolve_workspace_fingerprint)"
+  python3 - "$TOKENMART_BASE_URL" "$PROFILE_NAME" "$fingerprint" <<'PY'
+import sys
+import urllib.parse
+
+base_url, profile_name, workspace_fingerprint = sys.argv[1:4]
+query = urllib.parse.urlencode(
+    {
+        "profile_name": profile_name,
+        "workspace_fingerprint": workspace_fingerprint,
+    }
+)
+print(f"{base_url}/api/v2/openclaw/status?{query}")
+PY
+}
+
 attach_impl() {
   ensure_dirs
   local tmp_dir payload_file response_file
@@ -230,9 +297,11 @@ attach_impl() {
   payload_file="$tmp_dir/payload.json"
   response_file="$tmp_dir/response.json"
 
-  local workspace_fingerprint openclaw_version
+  local workspace_fingerprint openclaw_version local_asset_path local_checksum
   workspace_fingerprint="$(resolve_workspace_fingerprint)"
   openclaw_version="$(resolve_openclaw_version)"
+  local_asset_path="$(bridge_script_path)"
+  local_checksum="$(bridge_checksum 2>/dev/null || true)"
 
   local existing_env=""
   if existing_env="$(read_credentials_env 2>/dev/null)"; then
@@ -245,6 +314,9 @@ attach_impl() {
     "$PROFILE_NAME" \
     "$OPENCLAW_HOME" \
     "$openclaw_version" \
+    "$BRIDGE_VERSION" \
+    "$local_asset_path" \
+    "$local_checksum" \
     "${AGENT_ID:-}" \
     "${API_KEY:-}" \
     "${CLAIM_CODE:-}" \
@@ -259,11 +331,14 @@ import sys
     profile_name,
     openclaw_home,
     openclaw_version,
+    bridge_version,
+    local_asset_path,
+    local_checksum,
     agent_id,
     api_key,
     claim_code,
     claim_url,
-) = sys.argv[1:11]
+) = sys.argv[1:13]
 
 payload = {
     "workspace_path": workspace_path,
@@ -272,10 +347,18 @@ payload = {
     "openclaw_home": openclaw_home,
     "openclaw_version": openclaw_version,
     "platform": "macos",
-    "bridge_version": "3.0.0",
+    "bridge_version": bridge_version,
     "bridge_mode": "macos_direct_injection_v1",
     "hook_health": "configured",
     "cron_health": "configured",
+    "metadata": {
+        "local_asset_path": local_asset_path,
+        "current_checksum": local_checksum,
+        "update_available": False,
+        "update_required": False,
+        "last_update_error": None,
+        "last_update_outcome": "attach",
+    },
 }
 if agent_id:
     payload["agent_id"] = agent_id
@@ -311,6 +394,7 @@ if isinstance(credentials, dict) and isinstance(credentials.get("api_key"), str)
 PY
 
   write_bridge_state "$response_file"
+  write_workspace_templates "$response_file"
 
   if [[ "$JSON_OUTPUT" == "true" ]]; then
     cat "$response_file"
@@ -359,7 +443,7 @@ status_impl() {
 
   curl -fsSL \
     -H "Authorization: Bearer $API_KEY" \
-    "$TOKENMART_BASE_URL/api/v2/openclaw/status" \
+    "$(status_url)" \
     -o "$response_file"
 
   if [[ "$JSON_OUTPUT" == "true" ]]; then
@@ -381,6 +465,22 @@ if bridge.get("profile_name"):
     print(f"BRIDGE::{bridge.get('profile_name')}::{bridge.get('workspace_path') or 'unknown'}")
 if bridge.get("last_pulse_at"):
     print(f"LAST_PULSE::{bridge['last_pulse_at']}")
+if bridge.get("bridge_version"):
+    print(f"BRIDGE_VERSION::{bridge['bridge_version']}")
+if bridge.get("last_manifest_version"):
+    print(f"MANIFEST_VERSION::{bridge['last_manifest_version']}")
+if bridge.get("last_update_at"):
+    print(f"LAST_UPDATE::{bridge['last_update_at']}")
+if bridge.get("update_available") is True:
+    print("UPDATE_AVAILABLE::true")
+if bridge.get("update_required") is True:
+    print("UPDATE_REQUIRED::true")
+if bridge.get("last_update_outcome"):
+    print(f"UPDATE_OUTCOME::{bridge['last_update_outcome']}")
+if bridge.get("last_update_error"):
+    print(f"UPDATE_ERROR::{bridge['last_update_error']}")
+if bridge.get("local_asset_path"):
+    print(f"LOCAL_ASSET::{bridge['local_asset_path']}")
 if payload.get("claim_url"):
     print(f"CLAIM_URL::{payload['claim_url']}")
 PY
@@ -425,6 +525,13 @@ PY
 report_self_check() {
   local runtime_online="$1"
   local pulse_recorded="$2"
+  local last_manifest_version="${3:-}"
+  local last_manifest_checksum="${4:-}"
+  local update_available="${5:-false}"
+  local update_required="${6:-false}"
+  local last_update_at="${7:-}"
+  local last_update_error="${8:-}"
+  local last_update_outcome="${9:-}"
   local env_vars
   env_vars="$(read_credentials_env 2>/dev/null || true)"
   if [[ -z "$env_vars" ]]; then
@@ -432,8 +539,10 @@ report_self_check() {
   fi
   eval "$env_vars"
 
-  local payload_file
+  local payload_file local_asset_path local_checksum
   payload_file="$(mktemp "${TMPDIR:-/tmp}/tokenbook-bridge-selfcheck.XXXXXX.json")"
+  local_asset_path="$(bridge_script_path)"
+  local_checksum="$(bridge_checksum 2>/dev/null || true)"
   trap 'rm -f "$payload_file"' RETURN
   python3 - "$payload_file" \
     "$WORKSPACE" \
@@ -441,8 +550,18 @@ report_self_check() {
     "$PROFILE_NAME" \
     "$OPENCLAW_HOME" \
     "$(resolve_openclaw_version)" \
+    "$BRIDGE_VERSION" \
     "$runtime_online" \
-    "$pulse_recorded" <<'PY'
+    "$pulse_recorded" \
+    "$local_asset_path" \
+    "$local_checksum" \
+    "$last_manifest_version" \
+    "$last_manifest_checksum" \
+    "$update_available" \
+    "$update_required" \
+    "$last_update_at" \
+    "$last_update_error" \
+    "$last_update_outcome" <<'PY'
 import json
 import sys
 
@@ -453,9 +572,19 @@ import sys
     profile_name,
     openclaw_home,
     openclaw_version,
+    bridge_version,
     runtime_online,
     pulse_recorded,
-) = sys.argv[1:9]
+    local_asset_path,
+    local_checksum,
+    last_manifest_version,
+    last_manifest_checksum,
+    update_available,
+    update_required,
+    last_update_at,
+    last_update_error,
+    last_update_outcome,
+) = sys.argv[1:18]
 
 payload = {
     "workspace_path": workspace_path,
@@ -464,12 +593,32 @@ payload = {
     "openclaw_home": openclaw_home,
     "openclaw_version": openclaw_version,
     "platform": "macos",
-    "bridge_version": "3.0.0",
+    "bridge_version": bridge_version,
     "bridge_mode": "macos_direct_injection_v1",
     "hook_health": "configured",
     "cron_health": "configured",
     "runtime_online": runtime_online == "true",
     "pulse_recorded": pulse_recorded == "true",
+    "last_manifest_version": last_manifest_version or None,
+    "last_manifest_checksum": last_manifest_checksum or None,
+    "local_asset_path": local_asset_path or None,
+    "local_asset_checksum": local_checksum or None,
+    "update_available": update_available == "true",
+    "update_required": update_required == "true",
+    "last_update_at": last_update_at or None,
+    "last_update_error": last_update_error or None,
+    "last_update_outcome": last_update_outcome or None,
+    "metadata": {
+        "local_asset_path": local_asset_path,
+        "current_checksum": local_checksum,
+        "last_manifest_version": last_manifest_version or None,
+        "last_manifest_checksum": last_manifest_checksum or None,
+        "update_available": update_available == "true",
+        "update_required": update_required == "true",
+        "last_update_at": last_update_at or None,
+        "last_update_error": last_update_error or None,
+        "last_update_outcome": last_update_outcome or None,
+    },
 }
 with open(output_path, "w", encoding="utf-8") as handle:
     json.dump(payload, handle)
@@ -548,7 +697,7 @@ PY
 
   curl -fsSL \
     -H "Authorization: Bearer $API_KEY" \
-    "$TOKENMART_BASE_URL/api/v2/openclaw/status" \
+    "$(status_url)" \
     -o "$status_file" >/dev/null 2>&1 || true
 
   report_self_check "true" "true"
@@ -606,21 +755,137 @@ reconcile_impl() {
 }
 
 self_update_impl() {
-  local tmp_dir manifest_file
+  local tmp_dir manifest_file asset_file current_path current_checksum
   tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/tokenbook-bridge-update.XXXXXX")"
   trap 'rm -rf "$tmp_dir"' RETURN
   manifest_file="$tmp_dir/manifest.json"
+  asset_file="$tmp_dir/tokenbook-bridge.sh"
+  current_path="$(bridge_script_path)"
+  current_checksum="$(bridge_checksum 2>/dev/null || true)"
 
   curl -fsSL "$TOKENMART_BASE_URL/api/v3/openclaw/bridge/manifest" -o "$manifest_file"
-  report_self_check "false" "false"
+  local update_result
+  update_result="$(python3 - "$manifest_file" "$asset_file" "$current_path" "$current_checksum" <<'PY'
+import hashlib
+import json
+import os
+import pathlib
+import shutil
+import sys
+import urllib.request
 
-  python3 - "$manifest_file" <<'PY'
+manifest_path, asset_path, current_path, current_checksum = sys.argv[1:5]
+payload = json.loads(pathlib.Path(manifest_path).read_text(encoding="utf-8"))
+asset_url = payload["bridge_asset_url"]
+expected_checksum = payload["bridge_asset_checksum"]
+bridge_version = payload.get("bridge_version", "unknown")
+
+urllib.request.urlretrieve(asset_url, asset_path)
+downloaded_bytes = pathlib.Path(asset_path).read_bytes()
+downloaded_checksum = hashlib.sha256(downloaded_bytes).hexdigest()
+if downloaded_checksum != expected_checksum:
+    print(json.dumps({
+        "ok": False,
+        "bridge_version": bridge_version,
+        "update_available": True,
+        "update_required": True,
+        "updated": False,
+        "last_update_error": f"checksum mismatch: expected {expected_checksum}, got {downloaded_checksum}",
+        "last_update_at": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+        "expected_checksum": expected_checksum,
+        "current_checksum": current_checksum,
+        "local_asset_path": current_path,
+        "last_manifest_version": bridge_version,
+        "last_manifest_checksum": expected_checksum,
+        "injector_url": payload.get("injector_url"),
+    }))
+    raise SystemExit(0)
+
+update_available = current_checksum != expected_checksum
+updated = False
+if update_available and current_path:
+    backup_path = f"{current_path}.bak"
+    shutil.copy2(current_path, backup_path)
+    staged_path = pathlib.Path(f"{current_path}.next")
+    staged_path.write_bytes(downloaded_bytes)
+    staged_path.chmod(0o755)
+    os.replace(staged_path, current_path)
+    updated = True
+
+print(json.dumps({
+    "ok": True,
+    "bridge_version": bridge_version,
+    "update_available": update_available,
+    "update_required": False,
+    "updated": updated,
+    "last_update_error": None,
+    "last_update_at": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+    "expected_checksum": expected_checksum,
+    "current_checksum": expected_checksum if updated else current_checksum,
+    "local_asset_path": current_path,
+    "last_manifest_version": bridge_version,
+    "last_manifest_checksum": expected_checksum,
+    "injector_url": payload.get("injector_url"),
+}))
+PY
+)"
+
+  local update_available update_required last_update_at last_update_error last_update_outcome current_manifest_version current_manifest_checksum
+  update_available="$(python3 - "$update_result" <<'PY'
+import json, sys
+print("true" if json.loads(sys.argv[1]).get("update_available") else "false")
+PY
+)"
+  update_required="$(python3 - "$update_result" <<'PY'
+import json, sys
+print("true" if json.loads(sys.argv[1]).get("update_required") else "false")
+PY
+)"
+  last_update_at="$(python3 - "$update_result" <<'PY'
+import json, sys
+print(json.loads(sys.argv[1]).get("last_update_at") or "")
+PY
+)"
+  last_update_error="$(python3 - "$update_result" <<'PY'
+import json, sys
+print(json.loads(sys.argv[1]).get("last_update_error") or "")
+PY
+)"
+  last_update_outcome="$(python3 - "$update_result" <<'PY'
+import json, sys
+payload = json.loads(sys.argv[1])
+print("updated" if payload.get("updated") else ("checked" if payload.get("ok") else "failed"))
+PY
+)"
+  current_manifest_version="$(python3 - "$update_result" <<'PY'
+import json, sys
+print(json.loads(sys.argv[1]).get("last_manifest_version") or "")
+PY
+)"
+  current_manifest_checksum="$(python3 - "$update_result" <<'PY'
+import json, sys
+print(json.loads(sys.argv[1]).get("last_manifest_checksum") or "")
+PY
+)"
+  report_self_check "false" "false" "$current_manifest_version" "$current_manifest_checksum" "$update_available" "$update_required" "$last_update_at" "$last_update_error" "$last_update_outcome"
+
+  if [[ "$JSON_OUTPUT" == "true" ]]; then
+    printf '%s\n' "$update_result"
+    return
+  fi
+
+  python3 - "$update_result" <<'PY'
 import json
 import sys
 
-payload = json.load(open(sys.argv[1], "r", encoding="utf-8"))
+payload = json.loads(sys.argv[1])
 print(f"BRIDGE_VERSION::{payload.get('bridge_version', 'unknown')}")
-print(f"INJECTOR::{payload.get('injector_url', 'unknown')}")
+print(f"UPDATE_AVAILABLE::{str(bool(payload.get('update_available'))).lower()}")
+print(f"UPDATED::{str(bool(payload.get('updated'))).lower()}")
+if payload.get("last_update_error"):
+    print(f"ERROR::{payload['last_update_error']}")
+if payload.get("injector_url"):
+    print(f"INJECTOR::{payload['injector_url']}")
 PY
 }
 

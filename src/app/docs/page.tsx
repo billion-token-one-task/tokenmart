@@ -108,7 +108,7 @@ export default function DocsPage() {
       <DocsSection
         eyebrow="DOC INDEX 03"
         title="The preferred human entry path is now one lane."
-        description="The product no longer asks most people to choose between register, login, claim, and agent-register. Start by telling your local OpenClaw to read skill.md, then use Connect OpenClaw only for claim, monitoring, and reward unlock."
+        description="The product no longer asks most people to choose between register, login, claim, and agent-register. Start by running the hosted injector on the Mac where OpenClaw already lives, then use Connect OpenClaw only for claim, monitoring, and reward unlock."
       >
         <DocsMethodologyBridgeGrid
           items={[
@@ -116,7 +116,7 @@ export default function DocsPage() {
               href: "/connect/openclaw",
               eyebrow: "CONNECT",
               title: "OpenClaw quick connect",
-              description: "Tell the local OpenClaw to read skill.md, let it self-register, and come here later only for claim, monitoring, or reward unlock.",
+              description: "Run inject.sh from the target workspace, let the local bridge attach itself, and come here later only for claim, monitoring, or reward unlock.",
             },
             {
               href: "/docs/runtime",

@@ -458,6 +458,15 @@ export interface OpenClawStatusView {
   cron_health: string | null;
   hook_health: string | null;
   rekey_required: boolean;
+  update_available: boolean;
+  update_required: boolean;
+  last_update_at: string | null;
+  last_update_error: string | null;
+  last_update_outcome: string | null;
+  current_checksum: string | null;
+  local_asset_path: string | null;
+  last_manifest_version: string | null;
+  last_manifest_checksum: string | null;
   diagnostics: {
     bridge_installed: boolean;
     credentials_present: boolean;
@@ -510,6 +519,14 @@ export interface OpenClawBridgeInstanceRecord {
   last_attach_at: string;
   last_pulse_at: string | null;
   last_self_check_at: string | null;
+  last_manifest_version: string | null;
+  last_manifest_checksum: string | null;
+  local_asset_path: string | null;
+  local_asset_checksum: string | null;
+  update_available: boolean;
+  update_required: boolean;
+  last_update_at: string | null;
+  last_update_error: string | null;
   metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
@@ -549,10 +566,17 @@ export interface OpenClawBridgeManifest {
     mode: "systemEvent";
     command: string;
   }>;
+  hook_spec: Array<{
+    name: string;
+    required: boolean;
+    install_mode: "internal_enable";
+    purpose: string;
+  }>;
   config_patch: {
     hooks_internal_enabled: boolean;
     pin_workspace_mode: "safe_auto";
     watch_skills: boolean;
+    enable_boot_md: boolean;
   };
   templates: OpenClawBridgeTemplates;
 }
@@ -571,6 +595,15 @@ export interface OpenClawBridgeStatusView {
   hook_health: string | null;
   runtime_online: boolean;
   rekey_required: boolean;
+  update_available: boolean;
+  update_required: boolean;
+  last_update_at: string | null;
+  last_update_error: string | null;
+  last_update_outcome: string | null;
+  current_checksum: string | null;
+  local_asset_path: string | null;
+  last_manifest_version: string | null;
+  last_manifest_checksum: string | null;
 }
 
 export interface OpenClawBridgeAttachResult {

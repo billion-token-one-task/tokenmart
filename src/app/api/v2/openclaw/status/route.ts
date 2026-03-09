@@ -15,6 +15,9 @@ export async function GET(request: NextRequest) {
   if (!auth.success) return authError(auth.error, auth.status);
 
   const requestedAgentId = request.nextUrl.searchParams.get("agent_id")?.trim() || null;
+  const profileName = request.nextUrl.searchParams.get("profile_name")?.trim() || null;
+  const workspaceFingerprint =
+    request.nextUrl.searchParams.get("workspace_fingerprint")?.trim() || null;
 
   try {
     if (auth.context.type === "tokenmart") {
@@ -28,6 +31,8 @@ export async function GET(request: NextRequest) {
       return jsonNoStore(
         await getOpenClawBridgeAwareStatus({
           agentId: auth.context.agent_id,
+          profileName,
+          workspaceFingerprint,
         }),
       );
     }
@@ -49,6 +54,8 @@ export async function GET(request: NextRequest) {
     const status = await getOpenClawBridgeAwareStatus({
       accountId: auth.context.account_id,
       agentId: accessibleAgentId,
+      profileName,
+      workspaceFingerprint,
     });
 
     return jsonNoStore(status);

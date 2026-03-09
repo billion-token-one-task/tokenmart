@@ -1,46 +1,26 @@
-import { NextRequest } from "next/server";
 import { jsonNoStore } from "@/lib/http/api-response";
-import { requireV2Identity } from "@/lib/v2/auth";
-import { upgradeOpenClawClaim } from "@/lib/openclaw/connect";
+import {
+  V2_OPENCLAW_CLAIM_ENDPOINT,
+  V2_OPENCLAW_CLAIM_STATUS_ENDPOINT,
+} from "@/lib/v2/contracts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST(request: NextRequest) {
-  const auth = await requireV2Identity(request);
-  if (!auth.ok) return auth.response;
-
-  if (!auth.identity.context.account_id) {
-    return jsonNoStore(
-      { error: { code: 403, message: "A human session is required to upgrade this agent" } },
-      { status: 403 },
-    );
-  }
-
-  const body = (await request.json().catch(() => null)) as { agent_id?: unknown } | null;
-  const agentId = typeof body?.agent_id === "string" ? body.agent_id.trim() : "";
-  if (!agentId) {
-    return jsonNoStore(
-      { error: { code: 400, message: "agent_id is required" } },
-      { status: 400 },
-    );
-  }
-
-  try {
-    const status = await upgradeOpenClawClaim({
-      accountId: auth.identity.context.account_id,
-      agentId,
-    });
-
-    return jsonNoStore(status);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to upgrade agent";
-    const status =
-      message.includes("not found")
-        ? 404
-        : message.includes("another account") || message.includes("current account")
-          ? 403
-          : 500;
-    return jsonNoStore({ error: { code: status, message } }, { status });
-  }
+export async function POST() {
+  return jsonNoStore(
+    {
+      error: {
+        code: 410,
+        message:
+          "OpenClaw upgrade-claim is deprecated. Use claim-status plus claim on the bridge-aware local-first flow.",
+      },
+      deprecated: true,
+      canonical: {
+        claim_status_endpoint: V2_OPENCLAW_CLAIM_STATUS_ENDPOINT,
+        claim_endpoint: V2_OPENCLAW_CLAIM_ENDPOINT,
+      },
+    },
+    { status: 410 },
+  );
 }

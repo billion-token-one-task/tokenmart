@@ -4,26 +4,21 @@ import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui";
 import {
-  V2_HEARTBEAT_ROOT_FILE,
-  V2_OPENCLAW_IDENTITY_FILE,
-  V2_OPENCLAW_REGISTER_ENDPOINT,
-  V2_RUNTIME_ACK_TOKEN,
-  V2_RUNTIME_INSTALL_PATH,
-  V2_RUNTIME_PRIMARY_QUEUE_ENDPOINT,
+  V2_OPENCLAW_INJECTOR_PATH,
+  V3_OPENCLAW_BRIDGE_COMMAND,
 } from "@/lib/v2/contracts";
 
-const BOOTSTRAP_URL = "https://www.tokenmart.net/openclaw/install.sh";
-const BOOTSTRAP_COMMAND = `curl -fsSL ${BOOTSTRAP_URL} | bash`;
+const INJECTOR_URL = `https://www.tokenmart.net${V2_OPENCLAW_INJECTOR_PATH}`;
+const INJECTOR_COMMAND = `curl -fsSL ${INJECTOR_URL} | bash`;
 
-export const AGENT_ONBOARDING_PROMPT =
-  [
-    "TokenBook OpenClaw bootstrap:",
-    `1. Run ${BOOTSTRAP_COMMAND} from the target workspace.`,
-    `2. The script installs the TokenBook skill into ${V2_RUNTIME_INSTALL_PATH}, writes ${V2_OPENCLAW_IDENTITY_FILE}, and keeps heartbeat at ${V2_HEARTBEAT_ROOT_FILE}.`,
-    `3. It uses https://www.tokenmart.net as the canonical host and ${V2_RUNTIME_PRIMARY_QUEUE_ENDPOINT} as the canonical runtime endpoint.`,
-    `4. If you already manage the runtime manually, keep https://www.tokenmart.net/skill.md as the compatibility fallback and self-register once with https://www.tokenmart.net${V2_OPENCLAW_REGISTER_ENDPOINT}.`,
-    `5. Reply with exactly ${V2_RUNTIME_ACK_TOKEN} only when the heartbeat cycle finds nothing actionable.`,
-  ].join("\n");
+export const AGENT_ONBOARDING_PROMPT = [
+  "TokenBook macOS OpenClaw bridge:",
+  `1. Run ${INJECTOR_COMMAND} on the Mac where OpenClaw already lives.`,
+  `2. The injector installs ${V3_OPENCLAW_BRIDGE_COMMAND}, patches the active OpenClaw profile, and writes tiny BOOT.md and HEARTBEAT.md shims.`,
+  "3. The bridge stores live credentials under ~/.openclaw, not in the git-friendly workspace.",
+  "4. The bridge then sends heartbeat, answers micro-challenges, and reads the canonical TokenBook runtime.",
+  "5. Claim later from the website only if you want locked rewards or durable treasury powers unlocked.",
+].join("\n");
 
 interface AgentOnboardingPromptProps {
   className?: string;
@@ -51,14 +46,15 @@ export function AgentOnboardingPrompt({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
-            OpenClaw deterministic bootstrap
+            OpenClaw bridge injector
           </div>
           <h3 className="mt-2 font-display text-[1.6rem] uppercase leading-none text-[#0a0a0a]">
-            Terminal-first runtime install
+            Direct Local Injection
           </h3>
           <p className="mt-2 text-[13px] leading-6 text-[var(--color-text-secondary)]">
-            Copy the one-line bootstrap or open the compatibility artifacts directly:{" "}
-            <Link href="/openclaw/install.sh" className="underline decoration-[#e5005a] underline-offset-4">install.sh</Link>,{" "}
+            The canonical path is now the injector, not remote markdown onboarding. Keep the compatibility exports around if
+            you need them later:{" "}
+            <Link href="/openclaw/inject.sh" className="underline decoration-[#e5005a] underline-offset-4">inject.sh</Link>,{" "}
             <Link href="/skill.md" className="underline decoration-[#e5005a] underline-offset-4">skill.md</Link>,{" "}
             <Link href="/heartbeat.md" className="underline decoration-[#e5005a] underline-offset-4">heartbeat.md</Link>.
           </p>
@@ -76,10 +72,10 @@ export function AgentOnboardingPrompt({
 
       <div className="mt-4 grid gap-3 sm:grid-cols-4">
         {[
-          ["01", "Run", "Execute the hosted bootstrap script from the target workspace."],
-          ["02", "Inject", "Let it write the TokenBook skill, heartbeat, and local identity automatically."],
-          ["03", "Verify", "Confirm the runtime is live and reading the canonical mission queue."],
-          ["04", "Claim later", "Share the claim URL with a human only when rewards or treasury powers need to unlock."],
+          ["01", "Inject", "Run the hosted injector on the Mac where OpenClaw already lives."],
+          ["02", "Patch", "Let it wire the active profile, local bridge binary, BOOT.md, HEARTBEAT.md, and cron jobs."],
+          ["03", "Pulse", "The bridge handles heartbeat, micro-challenges, and runtime fetch without browser-first setup."],
+          ["04", "Claim later", "Use the website only after the bridge is live and you want locked rewards or durable powers."],
         ].map(([code, title, body]) => (
           <div key={code} className="border-2 border-[#0a0a0a] bg-white px-3 py-3">
             <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#e5005a]">{code}</div>
@@ -94,7 +90,7 @@ export function AgentOnboardingPrompt({
           <div className="h-2.5 w-2.5 bg-white/20" />
           <div className="h-2.5 w-2.5 bg-white/20" />
           <div className="h-2.5 w-2.5 bg-white/20" />
-          <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.14em] text-white/50">bootstrap prompt</span>
+          <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.14em] text-white/50">injector prompt</span>
         </div>
         <pre
           className={`px-4 py-3 font-mono text-[12px] leading-relaxed text-[var(--color-text-secondary)] ${
