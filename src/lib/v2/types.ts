@@ -384,6 +384,7 @@ export interface AgentRuntimeView {
 
 export interface OpenClawInstallCommands {
   env: string;
+  injector: string;
   workspace_install: string;
 }
 
@@ -445,6 +446,27 @@ export interface OpenClawStatusView {
   pending_locked_rewards: number;
   claim_url: string | null;
   capability_flags: LifecycleCapabilityFlags;
+  bridge_mode: string | null;
+  bridge_version: string | null;
+  profile_name: string | null;
+  workspace_path: string | null;
+  openclaw_home: string | null;
+  openclaw_version: string | null;
+  last_attach_at: string | null;
+  last_pulse_at: string | null;
+  last_self_check_at: string | null;
+  cron_health: string | null;
+  hook_health: string | null;
+  rekey_required: boolean;
+  diagnostics: {
+    bridge_installed: boolean;
+    credentials_present: boolean;
+    hooks_registered: boolean;
+    cron_registered: boolean;
+    runtime_reachable: boolean;
+    last_error: string | null;
+  };
+  bridge: OpenClawBridgeStatusView | null;
 }
 
 export interface OpenClawInstallBundle {
@@ -469,6 +491,125 @@ export interface OpenClawClaimStatus {
   pending_locked_rewards: number;
   claimable: boolean;
   claim_url: string | null;
+}
+
+export interface OpenClawBridgeInstanceRecord {
+  id: string;
+  agent_id: string;
+  workspace_fingerprint: string;
+  bridge_mode: string;
+  bridge_version: string;
+  profile_name: string;
+  workspace_path: string;
+  openclaw_home: string;
+  openclaw_version: string | null;
+  platform: string;
+  cron_health: string;
+  hook_health: string;
+  runtime_online: boolean;
+  last_attach_at: string;
+  last_pulse_at: string | null;
+  last_self_check_at: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OpenClawBridgePaths {
+  bridge_home: string;
+  bridge_entrypoint: string;
+  credentials_file: string;
+  boot_file: string;
+  heartbeat_file: string;
+}
+
+export interface OpenClawBridgeTemplates {
+  boot_md: string;
+  heartbeat_md: string;
+  local_skill_shim: string;
+}
+
+export interface OpenClawBridgeManifest {
+  bridge_mode: string;
+  bridge_version: string;
+  minimum_openclaw_version: string | null;
+  injector_url: string;
+  bridge_asset_url: string;
+  bridge_asset_checksum: string;
+  command_name: string;
+  runtime_endpoint: string;
+  heartbeat_endpoint: string;
+  claim_status_endpoint: string;
+  rekey_endpoint: string;
+  status_endpoint: string;
+  cron_spec: Array<{
+    name: string;
+    cadence: string;
+    session: "main";
+    mode: "systemEvent";
+    command: string;
+  }>;
+  config_patch: {
+    hooks_internal_enabled: boolean;
+    pin_workspace_mode: "safe_auto";
+    watch_skills: boolean;
+  };
+  templates: OpenClawBridgeTemplates;
+}
+
+export interface OpenClawBridgeStatusView {
+  bridge_mode: string;
+  bridge_version: string | null;
+  profile_name: string | null;
+  workspace_path: string | null;
+  openclaw_home: string | null;
+  openclaw_version: string | null;
+  last_attach_at: string | null;
+  last_pulse_at: string | null;
+  last_self_check_at: string | null;
+  cron_health: string | null;
+  hook_health: string | null;
+  runtime_online: boolean;
+  rekey_required: boolean;
+}
+
+export interface OpenClawBridgeAttachResult {
+  attached: boolean;
+  reused_existing_identity: boolean;
+  rekey_required: boolean;
+  bridge_mode: string;
+  bridge_version: string;
+  profile_name: string;
+  workspace_path: string;
+  workspace_fingerprint: string;
+  credentials_path: string;
+  bridge_paths: OpenClawBridgePaths;
+  templates: OpenClawBridgeTemplates;
+  agent: {
+    id: string;
+    name: string;
+    lifecycle_state: string;
+    key_prefix: string | null;
+    claim_url: string | null;
+  } | null;
+  credentials: {
+    agent_id: string;
+    agent_name: string;
+    api_key: string;
+    claim_code: string;
+    claim_url: string;
+    registered_at: string;
+    workspace_fingerprint: string;
+    bridge_version: string;
+  } | null;
+  status_hint: {
+    runtime_endpoint: string;
+    heartbeat_endpoint: string;
+    status_endpoint: string;
+    claim_status_endpoint: string;
+    rekey_endpoint: string;
+  };
+  warnings: string[];
 }
 
 export interface SupervisorOverview {

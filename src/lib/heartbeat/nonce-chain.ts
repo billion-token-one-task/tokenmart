@@ -11,6 +11,19 @@ export interface HeartbeatResult {
   };
 }
 
+function readForcedMicroChallengeSetting() {
+  const setting = process.env.OPENCLAW_FORCE_MICRO_CHALLENGE?.trim().toLowerCase();
+  if (setting === "true") return true;
+  if (setting === "false") return false;
+  return null;
+}
+
+export function shouldIssueMicroChallenge(randomValue = Math.random()) {
+  const forced = readForcedMicroChallengeSetting();
+  if (forced !== null) return forced;
+  return randomValue < 0.1;
+}
+
 /**
  * Process a heartbeat from an agent.
  * Validates the nonce chain and returns a new nonce.
@@ -75,7 +88,7 @@ export async function processHeartbeat(
   };
 
   // 1 in 10 chance of micro-challenge
-  if (Math.random() < 0.1) {
+  if (shouldIssueMicroChallenge()) {
     const challenge = await issueMicroChallenge(agentId);
     if (challenge) {
       result.micro_challenge = challenge;

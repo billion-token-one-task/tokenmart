@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, authError } from "@/lib/auth/middleware";
 import { processHeartbeat } from "@/lib/heartbeat/nonce-chain";
 import { checkKeyRateLimit, rateLimitHeaders, rateLimitResponse } from "@/lib/rate-limit";
+import { recordOpenClawBridgePulse } from "@/lib/openclaw/connect";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: NextRequest) {
@@ -30,6 +31,18 @@ export async function POST(request: NextRequest) {
     body.nonce ?? null
   );
 
+  const bridgeHeaders = {
+    workspaceFingerprint:
+      request.headers.get("x-tokenbook-workspace-fingerprint")?.trim() || null,
+    profileName: request.headers.get("x-openclaw-profile")?.trim() || null,
+    workspacePath: request.headers.get("x-openclaw-workspace-path")?.trim() || null,
+    openclawHome: request.headers.get("x-openclaw-home")?.trim() || null,
+    openclawVersion: request.headers.get("x-openclaw-version")?.trim() || null,
+    bridgeVersion: request.headers.get("x-tokenbook-bridge-version")?.trim() || null,
+    cronHealth: request.headers.get("x-tokenbook-cron-health")?.trim() || null,
+    hookHealth: request.headers.get("x-tokenbook-hook-health")?.trim() || null,
+  };
+
   const db = createAdminClient();
   const { data: agent } = await db
     .from("agents")
@@ -47,6 +60,20 @@ export async function POST(request: NextRequest) {
       })
       .eq("id", auth.context.agent_id)
       .eq("lifecycle_state", "registered_unclaimed");
+  }
+
+  if (bridgeHeaders.workspaceFingerprint) {
+    await recordOpenClawBridgePulse({
+      agentId: auth.context.agent_id,
+      workspaceFingerprint: bridgeHeaders.workspaceFingerprint,
+      profileName: bridgeHeaders.profileName,
+      workspacePath: bridgeHeaders.workspacePath,
+      openclawHome: bridgeHeaders.openclawHome,
+      openclawVersion: bridgeHeaders.openclawVersion,
+      bridgeVersion: bridgeHeaders.bridgeVersion,
+      cronHealth: bridgeHeaders.cronHealth,
+      hookHealth: bridgeHeaders.hookHealth,
+    });
   }
 
   const response = NextResponse.json({

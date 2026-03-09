@@ -3,7 +3,7 @@ import { jsonNoStore } from "@/lib/http/api-response";
 import { authenticateRequest, authError } from "@/lib/auth/middleware";
 import { resolveAccessibleAgentForAccount } from "@/lib/auth/supabase-bridge";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getOpenClawStatus } from "@/lib/openclaw/connect";
+import { getOpenClawBridgeAwareStatus } from "@/lib/openclaw/bridge";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       }
 
       return jsonNoStore(
-        await getOpenClawStatus({
+        await getOpenClawBridgeAwareStatus({
           agentId: auth.context.agent_id,
         }),
       );
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       db,
     );
 
-    const status = await getOpenClawStatus({
+    const status = await getOpenClawBridgeAwareStatus({
       accountId: auth.context.account_id,
       agentId: accessibleAgentId,
     });

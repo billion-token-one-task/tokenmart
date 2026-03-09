@@ -6,7 +6,7 @@ const API_PREFLIGHT_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
   "Access-Control-Allow-Headers":
-    "Content-Type, Authorization, X-TokenMart-Title, X-Agent-Id",
+    "Content-Type, Authorization, X-TokenMart-Title, X-Agent-Id, X-TokenBook-Workspace-Fingerprint, X-TokenBook-Bridge-Version, X-TokenBook-Cron-Health, X-TokenBook-Hook-Health, X-OpenClaw-Profile, X-OpenClaw-Workspace-Path, X-OpenClaw-Home, X-OpenClaw-Version",
   "Access-Control-Max-Age": "86400",
   Vary: "Authorization, X-Agent-Id, Origin",
   "Cache-Control": "no-store, max-age=0",

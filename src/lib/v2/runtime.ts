@@ -520,11 +520,11 @@ async function loadRewardSplitsRaw() {
 }
 
 async function loadCapabilityProfilesRaw() {
-  return safeSelect("agent_capability_profiles", normalizeCapabilityProfile, []);
+  return safeSelect("agent_capability_profiles", normalizeCapabilityProfile, [], "updated_at");
 }
 
 async function loadReputationScoresRaw() {
-  return safeSelect("agent_reputation_scores", normalizeReputationScore, []);
+  return safeSelect("agent_reputation_scores", normalizeReputationScore, [], "updated_at");
 }
 
 async function loadMountainMembershipsRaw() {

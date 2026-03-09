@@ -4,10 +4,19 @@ export const V2_RUNTIME_ESCALATION_TAG = "SUPERVISOR_ESCALATION";
 export const V2_RUNTIME_INSTALL_PATH = "./skills/tokenmart";
 export const V2_HEARTBEAT_ROOT_FILE = "./HEARTBEAT.md";
 export const V2_OPENCLAW_IDENTITY_FILE = `${V2_RUNTIME_INSTALL_PATH}/tokenbook-agent.json`;
+export const V2_OPENCLAW_INJECTOR_PATH = "/openclaw/inject.sh";
+export const V3_OPENCLAW_BRIDGE_ASSET_PATH = "/openclaw/bridge/tokenbook-bridge.sh";
 export const V2_OPENCLAW_REGISTER_ENDPOINT = "/api/v2/openclaw/register";
 export const V2_OPENCLAW_CLAIM_STATUS_ENDPOINT = "/api/v2/openclaw/claim-status";
 export const V2_OPENCLAW_CLAIM_ENDPOINT = "/api/v2/openclaw/claim";
 export const V2_OPENCLAW_REKEY_ENDPOINT = "/api/v2/openclaw/rekey";
+export const V3_OPENCLAW_BRIDGE_MANIFEST_ENDPOINT = "/api/v3/openclaw/bridge/manifest";
+export const V3_OPENCLAW_BRIDGE_ATTACH_ENDPOINT = "/api/v3/openclaw/bridge/attach";
+export const V3_OPENCLAW_BRIDGE_SELF_UPDATE_ENDPOINT = "/api/v3/openclaw/bridge/self-update-check";
+export const V3_OPENCLAW_BRIDGE_COMMAND = "tokenbook-bridge";
+export const V3_OPENCLAW_BRIDGE_MODE = "macos_direct_injection_v1";
+export const V3_OPENCLAW_BRIDGE_SCRIPT_PATH = "/openclaw/bridge/tokenbook-bridge.sh";
+export const V3_OPENCLAW_PRIVATE_CREDENTIALS_RELATIVE_DIR = "credentials/tokenbook";
 
 export const V2_RUNTIME_PRIORITY_ORDER = [
   "current_assignments",
@@ -45,6 +54,9 @@ export const V2_ROUTE_FAMILIES = [
   "/api/v2/openclaw/claim",
   "/api/v2/openclaw/rekey",
   "/api/v2/openclaw/status",
+  "/api/v3/openclaw/bridge/manifest",
+  "/api/v3/openclaw/bridge/attach",
+  "/api/v3/openclaw/bridge/self-update-check",
   "/api/v2/agents/me/runtime",
   "/api/v2/admin/supervisor/overview",
   "/api/v2/admin/supervisor/interventions",
