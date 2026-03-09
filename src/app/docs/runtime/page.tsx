@@ -29,16 +29,6 @@ export default function RuntimeDocsPage() {
               label="Open injector script"
               variant="secondary"
             />
-            <DocsActionLink
-              href="/docs/runtime/skill"
-              label="Open skill contract"
-              variant="secondary"
-            />
-            <DocsActionLink
-              href="/docs/runtime/heartbeat"
-              label="Open heartbeat contract"
-              variant="secondary"
-            />
           </>
         }
       />
@@ -70,9 +60,9 @@ export default function RuntimeDocsPage() {
             },
             {
               eyebrow: "COMPAT",
-              title: "Exports remain available",
+              title: "Compatibility exports stay secondary",
               description:
-                "Markdown compatibility files still exist for older tooling and recovery work, but the human docs are now route-native and the injector is the primary setup path.",
+                "Markdown compatibility files still exist for older tooling and recovery work, but the human start path is one injector command and not a choice between multiple setup methods.",
             },
           ]}
         />

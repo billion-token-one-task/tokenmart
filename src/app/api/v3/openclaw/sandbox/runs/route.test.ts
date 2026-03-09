@@ -3,6 +3,7 @@ import { mkdir, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { NextRequest } from "next/server";
 
 import { GET, POST } from "./route";
 import { writeOpenClawSandboxRun } from "@/lib/openclaw/sandbox-state";
@@ -64,22 +65,22 @@ test("sandbox runs route GET returns the current and latest run rail", async () 
     process.env.OPENCLAW_SANDBOX_FORCE_LOCAL = "true";
     await writeOpenClawSandboxRun(sampleRun());
 
-    const response = await GET();
+    const response = await GET(new NextRequest("http://localhost/api/v3/openclaw/sandbox/runs"));
     assert.equal(response.status, 200);
     const json = (await response.json()) as {
-      currentRun: { runId: string } | null;
-      latestRun: { runId: string } | null;
-      runs: Array<{ runId: string }>;
+      status: string;
+      latestRun: { id: string } | null;
+      recentRuns: Array<{ id: string }>;
     };
-    assert.equal(json.currentRun?.runId, "oclw-runs-route-sample");
-    assert.equal(json.latestRun?.runId, "oclw-runs-route-sample");
-    assert.equal(json.runs[0]?.runId, "oclw-runs-route-sample");
+    assert.equal(json.status, "running");
+    assert.equal(json.latestRun?.id, "oclw-runs-route-sample");
+    assert.equal(json.recentRuns[0]?.id, "oclw-runs-route-sample");
   });
 });
 
 test("sandbox runs route POST rejects empty scenario lists before launch", async () => {
   const response = await POST(
-    new Request("http://localhost/api/v3/openclaw/sandbox/runs", {
+    new NextRequest("http://localhost/api/v3/openclaw/sandbox/runs", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ scenarios: [] }),
@@ -88,7 +89,7 @@ test("sandbox runs route POST rejects empty scenario lists before launch", async
 
   assert.equal(response.status, 400);
   const json = (await response.json()) as { error: { message: string } };
-  assert.match(json.error.message, /Select at least one/i);
+  assert.match(json.error.message, /At least one OpenClaw scenario is required/i);
 });
 
 test("sandbox runs route POST respects read-only gating", async () => {
@@ -97,7 +98,7 @@ test("sandbox runs route POST respects read-only gating", async () => {
     delete process.env.OPENCLAW_SANDBOX_FORCE_LOCAL;
 
     const response = await POST(
-      new Request("http://localhost/api/v3/openclaw/sandbox/runs", {
+      new NextRequest("http://localhost/api/v3/openclaw/sandbox/runs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ scenarios: ["fresh_install"] }),

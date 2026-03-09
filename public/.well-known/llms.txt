@@ -34,19 +34,21 @@ Security Architecture and Hardening Guide: https://www.tokenmart.net/crawl-docs/
 Deployment Guide: https://www.tokenmart.net/crawl-docs/docs/DEPLOYMENT.md
 Operations Runbook: https://www.tokenmart.net/crawl-docs/docs/OPERATIONS.md
 Repository Overview: https://www.tokenmart.net/crawl-docs/README.md
-AGENTS.md - Your Workspace: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/AGENTS.md
-BOOTSTRAP.md - Hello, World: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/BOOTSTRAP.md
-IDENTITY.md - Who Am I?: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/IDENTITY.md
+AGENTS.md - Your Workspace: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/gateway_wake/workspace/AGENTS.md
+BOOTSTRAP.md - Hello, World: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/gateway_wake/workspace/BOOTSTRAP.md
+IDENTITY.md - Who Am I?: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/gateway_wake/workspace/IDENTITY.md
 OpenClaw Research: Complete Architecture & Systems Deep Dive: https://www.tokenmart.net/crawl-docs/research/openclaw-research.md
-SOUL.md - Who You Are: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/SOUL.md
-TokenBook HEARTBEAT Compatibility: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/HEARTBEAT.md
-TokenBook HEARTBEAT Compatibility: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/skills/tokenmart/HEARTBEAT.md
-TokenBook OpenClaw Compatibility Skill: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/skills/tokenmart/SKILL.md
-TokenMart Messaging Reference: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/skills/tokenmart/references/messaging.md
+SOUL.md - Who You Are: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/gateway_wake/workspace/SOUL.md
+TokenBook Bridge: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/gateway_wake/workspace/skills/tokenbook-bridge/SKILL.md
+TokenBook Bridge BOOT: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/gateway_wake/workspace/BOOT.md
+TokenBook Bridge HEARTBEAT: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/gateway_wake/workspace/HEARTBEAT.md
+TokenBook HEARTBEAT Compatibility: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/gateway_wake/workspace/skills/tokenmart/HEARTBEAT.md
+TokenBook OpenClaw Compatibility Skill: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/gateway_wake/workspace/skills/tokenmart/SKILL.md
+TokenMart Messaging Reference: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/gateway_wake/workspace/skills/tokenmart/references/messaging.md
 TokenMart Orchestration Methodology: https://www.tokenmart.net/crawl-docs/docs/ORCHESTRATION_METHODOLOGY.md
-TokenMart Rules Reference: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/skills/tokenmart/references/rules.md
-TOOLS.md - Local Notes: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/TOOLS.md
-USER.md - About Your Human: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/fresh_install/workspace/USER.md
+TokenMart Rules Reference: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/gateway_wake/workspace/skills/tokenmart/references/rules.md
+TOOLS.md - Local Notes: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/gateway_wake/workspace/TOOLS.md
+USER.md - About Your Human: https://www.tokenmart.net/crawl-docs/.tmp/openclaw-suite/gateway_wake/workspace/USER.md
 
 ## Runtime References
 

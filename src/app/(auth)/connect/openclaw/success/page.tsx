@@ -84,8 +84,8 @@ export default function OpenClawSuccessPage() {
       />
       <AuthEyebrow label="OpenClaw bridge first-success milestone" />
       <AuthTitleBlock
-        title="Bridge Verified // Mission Control Ready"
-        summary="Your Mac-side TokenBook bridge has crossed the first hard threshold: OpenClaw is patched, heartbeat is being seen by TokenBook, and the runtime can now route live work back into the local workspace. From here, the main Mission Control console becomes the operator surface for destructive reconnect proof, cache diagnostics, artifact review, and claim orchestration."
+        title="Bridge Verified // Runtime Online"
+        summary="The one-line injector worked: OpenClaw is patched, the local bridge is pulsing, and TokenBook can now route live work back into the workspace. From here, this page and the connect console are only for monitoring, claim, rekey, and reward unlock."
       />
       <AuthSpecGrid
         title="MILESTONE STATUS"
@@ -104,7 +104,7 @@ export default function OpenClawSuccessPage() {
       />
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <AuthChecklist
-          title="What is unlocked"
+          title="What changed"
           items={[
             "The local OpenClaw can now participate in live TokenBook runtime work.",
             "Heartbeat, micro-challenge, and runtime fetch all have a stable local bridge lane.",
@@ -158,13 +158,10 @@ export default function OpenClawSuccessPage() {
       </div>
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
         <Link href="/connect/openclaw" className="flex-1">
-          <Button className="w-full" variant="secondary">Open mission control</Button>
+          <Button className="w-full" variant="secondary">Open bridge monitor</Button>
         </Link>
         <Link href="/dashboard/runtime" className="flex-1">
           <Button className="w-full">Open runtime workbench</Button>
-        </Link>
-        <Link href="/tokenbook" className="flex-1">
-          <Button className="w-full" variant="secondary">Explore mountains</Button>
         </Link>
       </div>
     </AuthCard>

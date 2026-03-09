@@ -232,51 +232,28 @@ function createProps(overrides: Partial<MissionControlProps> = {}): MissionContr
   };
 }
 
-test("mission control view explains read-only mode and renders identity continuity", () => {
-  const html = renderToStaticMarkup(<OpenClawMissionControlView {...createProps()} />);
-
-  assert.match(html, /Remote environments are monitoring-only for destructive sandbox control/);
-  assert.match(html, /Identity continuity/);
-  assert.match(html, /agent-old -&gt; agent-new|agent-old.*agent-new/);
-  assert.match(html, /new fingerprint creates a distinct agent/);
-});
-
-test("mission control view reflects local execution and strict-turn readiness", () => {
+test("mission control view shows a single injector-first onboarding path when logged out", () => {
   const html = renderToStaticMarkup(
-    <OpenClawMissionControlView
-      {...createProps({
-        sandbox: {
-          capabilities: {
-            isLocalEnvironment: true,
-            canRunDestructive: true,
-            canViewArtifacts: true,
-            strictTurnAvailable: true,
-            canRunScenarios: true,
-            disabledReason: null,
-          },
-          defaults: {
-            baseUrl: "http://127.0.0.1:3000",
-            cliVersion: "latest",
-            serverMode: "auto",
-            keepArtifacts: "fail",
-            requireTurnSuccess: false,
-          },
-          cache: {
-            root: "/tmp/openclaw-cache",
-            availableVersions: ["latest"],
-          },
-          latestRun: null,
-          currentRun: null,
-          runs: [],
-        },
-        destructiveArmed: true,
-        selectedScenarios: ["fresh_install", "strict_provider_turn"] as const,
-        requireTurnSuccess: true,
-      })}
-    />,
+    <OpenClawMissionControlView {...createProps({ loggedIn: false })} />,
   );
 
-  assert.match(html, /Launch selected run/);
-  assert.match(html, /Strict provider turns need model provider credentials on this machine|Require a successful provider-backed model turn/);
-  assert.doesNotMatch(html, /Remote environments are monitoring-only for destructive sandbox control/);
+  assert.match(html, /RUN THIS ON THE MAC WHERE OPENCLAW ALREADY LIVES/);
+  assert.match(html, /curl -fsSL https:\/\/www\.tokenmart\.net\/openclaw\/inject\.sh \| bash/);
+  assert.match(html, /One command\. Then come back later\./);
+  assert.doesNotMatch(html, /Claim code or claim URL/);
+  assert.doesNotMatch(html, /Continue with Google/);
+  assert.doesNotMatch(html, /Send magic link/);
+});
+
+test("mission control view shows monitoring and claim controls when signed in", () => {
+  const html = renderToStaticMarkup(
+    <OpenClawMissionControlView {...createProps()} />,
+  );
+
+  assert.match(html, /BRIDGE MONITOR/);
+  assert.match(html, /Claim agent/);
+  assert.match(html, /Rekey claimed agent/);
+  assert.match(html, /Monitoring only/);
+  assert.doesNotMatch(html, /Launch selected run/);
+  assert.doesNotMatch(html, /Scenario Bundle/);
 });

@@ -6,10 +6,6 @@ import {
   readOpenClawSandboxSnapshot,
   startOpenClawSandboxRun,
 } from "@/lib/openclaw/sandbox";
-import {
-  presentOpenClawSandboxRun,
-  presentOpenClawSandboxSnapshot,
-} from "@/lib/openclaw/sandbox-presenter";
 import type { OpenClawSandboxRunStartInput } from "@/lib/openclaw/sandbox-types";
 
 export const runtime = "nodejs";
@@ -20,9 +16,7 @@ export async function GET(request: NextRequest) {
   if (!rateLimit.allowed) return rateLimitResponse();
 
   try {
-    return jsonNoStore(
-      presentOpenClawSandboxSnapshot(await readOpenClawSandboxSnapshot()),
-    );
+    return jsonNoStore(await readOpenClawSandboxSnapshot());
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load OpenClaw sandbox snapshot";
     return jsonNoStore({ error: { code: 500, message } }, { status: 500 });
@@ -40,14 +34,12 @@ export async function POST(request: NextRequest) {
 
   try {
     const run = await startOpenClawSandboxRun(json.data);
-    return jsonNoStore(
-      {
-        runId: run.id,
-        run: presentOpenClawSandboxRun(run),
-        state: presentOpenClawSandboxSnapshot(await readOpenClawSandboxSnapshot()),
+    return jsonNoStore(run, {
+      status: 202,
+      headers: {
+        Location: `/api/v3/openclaw/sandbox/runs/${run.id}`,
       },
-      { status: 202 },
-    );
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to start OpenClaw sandbox run";
     const status = /disabled/i.test(message)

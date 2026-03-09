@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { mkdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import type {
@@ -45,6 +45,8 @@ interface ScenarioEnvironment {
   configPath: string;
   workspaceDir: string;
   installPath: string;
+  bridgePath: string;
+  bridgeCredentialsPath: string;
   identityPath: string;
   profile: string;
   childEnv: NodeJS.ProcessEnv;
@@ -55,6 +57,7 @@ interface ScenarioEnvironment {
 interface IdentityPayload {
   agent_id: string;
   api_key: string;
+  workspace_fingerprint?: string;
 }
 
 interface IdentityTransition {
@@ -247,42 +250,6 @@ class Reporter {
   failures() {
     return this.results.filter((result) => !result.ok);
   }
-}
-
-async function requestJson(
-  reporter: Reporter,
-  scenario: OpenClawScenario,
-  name: string,
-  url: string,
-  init: RequestInit,
-  expectedStatus = 200,
-  timeoutMs = 30_000,
-): Promise<unknown> {
-  const response = await fetch(url, {
-    ...init,
-    signal: AbortSignal.timeout(timeoutMs),
-  });
-  const text = await response.text();
-  let data: unknown = null;
-  if (text) {
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = text;
-    }
-  }
-
-  const ok = response.status === expectedStatus;
-  await reporter.record(
-    scenario,
-    name,
-    ok,
-    `${response.status}${typeof data === "string" ? ` :: ${data.slice(0, 240)}` : ""}`,
-  );
-  if (!ok) {
-    throw new Error(`${name} failed (${response.status}): ${typeof data === "string" ? data : JSON.stringify(data)}`);
-  }
-  return data;
 }
 
 async function runCommand(
@@ -512,6 +479,13 @@ async function createScenarioEnvironment(
   const configPath = path.join(openclawHome, "openclaw.json");
   const workspaceDir = path.join(tmpRoot, "workspace");
   const installPath = path.join(tmpRoot, "install.sh");
+  const bridgePath = path.join(tmpRoot, "tokenbook-bridge.sh");
+  const bridgeCredentialsPath = path.join(
+    openclawHome,
+    "credentials",
+    "tokenbook",
+    `${profile}.json`,
+  );
   const identityPath = path.join(workspaceDir, "skills", "tokenmart", "tokenbook-agent.json");
 
   await mkdir(homeDir, { recursive: true });
@@ -525,6 +499,8 @@ async function createScenarioEnvironment(
     configPath,
     workspaceDir,
     installPath,
+    bridgePath,
+    bridgeCredentialsPath,
     identityPath,
     profile,
     openclawBin,
@@ -563,6 +539,8 @@ async function cleanupScenarioEnvironment(
     { key: `${env.scenario}:config:${env.configPath}`, label: "OpenClaw config", path: env.configPath, kind: "config", exists: existsSync(env.configPath), retained: shouldKeep, scenario: env.scenario },
     { key: `${env.scenario}:workspace:${env.workspaceDir}`, label: "workspace", path: env.workspaceDir, kind: "workspace", exists: existsSync(env.workspaceDir), retained: shouldKeep, scenario: env.scenario },
     { key: `${env.scenario}:installer:${env.installPath}`, label: "downloaded installer", path: env.installPath, kind: "installer", exists: existsSync(env.installPath), retained: shouldKeep, scenario: env.scenario },
+    { key: `${env.scenario}:bridge-script:${env.bridgePath}`, label: "downloaded bridge script", path: env.bridgePath, kind: "bridge-script", exists: existsSync(env.bridgePath), retained: shouldKeep, scenario: env.scenario },
+    { key: `${env.scenario}:bridge-credentials:${env.bridgeCredentialsPath}`, label: "bridge credentials", path: env.bridgeCredentialsPath, kind: "bridge-credentials", exists: existsSync(env.bridgeCredentialsPath), retained: shouldKeep, scenario: env.scenario },
     { key: `${env.scenario}:identity:${env.identityPath}`, label: "identity file", path: env.identityPath, kind: "identity", exists: existsSync(env.identityPath), retained: shouldKeep, scenario: env.scenario },
   ];
   for (const artifact of artifacts) {
@@ -595,6 +573,24 @@ async function downloadInstaller(env: ScenarioEnvironment, reporter: Reporter) {
   });
 }
 
+async function downloadBridgeScript(env: ScenarioEnvironment, reporter: Reporter) {
+  const response = await requestText(`${env.baseUrl}/openclaw/bridge/tokenbook-bridge.sh`);
+  await reporter.record(env.scenario, "download tokenbook-bridge.sh", response.ok, String(response.status));
+  if (!response.ok) {
+    throw new Error(`Failed to download tokenbook-bridge.sh from ${env.baseUrl}`);
+  }
+  await writeFile(env.bridgePath, response.text, "utf8");
+  await chmod(env.bridgePath, 0o755);
+  await reporter.recordArtifact({
+    label: "downloaded bridge script",
+    path: env.bridgePath,
+    kind: "bridge-script",
+    exists: true,
+    retained: true,
+    scenario: env.scenario,
+  });
+}
+
 async function runInstall(env: ScenarioEnvironment, reporter: Reporter, workspaceDir = env.workspaceDir) {
   await runCommand(
     reporter,
@@ -613,6 +609,10 @@ async function runInstall(env: ScenarioEnvironment, reporter: Reporter, workspac
 async function readIdentity(env: ScenarioEnvironment, workspaceDir = env.workspaceDir): Promise<IdentityPayload> {
   const identityPath = path.join(workspaceDir, "skills", "tokenmart", "tokenbook-agent.json");
   return JSON.parse(await readFile(identityPath, "utf8")) as IdentityPayload;
+}
+
+async function readBridgeIdentity(env: ScenarioEnvironment): Promise<IdentityPayload> {
+  return JSON.parse(await readFile(env.bridgeCredentialsPath, "utf8")) as IdentityPayload;
 }
 
 async function verifyInstallArtifacts(env: ScenarioEnvironment, reporter: Reporter, workspaceDir = env.workspaceDir) {
@@ -657,10 +657,15 @@ async function verifyInstallArtifacts(env: ScenarioEnvironment, reporter: Report
 async function verifyConnectedStatus(env: ScenarioEnvironment, reporter: Reporter, identity: IdentityPayload) {
   let lastStatus: Json | null = null;
   const started = Date.now();
+  const statusUrl = new URL(`${env.baseUrl}/api/v2/openclaw/status`);
+  statusUrl.searchParams.set("profile_name", env.profile);
+  if (identity.workspace_fingerprint?.trim()) {
+    statusUrl.searchParams.set("workspace_fingerprint", identity.workspace_fingerprint.trim());
+  }
 
   while (Date.now() - started < 90_000) {
     try {
-      const response = await fetch(`${env.baseUrl}/api/v2/openclaw/status`, {
+      const response = await fetch(statusUrl, {
         method: "GET",
         headers: { Authorization: `Bearer ${identity.api_key}` },
         signal: AbortSignal.timeout(15_000),
@@ -694,6 +699,63 @@ async function verifyConnectedStatus(env: ScenarioEnvironment, reporter: Reporte
   );
   assert.equal(lastStatus?.connected, true);
   assert.equal(lastStatus?.runtime_online, true);
+}
+
+async function attachAndPulseBridge(
+  env: ScenarioEnvironment,
+  reporter: Reporter,
+  workspaceDir = env.workspaceDir,
+): Promise<IdentityPayload> {
+  await downloadBridgeScript(env, reporter);
+  await runCommand(
+    reporter,
+    env.scenario,
+    "attach tokenbook bridge",
+    "bash",
+    [
+      env.bridgePath,
+      "attach",
+      "--workspace",
+      workspaceDir,
+      "--profile",
+      env.profile,
+      "--openclaw-home",
+      env.openclawHome,
+      "--host",
+      env.baseUrl,
+    ],
+    {
+      cwd: process.cwd(),
+      env: env.childEnv,
+      timeoutMs: 180_000,
+    },
+  );
+  const bridgeIdentity = await readBridgeIdentity(env);
+  await reporter.record(env.scenario, "bridge credentials staged", true, bridgeIdentity.agent_id);
+  await runCommand(
+    reporter,
+    env.scenario,
+    "pulse tokenbook bridge",
+    "bash",
+    [
+      env.bridgePath,
+      "pulse",
+      "--workspace",
+      workspaceDir,
+      "--profile",
+      env.profile,
+      "--openclaw-home",
+      env.openclawHome,
+      "--host",
+      env.baseUrl,
+    ],
+    {
+      cwd: process.cwd(),
+      env: env.childEnv,
+      timeoutMs: 180_000,
+    },
+  );
+  return bridgeIdentity;
 }
 
 async function prepareGatewayConfig(env: ScenarioEnvironment, reporter: Reporter) {
@@ -841,9 +903,10 @@ async function runGatewayWake(
 async function freshInstallScenario(env: ScenarioEnvironment, reporter: Reporter) {
   await downloadInstaller(env, reporter);
   await runInstall(env, reporter);
-  const identity = await verifyInstallArtifacts(env, reporter);
-  await verifyConnectedStatus(env, reporter, identity);
-  return identity;
+  await verifyInstallArtifacts(env, reporter);
+  const bridgeIdentity = await attachAndPulseBridge(env, reporter);
+  await verifyConnectedStatus(env, reporter, bridgeIdentity);
+  return bridgeIdentity;
 }
 
 async function wipeAndReinstallSameFingerprint(env: ScenarioEnvironment, reporter: Reporter) {
@@ -856,7 +919,8 @@ async function wipeAndReinstallSameFingerprint(env: ScenarioEnvironment, reporte
 
   await downloadInstaller(env, reporter);
   await runInstall(env, reporter);
-  const secondIdentity = await verifyInstallArtifacts(env, reporter);
+  await verifyInstallArtifacts(env, reporter);
+  const secondIdentity = await attachAndPulseBridge(env, reporter);
   await verifyConnectedStatus(env, reporter, secondIdentity);
   assert.equal(secondIdentity.agent_id, firstIdentity.agent_id, "same fingerprint should reuse the same agent");
   await reporter.record(env.scenario, "same fingerprint reuses agent id", true, secondIdentity.agent_id);
@@ -877,7 +941,8 @@ async function wipeAndReinstallNewFingerprint(env: ScenarioEnvironment, reporter
 
   await downloadInstaller(env, reporter);
   await runInstall(env, reporter, workspaceA);
-  const firstIdentity = await verifyInstallArtifacts(env, reporter, workspaceA);
+  await verifyInstallArtifacts(env, reporter, workspaceA);
+  const firstIdentity = await attachAndPulseBridge(env, reporter, workspaceA);
   await verifyConnectedStatus(env, reporter, firstIdentity);
 
   await rm(env.homeDir, { recursive: true, force: true });
@@ -886,7 +951,8 @@ async function wipeAndReinstallNewFingerprint(env: ScenarioEnvironment, reporter
 
   await downloadInstaller(env, reporter);
   await runInstall(env, reporter, workspaceB);
-  const secondIdentity = await verifyInstallArtifacts(env, reporter, workspaceB);
+  await verifyInstallArtifacts(env, reporter, workspaceB);
+  const secondIdentity = await attachAndPulseBridge(env, reporter, workspaceB);
   await verifyConnectedStatus(env, reporter, secondIdentity);
 
   assert.notEqual(secondIdentity.agent_id, firstIdentity.agent_id, "new fingerprint should create a new agent");

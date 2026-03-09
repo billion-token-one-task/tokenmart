@@ -179,6 +179,80 @@ interface RewardSplitUpdateClient {
   };
 }
 
+function isMissingOpenClawBridgeTableError(error: { code?: string | null; message?: string | null } | null | undefined) {
+  const message = error?.message ?? "";
+  return error?.code === "PGRST205" || message.includes("openclaw_bridge_instances");
+}
+
+function buildFallbackBridgeInstance(
+  patch: {
+    agent_id: string;
+    workspace_fingerprint: string;
+    bridge_mode: string;
+    bridge_version: string;
+    profile_name: string;
+    workspace_path: string;
+    openclaw_home: string;
+    openclaw_version: string | null;
+    platform: string;
+    cron_health: string;
+    hook_health: string;
+    runtime_online: boolean;
+    last_attach_at: string;
+    last_pulse_at: string | null;
+    last_self_check_at: string | null;
+    last_manifest_version: string | null;
+    last_manifest_checksum: string | null;
+    local_asset_path: string | null;
+    local_asset_checksum: string | null;
+    update_available: boolean;
+    update_required: boolean;
+    last_update_at: string | null;
+    last_update_error: string | null;
+    metadata: Json;
+    updated_at: string;
+  },
+): OpenClawBridgeInstanceRow {
+  const syntheticId = [
+    "fallback",
+    patch.agent_id,
+    patch.workspace_fingerprint,
+    patch.profile_name,
+  ]
+    .join(":")
+    .slice(0, 190);
+
+  return {
+    id: syntheticId,
+    agent_id: patch.agent_id,
+    workspace_fingerprint: patch.workspace_fingerprint,
+    bridge_mode: patch.bridge_mode,
+    bridge_version: patch.bridge_version,
+    profile_name: patch.profile_name,
+    workspace_path: patch.workspace_path,
+    openclaw_home: patch.openclaw_home,
+    openclaw_version: patch.openclaw_version,
+    platform: patch.platform,
+    cron_health: patch.cron_health,
+    hook_health: patch.hook_health,
+    runtime_online: patch.runtime_online,
+    last_attach_at: patch.last_attach_at,
+    last_pulse_at: patch.last_pulse_at,
+    last_self_check_at: patch.last_self_check_at,
+    last_manifest_version: patch.last_manifest_version,
+    last_manifest_checksum: patch.last_manifest_checksum,
+    local_asset_path: patch.local_asset_path,
+    local_asset_checksum: patch.local_asset_checksum,
+    update_available: patch.update_available,
+    update_required: patch.update_required,
+    last_update_at: patch.last_update_at,
+    last_update_error: patch.last_update_error,
+    metadata: (patch.metadata as Record<string, unknown>) ?? null,
+    created_at: patch.last_attach_at,
+    updated_at: patch.updated_at,
+  };
+}
+
 function slugifySegment(value: string | null | undefined) {
   const base = (value ?? "openclaw")
     .toLowerCase()
@@ -563,13 +637,15 @@ async function upsertBridgeInstance(
   db: AdminClient,
 ) {
   const now = new Date().toISOString();
-  const { data: existing } = await db
+  const { data: existing, error: existingError } = await db
     .from("openclaw_bridge_instances")
     .select("last_pulse_at, last_self_check_at, metadata, update_available, update_required, last_update_at, last_update_error, last_manifest_version, last_manifest_checksum, local_asset_path, local_asset_checksum")
     .eq("agent_id", input.agentId)
     .eq("workspace_fingerprint", input.workspaceFingerprint)
     .eq("profile_name", normalizeProfileName(input.profileName))
     .maybeSingle();
+
+  const safeExisting = isMissingOpenClawBridgeTableError(existingError) ? null : existing;
 
   const patch = {
     agent_id: input.agentId,
@@ -585,18 +661,18 @@ async function upsertBridgeInstance(
     hook_health: input.hookHealth ?? "unknown",
     runtime_online: input.runtimeOnline ?? false,
     last_attach_at: now,
-    last_pulse_at: input.touchPulse ? now : existing?.last_pulse_at ?? null,
-    last_self_check_at: input.touchSelfCheck ? now : existing?.last_self_check_at ?? null,
-    last_manifest_version: input.lastManifestVersion ?? existing?.last_manifest_version ?? null,
-    last_manifest_checksum: input.lastManifestChecksum ?? existing?.last_manifest_checksum ?? null,
-    local_asset_path: input.localAssetPath ?? existing?.local_asset_path ?? null,
-    local_asset_checksum: input.localAssetChecksum ?? existing?.local_asset_checksum ?? null,
-    update_available: input.updateAvailable ?? existing?.update_available ?? false,
-    update_required: input.updateRequired ?? existing?.update_required ?? false,
-    last_update_at: input.lastUpdateAt ?? existing?.last_update_at ?? null,
-    last_update_error: input.lastUpdateError ?? existing?.last_update_error ?? null,
+    last_pulse_at: input.touchPulse ? now : safeExisting?.last_pulse_at ?? null,
+    last_self_check_at: input.touchSelfCheck ? now : safeExisting?.last_self_check_at ?? null,
+    last_manifest_version: input.lastManifestVersion ?? safeExisting?.last_manifest_version ?? null,
+    last_manifest_checksum: input.lastManifestChecksum ?? safeExisting?.last_manifest_checksum ?? null,
+    local_asset_path: input.localAssetPath ?? safeExisting?.local_asset_path ?? null,
+    local_asset_checksum: input.localAssetChecksum ?? safeExisting?.local_asset_checksum ?? null,
+    update_available: input.updateAvailable ?? safeExisting?.update_available ?? false,
+    update_required: input.updateRequired ?? safeExisting?.update_required ?? false,
+    last_update_at: input.lastUpdateAt ?? safeExisting?.last_update_at ?? null,
+    last_update_error: input.lastUpdateError ?? safeExisting?.last_update_error ?? null,
     metadata: {
-      ...(((existing?.metadata as Record<string, unknown> | null) ?? {})),
+      ...(((safeExisting?.metadata as Record<string, unknown> | null) ?? {})),
       ...(input.metadata ?? {}),
     } as Json,
     updated_at: now,
@@ -614,7 +690,10 @@ async function upsertBridgeInstance(
     .single();
 
   if (error || !data) {
-    throw new Error("Failed to persist OpenClaw bridge instance state");
+    if (isMissingOpenClawBridgeTableError(error)) {
+      return buildFallbackBridgeInstance(patch);
+    }
+    throw new Error(error?.message || "Failed to persist OpenClaw bridge instance state");
   }
 
   return data as OpenClawBridgeInstanceRow;

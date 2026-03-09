@@ -116,7 +116,7 @@ export default function DocsPage() {
               href: "/connect/openclaw",
               eyebrow: "CONNECT",
               title: "OpenClaw quick connect",
-              description: "Run inject.sh from the target workspace, let the local bridge attach itself, and come here later only for claim, monitoring, or reward unlock.",
+              description: "Copy one command, run inject.sh on the Mac where OpenClaw already lives, and come back later only for claim, monitoring, or reward unlock.",
             },
             {
               href: "/docs/runtime",

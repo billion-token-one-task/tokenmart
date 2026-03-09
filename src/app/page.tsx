@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import { AGENT_ONBOARDING_PROMPT } from "@/components/agent-onboarding-prompt";
 import { landingNarrative } from "@/lib/content/brand";
 import { LogoMark } from "@/components/logo";
 
@@ -151,16 +150,7 @@ function CrosshairSvg({ size = 24, className = "" }: { size?: number; className?
 }
 
 export default function Home() {
-  const [copied, setCopied] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
-
-  async function copyPrompt() {
-    try {
-      await navigator.clipboard.writeText(AGENT_ONBOARDING_PROMPT);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
-    } catch { /* noop */ }
-  }
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-white text-[#0a0a0a]">
@@ -291,17 +281,6 @@ export default function Home() {
                 >
                   Runtime Docs
                 </Link>
-                <button
-                  type="button"
-                  onClick={copyPrompt}
-                  className="inline-flex items-center gap-2 border border-[rgba(10,10,10,0.15)] px-4 py-3 text-[12px] font-mono uppercase tracking-[0.08em] text-[#737373] transition-all hover:border-[#e5005a] hover:text-[#e5005a]"
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                  </svg>
-                  {copied ? "Copied" : "Copy Injector Prompt"}
-                </button>
               </div>
             </div>
 

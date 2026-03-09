@@ -1,0 +1,43 @@
+{
+  "3b04760ed57f785dd9819e80b53ef015a8cd38b3d0e0605bee9889eeb06921ee": {
+    "deviceId": "3b04760ed57f785dd9819e80b53ef015a8cd38b3d0e0605bee9889eeb06921ee",
+    "publicKey": "ujUhCZxhC_Y7F2cwTmkuAvAzxYBWrIOwb4xlpy5mjN0",
+    "platform": "darwin",
+    "clientId": "cli",
+    "clientMode": "cli",
+    "role": "operator",
+    "roles": [
+      "operator"
+    ],
+    "scopes": [
+      "operator.admin",
+      "operator.read",
+      "operator.write",
+      "operator.approvals",
+      "operator.pairing"
+    ],
+    "approvedScopes": [
+      "operator.admin",
+      "operator.read",
+      "operator.write",
+      "operator.approvals",
+      "operator.pairing"
+    ],
+    "tokens": {
+      "operator": {
+        "token": "qQgQDVHPrJ0ArkIn7B6VJVtmrzha9cBg1WhNVhOxxC8",
+        "role": "operator",
+        "scopes": [
+          "operator.admin",
+          "operator.approvals",
+          "operator.pairing",
+          "operator.read",
+          "operator.write"
+        ],
+        "createdAtMs": 1773019780070
+      }
+    },
+    "createdAtMs": 1773019780070,
+    "approvedAtMs": 1773019780070
+  }
+}

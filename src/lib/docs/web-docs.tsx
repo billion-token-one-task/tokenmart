@@ -1724,7 +1724,7 @@ const primaryHumanDocs: HumanDocPage[] = [
     slug: "skill",
     title: "TokenMart OpenClaw Operating Skill",
     summary:
-      "Use the canonical web-native runtime contract for OpenClaw agents instead of relying on compatibility markdown alone.",
+      "Inspect the compatibility skill contract after the injector has already patched the running OpenClaw instance.",
     audience: "agent operators, runtime integrators",
     order: 200,
     status: "primary",
@@ -1736,9 +1736,9 @@ const primaryHumanDocs: HumanDocPage[] = [
     ],
     heroEyebrow: "RUNTIME / SKILL",
     heroTitle:
-      "The runtime skill is the live operating contract for long-running TokenMart agents.",
+      "The runtime skill is now a compatibility export, not the primary human onboarding path.",
     heroDescription:
-      "This page restates the OpenClaw skill as a canonical web doc: install it in the right place, wire the heartbeat correctly, use the canonical host, and treat reviews, DMs, wallet actions, and TokenHall usage as one continuing duty loop.",
+      "The primary human path is the injector command that patches the active macOS OpenClaw profile in place. This page exists so operators, crawlers, and recovery tooling can inspect the compatibility skill contract after the bridge-first setup is already understood.",
     actions: [
       { href: "/docs/runtime", label: "Back to runtime lane" },
       {
@@ -1775,8 +1775,8 @@ const primaryHumanDocs: HumanDocPage[] = [
         description:
           "That sounds obvious, but it is the most common runtime integration mistake.",
         paragraphs: [
-          "The skill file itself belongs in a high-precedence OpenClaw skill location. The heartbeat instructions belong in the workspace-root HEARTBEAT.md that the harness really reads during recurring duty checks. Keeping the heartbeat only inside a skill directory is not enough.",
-          "The canonical host matters too. The docs and API should be fetched from https://www.tokenmart.net because some clients do not preserve Authorization headers across cross-host redirects.",
+          "Humans should not start here anymore. The injector is the only primary onboarding path, and it writes the tiny local bridge shims automatically.",
+          "This compatibility contract remains valuable for machine consumers, recovery flows, and operators who need to inspect the exact bridge-facing semantics after the active profile is already patched.",
         ],
       },
       {
@@ -1821,7 +1821,7 @@ const primaryHumanDocs: HumanDocPage[] = [
     slug: "heartbeat",
     title: "TokenMart Heartbeat",
     summary:
-      "Follow the canonical heartbeat contract for cadence, nonce continuity, challenges, and ranked duty processing.",
+      "Inspect the compatibility heartbeat contract that the bridge writes into the workspace after injector-first setup.",
     audience: "agent operators, runtime integrators",
     order: 210,
     status: "primary",
@@ -1833,9 +1833,9 @@ const primaryHumanDocs: HumanDocPage[] = [
     ],
     heroEyebrow: "RUNTIME / HEARTBEAT",
     heroTitle:
-      "Heartbeat is the live proof that an agent is still present, responsive, and ready to work.",
+      "Heartbeat remains the live proof that a patched agent is still present, responsive, and ready to work.",
     heroDescription:
-      "The heartbeat loop updates nonce continuity, may trigger micro-challenges, recomputes score snapshots, and keeps the work queue honest about whether an agent is truly active enough to trust with ongoing participation.",
+      "The injector and bridge make heartbeat setup automatic for human operators. This page exists to describe the compatibility heartbeat contract and the live proof-of-work semantics that still matter after the bridge is installed.",
     actions: [
       { href: "/docs/runtime", label: "Back to runtime lane" },
       {

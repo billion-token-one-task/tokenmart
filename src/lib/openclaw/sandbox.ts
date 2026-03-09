@@ -3,6 +3,7 @@ import { spawn } from "node:child_process";
 import { createWriteStream } from "node:fs";
 import { readdir } from "node:fs/promises";
 import path from "node:path";
+import type { Readable } from "node:stream";
 import { loadOpenClawSuiteConfig, OPENCLAW_SCENARIOS } from "../../../scripts/openclaw/config";
 import {
   collectRetainedArtifacts,
@@ -24,6 +25,22 @@ import type {
   OpenClawSandboxServerMode,
   OpenClawSandboxSnapshot,
 } from "./sandbox-types";
+
+interface SandboxSpawnedProcess {
+  stdout: Readable | null;
+  stderr: Readable | null;
+  on(event: "close", listener: (code: number | null) => void): SandboxSpawnedProcess;
+  unref(): void;
+}
+
+type SandboxSpawner = (
+  command: string,
+  args: string[],
+  options: Parameters<typeof spawn>[2],
+) => SandboxSpawnedProcess;
+
+let sandboxSpawner: SandboxSpawner = (command, args, options) =>
+  spawn(command, args, options) as unknown as SandboxSpawnedProcess;
 
 function hasProviderCredentials() {
   return [
@@ -213,6 +230,10 @@ function buildHarnessArgs(run: OpenClawSandboxRunRecord) {
   return run.scenarios.flatMap((scenario) => ["--scenario", scenario]);
 }
 
+export function setOpenClawSandboxSpawnerForTests(spawner: SandboxSpawner | null) {
+  sandboxSpawner = spawner ?? ((command, args, options) => spawn(command, args, options) as unknown as SandboxSpawnedProcess);
+}
+
 export async function readOpenClawSandboxRunDetail(runId: string) {
   return readOpenClawSandboxRun(runId);
 }
@@ -233,7 +254,7 @@ export async function startOpenClawSandboxRun(input: OpenClawSandboxRunStartInpu
   await writeOpenClawSandboxRun(queuedRun);
 
   const logStream = createWriteStream(getOpenClawSandboxRunLogPath(queuedRun.id), { flags: "a" });
-  const child = spawn(
+  const child = sandboxSpawner(
     "npx",
     ["tsx", "scripts/openclaw/run-local-suite.ts", ...buildHarnessArgs(queuedRun)],
     {
@@ -252,8 +273,8 @@ export async function startOpenClawSandboxRun(input: OpenClawSandboxRunStartInpu
     },
   );
 
-  child.stdout.on("data", (chunk) => logStream.write(chunk));
-  child.stderr.on("data", (chunk) => logStream.write(chunk));
+  child.stdout?.on("data", (chunk) => logStream.write(chunk));
+  child.stderr?.on("data", (chunk) => logStream.write(chunk));
   child.on("close", () => {
     logStream.end();
   });

@@ -73,7 +73,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                 {[
                   ["Run injector", "Run inject.sh on the Mac where OpenClaw already lives and let the bridge patch the active profile in place.", "OCL-01"],
                   ["Claim later", "Use this site later for Google claim, monitoring, reward unlock, and key rotation.", "OCL-02"],
-                  ["Compatibility docs", "skill.md and heartbeat.md stay available as reference and recovery docs, not the primary setup path.", "OCL-03"],
+                  ["Monitor only", "After attach, this lane should show bridge health, runtime status, locked rewards, and rekey state instead of setup branches.", "OCL-03"],
                 ].map(([label, body, code]) => (
                   <div key={label} className="border-2 border-[#0a0a0a] bg-[rgba(255,255,255,0.72)] px-4 py-4">
                     <div className="flex items-center justify-between">

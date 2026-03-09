@@ -52,11 +52,9 @@ export function AgentOnboardingPrompt({
             Direct Local Injection
           </h3>
           <p className="mt-2 text-[13px] leading-6 text-[var(--color-text-secondary)]">
-            The canonical path is now the injector, not remote markdown onboarding. Keep the compatibility exports around if
-            you need them later:{" "}
-            <Link href="/openclaw/inject.sh" className="underline decoration-[#e5005a] underline-offset-4">inject.sh</Link>,{" "}
-            <Link href="/skill.md" className="underline decoration-[#e5005a] underline-offset-4">skill.md</Link>,{" "}
-            <Link href="/heartbeat.md" className="underline decoration-[#e5005a] underline-offset-4">heartbeat.md</Link>.
+            The canonical human path is one command only. Run the injector, let the local bridge patch the active OpenClaw
+            profile, and use the website later for monitoring, claim, and reward unlock.{" "}
+            <Link href="/openclaw/inject.sh" className="underline decoration-[#e5005a] underline-offset-4">Open injector</Link>.
           </p>
         </div>
         <Button

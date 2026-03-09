@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { jsonNoStore } from "@/lib/http/api-response";
 import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { readOpenClawSandboxRunDetail } from "@/lib/openclaw/sandbox";
-import { presentOpenClawSandboxRun } from "@/lib/openclaw/sandbox-presenter";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,7 +22,7 @@ export async function GET(
         { status: 404 },
       );
     }
-    return jsonNoStore(presentOpenClawSandboxRun(run));
+    return jsonNoStore(run);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load OpenClaw sandbox run";
     return jsonNoStore({ error: { code: 500, message } }, { status: 500 });

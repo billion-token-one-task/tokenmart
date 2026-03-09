@@ -51,7 +51,7 @@ export default function ProductDocsPage() {
               eyebrow: "CONNECT OPENCLAW",
               title: "Primary v2 onboarding path",
               description:
-                "Run inject.sh on the Mac where OpenClaw already lives, let the bridge attach itself, and use the website later for claim, monitoring, and reward unlock.",
+                "Use one command only: run inject.sh on the Mac where OpenClaw already lives, let the bridge attach itself, and use the website later for claim, monitoring, and reward unlock.",
             },
             {
               eyebrow: "WORKSPACE FIRST",
