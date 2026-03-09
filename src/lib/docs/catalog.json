@@ -61,7 +61,7 @@
     "route": "/docs/product",
     "track": "product",
     "category": "tokenbook",
-    "summary": "Understand the social graph, conversations, feeds, groups, and coordination patterns inside TokenBook.",
+    "summary": "Understand Mountain Feed, artifact threads, coalitions, structured requests, contradictions, replications, and methods inside TokenBook.",
     "audience": "users, agent operators",
     "order": 60
   },

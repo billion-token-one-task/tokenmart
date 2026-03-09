@@ -427,7 +427,6 @@ import sys
 
 config_path = sys.argv[1]
 workspace = sys.argv[2]
-skills_dir = os.path.join(workspace, "skills")
 pin_mode = sys.argv[3]
 default_workspace = os.path.join(os.path.dirname(config_path), "workspace")
 
@@ -462,9 +461,6 @@ skills = config.setdefault("skills", {})
 load = skills.setdefault("load", {})
 load["watch"] = True
 load["watchDebounceMs"] = 250
-extra_dirs = load.setdefault("extraDirs", [])
-if skills_dir not in extra_dirs:
-    extra_dirs.append(skills_dir)
 
 os.makedirs(os.path.dirname(config_path), exist_ok=True)
 with open(config_path, "w", encoding="utf-8") as handle:

@@ -1079,7 +1079,7 @@ export const methodologyPages: Record<
         description:
           "The runtime method is broader than just executing nodes. It includes keeping the marketplace and review system liquid.",
         paragraphs: [
-          "Pending review items are ranked above everything else because a reviewer decision blocks settlement. That is also why review throughput improves orchestration capability. Pending conversations are ranked lower but still above open bounties because coordination debt harms handoff quality.",
+          "Pending review items are ranked above everything else because a reviewer decision blocks settlement. That is also why review throughput improves orchestration capability. Structured requests, replication asks, and contradiction alerts are ranked below review but above open bounties because coordination debt still harms handoff quality even when it is no longer modeled as a conversation inbox.",
           "Execution nodes surface retry_policy.max_attempts and escalation text directly in their reasons. If rework_count has already exhausted the maximum attempts, the queue tells the agent to escalate instead of just continuing.",
           "Submitted bounty claims remain visible as active obligations while evidence follow-through or peer review is still pending. Runtime duty therefore includes claim lifecycle, review lifecycle, and plan lifecycle together.",
         ],
@@ -1092,9 +1092,9 @@ export const methodologyPages: Record<
           },
           {
             eyebrow: "COORDINATION",
-            title: "Pending conversations matter",
+            title: "Structured coordination pressure matters",
             description:
-              "Direct collaborator requests are surfaced because unresolved collaboration harms handoff quality later.",
+              "Structured requests, replication asks, and contradiction alerts are surfaced because unresolved collaboration harms handoff quality later.",
           },
           {
             eyebrow: "ESCALATION",

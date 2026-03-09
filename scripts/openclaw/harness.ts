@@ -46,6 +46,7 @@ interface ScenarioEnvironment {
   workspaceDir: string;
   installPath: string;
   bridgePath: string;
+  bridgeEntrypointPath: string;
   bridgeCredentialsPath: string;
   identityPath: string;
   profile: string;
@@ -68,6 +69,13 @@ interface IdentityTransition {
   note?: string | null;
 }
 
+interface MoonshotProviderConfig {
+  apiKey: string | null;
+  baseUrl: string;
+  modelRef: string;
+  modelId: string;
+}
+
 function buildPathEnv(binPath: string) {
   const binDir = path.dirname(binPath);
   return [binDir, process.env.PATH ?? ""].filter(Boolean).join(path.delimiter);
@@ -75,6 +83,25 @@ function buildPathEnv(binPath: string) {
 
 function sanitizeSegment(value: string) {
   return value.replace(/[^a-zA-Z0-9._-]+/g, "-");
+}
+
+function resolveMoonshotProviderConfig(): MoonshotProviderConfig {
+  const apiKey =
+    process.env.OPENCLAW_TEST_MOONSHOT_API_KEY?.trim() ||
+    process.env.MOONSHOT_API_KEY?.trim() ||
+    null;
+  const baseUrl =
+    process.env.OPENCLAW_TEST_MOONSHOT_BASE_URL?.trim() || "https://api.moonshot.cn/v1";
+  const modelRef =
+    process.env.OPENCLAW_TEST_MOONSHOT_MODEL?.trim() || "moonshot/kimi-k2.5";
+  const modelId = modelRef.startsWith("moonshot/") ? modelRef.slice("moonshot/".length) : modelRef;
+
+  return {
+    apiKey,
+    baseUrl,
+    modelRef,
+    modelId,
+  };
 }
 
 async function requestText(url: string, timeoutMs = 30_000) {
@@ -480,6 +507,7 @@ async function createScenarioEnvironment(
   const workspaceDir = path.join(tmpRoot, "workspace");
   const installPath = path.join(tmpRoot, "install.sh");
   const bridgePath = path.join(tmpRoot, "tokenbook-bridge.sh");
+  const bridgeEntrypointPath = path.join(openclawHome, "bin", "tokenbook-bridge");
   const bridgeCredentialsPath = path.join(
     openclawHome,
     "credentials",
@@ -500,6 +528,7 @@ async function createScenarioEnvironment(
     workspaceDir,
     installPath,
     bridgePath,
+    bridgeEntrypointPath,
     bridgeCredentialsPath,
     identityPath,
     profile,
@@ -517,7 +546,9 @@ async function createScenarioEnvironment(
 }
 
 function hasProviderCredentials() {
+  const moonshot = resolveMoonshotProviderConfig();
   return [
+    moonshot.apiKey,
     process.env.OPENAI_API_KEY,
     process.env.ANTHROPIC_API_KEY,
     process.env.OPENROUTER_API_KEY,
@@ -540,6 +571,7 @@ async function cleanupScenarioEnvironment(
     { key: `${env.scenario}:workspace:${env.workspaceDir}`, label: "workspace", path: env.workspaceDir, kind: "workspace", exists: existsSync(env.workspaceDir), retained: shouldKeep, scenario: env.scenario },
     { key: `${env.scenario}:installer:${env.installPath}`, label: "downloaded installer", path: env.installPath, kind: "installer", exists: existsSync(env.installPath), retained: shouldKeep, scenario: env.scenario },
     { key: `${env.scenario}:bridge-script:${env.bridgePath}`, label: "downloaded bridge script", path: env.bridgePath, kind: "bridge-script", exists: existsSync(env.bridgePath), retained: shouldKeep, scenario: env.scenario },
+    { key: `${env.scenario}:bridge-entrypoint:${env.bridgeEntrypointPath}`, label: "installed bridge entrypoint", path: env.bridgeEntrypointPath, kind: "bridge-entrypoint", exists: existsSync(env.bridgeEntrypointPath), retained: shouldKeep, scenario: env.scenario },
     { key: `${env.scenario}:bridge-credentials:${env.bridgeCredentialsPath}`, label: "bridge credentials", path: env.bridgeCredentialsPath, kind: "bridge-credentials", exists: existsSync(env.bridgeCredentialsPath), retained: shouldKeep, scenario: env.scenario },
     { key: `${env.scenario}:identity:${env.identityPath}`, label: "identity file", path: env.identityPath, kind: "identity", exists: existsSync(env.identityPath), retained: shouldKeep, scenario: env.scenario },
   ];
@@ -585,6 +617,22 @@ async function downloadBridgeScript(env: ScenarioEnvironment, reporter: Reporter
     label: "downloaded bridge script",
     path: env.bridgePath,
     kind: "bridge-script",
+    exists: true,
+    retained: true,
+    scenario: env.scenario,
+  });
+}
+
+async function installBridgeEntrypoint(env: ScenarioEnvironment, reporter: Reporter) {
+  await mkdir(path.dirname(env.bridgeEntrypointPath), { recursive: true });
+  const bridgeText = await readFile(env.bridgePath, "utf8");
+  await writeFile(env.bridgeEntrypointPath, bridgeText, "utf8");
+  await chmod(env.bridgeEntrypointPath, 0o755);
+  await reporter.record(env.scenario, "install bridge entrypoint", true, env.bridgeEntrypointPath);
+  await reporter.recordArtifact({
+    label: "installed bridge entrypoint",
+    path: env.bridgeEntrypointPath,
+    kind: "bridge-entrypoint",
     exists: true,
     retained: true,
     scenario: env.scenario,
@@ -707,6 +755,7 @@ async function attachAndPulseBridge(
   workspaceDir = env.workspaceDir,
 ): Promise<IdentityPayload> {
   await downloadBridgeScript(env, reporter);
+  await installBridgeEntrypoint(env, reporter);
   await runCommand(
     reporter,
     env.scenario,
@@ -763,6 +812,7 @@ async function prepareGatewayConfig(env: ScenarioEnvironment, reporter: Reporter
   const gatewaySettings = (gatewayConfig.gateway as Json | undefined) ?? {};
   const auth = (gatewaySettings.auth as Json | undefined) ?? {};
   const remote = (gatewaySettings.remote as Json | undefined) ?? {};
+  const moonshot = resolveMoonshotProviderConfig();
   const port = resolvePort();
   const token = `token-${sanitizeSegment(env.profile)}`;
 
@@ -773,6 +823,51 @@ async function prepareGatewayConfig(env: ScenarioEnvironment, reporter: Reporter
   gatewaySettings.auth = auth;
   gatewaySettings.remote = remote;
   gatewayConfig.gateway = gatewaySettings;
+
+  if (moonshot.apiKey) {
+    const agentsConfig = (gatewayConfig.agents as Json | undefined) ?? {};
+    const defaultsConfig = (agentsConfig.defaults as Json | undefined) ?? {};
+    const modelConfig = (defaultsConfig.model as Json | undefined) ?? {};
+    modelConfig.primary = moonshot.modelRef;
+    defaultsConfig.model = modelConfig;
+
+    const modelAliases = (defaultsConfig.models as Json | undefined) ?? {};
+    modelAliases[moonshot.modelRef] = {
+      alias: "Kimi K2.5",
+    } as unknown as Json;
+    defaultsConfig.models = modelAliases;
+    agentsConfig.defaults = defaultsConfig;
+    gatewayConfig.agents = agentsConfig;
+
+    const modelsConfig = (gatewayConfig.models as Json | undefined) ?? {};
+    const providersConfig = (modelsConfig.providers as Json | undefined) ?? {};
+    providersConfig.moonshot = {
+      baseUrl: moonshot.baseUrl,
+      apiKey: "${MOONSHOT_API_KEY}",
+      api: "openai-completions",
+      models: [
+        {
+          id: moonshot.modelId,
+          name: "Kimi K2.5",
+          reasoning: true,
+          input: ["text"],
+          cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+          contextWindow: 256000,
+          maxTokens: 8192,
+        },
+      ],
+    } as unknown as Json;
+    modelsConfig.mode = "merge";
+    modelsConfig.providers = providersConfig;
+    gatewayConfig.models = modelsConfig;
+
+    await reporter.record(
+      env.scenario,
+      "configured moonshot provider",
+      true,
+      `${moonshot.modelRef} :: ${moonshot.baseUrl}`,
+    );
+  }
 
   await writeFile(env.configPath, JSON.stringify(gatewayConfig, null, 2) + "\n", "utf8");
   await reporter.record(env.scenario, "gateway config updated", true);
@@ -786,6 +881,7 @@ async function runGatewayWake(
   requireTurnSuccess: boolean,
 ) {
   const { port, token } = await prepareGatewayConfig(env, reporter);
+  const heartbeatAttemptTimeoutMs = hasProviderCredentials() ? 120_000 : 60_000;
   const gatewayLogs: string[] = [];
   const gateway = spawn(
     env.openclawBin,
@@ -871,7 +967,7 @@ async function runGatewayWake(
           (heartbeatLast.stdout.trim().length > 0 && heartbeatLast.stdout.trim() !== "null")
         );
       },
-      60_000,
+      heartbeatAttemptTimeoutMs,
       2_000,
     );
 

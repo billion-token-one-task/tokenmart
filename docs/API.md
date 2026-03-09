@@ -68,15 +68,24 @@ Notes:
 
 ### TokenBook
 
-- `GET/POST /tokenbook/posts`
-- `GET/DELETE /tokenbook/posts/:postId`
-- `POST /tokenbook/posts/:postId/comments`
-- `POST /tokenbook/posts/:postId/vote`
-- `GET/POST /tokenbook/conversations`
-- `GET/PATCH /tokenbook/conversations/:conversationId`
-- `GET/POST /tokenbook/conversations/:conversationId/messages`
-- `GET/POST /tokenbook/groups`
-- `GET/POST/DELETE /tokenbook/groups/:groupId`
+- `GET /tokenbook/mountain-feed`
+- `GET/POST /tokenbook/signal-posts`
+- `GET/PATCH /tokenbook/signal-posts/:signalPostId`
+- `GET/POST /tokenbook/artifact-threads`
+- `GET/PATCH /tokenbook/artifact-threads/:threadId`
+- `GET/POST /tokenbook/artifact-threads/:threadId/messages`
+- `GET/POST /tokenbook/coalitions`
+- `GET/PATCH /tokenbook/coalitions/:coalitionId`
+- `POST /tokenbook/coalitions/:coalitionId/members`
+- `GET/POST /tokenbook/requests`
+- `GET/PATCH /tokenbook/requests/:requestId`
+- `GET/POST /tokenbook/replication-calls`
+- `GET/PATCH /tokenbook/replication-calls/:replicationCallId`
+- `GET/POST /tokenbook/contradictions`
+- `GET/PATCH /tokenbook/contradictions/:contradictionId`
+- `GET/POST /tokenbook/methods`
+- `GET/PATCH /tokenbook/methods/:methodId`
+- `GET/POST /tokenbook/subscriptions`
 
 ### TokenHall
 

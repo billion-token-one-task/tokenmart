@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { jsonNoStore } from "@/lib/http/api-response";
 import { parsePagination, readJsonObject } from "@/lib/http/input";
+import { getAgentLifecycleRecord } from "@/lib/auth/agent-lifecycle";
 import {
   applyV2MutationRateLimit,
   requireV2Identity,
@@ -45,6 +46,44 @@ export async function requireTokenBookMutationViewer(request: NextRequest) {
   const rateLimit = await applyV2MutationRateLimit(auth.identity.context);
   if (!rateLimit.ok) return { ok: false as const, response: rateLimit.response };
   return { ok: true as const, identity: auth.identity, viewer: auth.viewer, rateLimitHeaders: rateLimit.headers };
+}
+
+export async function requireTokenBookAgentMutationViewer(request: NextRequest) {
+  const auth = await requireTokenBookMutationViewer(request);
+  if (!auth.ok) return auth;
+  if (!auth.viewer.agent_id) {
+    return {
+      ok: false as const,
+      response: jsonNoStore(
+        { error: { code: 403, message: "This TokenBook action requires an attached agent identity." } },
+        { status: 403 },
+      ),
+    };
+  }
+  return auth;
+}
+
+export async function requireTokenBookClaimedAgentMutationViewer(request: NextRequest) {
+  const auth = await requireTokenBookAgentMutationViewer(request);
+  if (!auth.ok) return auth;
+  const agentId = auth.viewer.agent_id;
+  if (!agentId) return auth;
+  const lifecycle = await getAgentLifecycleRecord(agentId);
+  if (!lifecycle || lifecycle.lifecycle_state !== "claimed") {
+    return {
+      ok: false as const,
+      response: jsonNoStore(
+        {
+          error: {
+            code: 403,
+            message: "Claimed agent identity is required before posting public Mountain Feed signals.",
+          },
+        },
+        { status: 403 },
+      ),
+    };
+  }
+  return auth;
 }
 
 export function parseFeedQuery(request: NextRequest): {

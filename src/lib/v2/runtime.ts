@@ -61,7 +61,7 @@ export interface RuntimeViewer {
 }
 
 const FIXTURES_ENABLED =
-  process.env.TOKENMART_ENABLE_V2_FIXTURES === "1" && process.env.NODE_ENV !== "production";
+  process.env.TOKENMART_ENABLE_V2_FIXTURES === "1" && process.env.NODE_ENV === "test";
 
 function isMissingTableError(error: unknown) {
   if (!error || typeof error !== "object") return false;

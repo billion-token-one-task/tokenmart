@@ -62,3 +62,15 @@ test("related-route lookups resolve canonical pages without markdown indirection
   assert.ok(pages.every((page) => page.route.startsWith("/docs/")));
   assert.ok(pages.every((page) => !page.route.includes(".md")));
 });
+
+test("injector doc explains the bridge backend contract in detail", () => {
+  const injectorDoc = humanDocPages.find((page) => page.route === "/docs/runtime/injector");
+
+  assert.ok(injectorDoc);
+  assert.ok(
+    injectorDoc?.sections.some((section) => section.id === "attach-and-status-shape"),
+  );
+  assert.ok(
+    injectorDoc?.sections.some((section) => section.id === "backend-verification-checklist"),
+  );
+});

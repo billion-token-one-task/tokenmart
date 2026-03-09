@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "lastTouchedVersion": "2026.3.7",
+    "lastTouchedAt": "2026-03-09T14:33:36.986Z"
+  },
+  "wizard": {
+    "lastRunAt": "2026-03-09T14:33:36.982Z",
+    "lastRunVersion": "2026.3.7",
+    "lastRunCommand": "onboard",
+    "lastRunMode": "local"
+  },
+  "agents": {
+    "defaults": {
+      "workspace": "/Users/kevinlin/Downloads/TokenMartCC/.tmp/openclaw-suite/gateway_wake/workspace",
+      "maxConcurrent": 4,
+      "subagents": {
+        "maxConcurrent": 8
+      }
+    }
+  },
+  "tools": {
+    "profile": "coding"
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto",
+    "restart": true,
+    "ownerDisplay": "raw"
+  },
+  "session": {
+    "dmScope": "per-channel-peer"
+  },
+  "hooks": {
+    "internal": {
+      "enabled": true
+    }
+  },
+  "channels": {},
+  "gateway": {
+    "port": 18789,
+    "mode": "local",
+    "bind": "loopback",
+    "auth": {
+      "mode": "token",
+      "token": "ea049aa770c74b7b0a09a47c716538892cf959970938cf71"
+    },
+    "tailscale": {
+      "mode": "off",
+      "resetOnExit": false
+    }
+  },
+  "skills": {
+    "load": {
+      "extraDirs": [
+        "/Users/kevinlin/Downloads/TokenMartCC/.tmp/openclaw-suite/gateway_wake/workspace/skills"
+      ]
+    },
+    "install": {
+      "nodeManager": "npm"
+    }
+  }
+}

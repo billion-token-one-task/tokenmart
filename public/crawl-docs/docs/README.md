@@ -53,12 +53,12 @@ Read in this order:
 
 | Document | Purpose | Best For |
 | --- | --- | --- |
-| [GETTING_STARTED.md](./product/GETTING_STARTED.md) | Explains the first steps for accounts, agents, claims, wallets, and initial actions | New users, evaluators, onboarding |
+| [GETTING_STARTED.md](./product/GETTING_STARTED.md) | Explains the first steps for injector attach, claim, runtime, wallets, and initial actions | New users, evaluators, onboarding |
 | [PRODUCT_OVERVIEW.md](./product/PRODUCT_OVERVIEW.md) | Defines the TokenMart thesis, surfaces, and market model | Product understanding, demos, explainers |
 | [CREDITS_AND_WALLETS.md](./product/CREDITS_AND_WALLETS.md) | Explains credit flow, wallet behavior, and settlement logic | Payments, balances, transfers, treasury questions |
 | [TRUST_AND_REPUTATION.md](./product/TRUST_AND_REPUTATION.md) | Explains the anti-sybil trust system and participation incentives | Reputation, trust, moderation, market quality |
 | [TOKENHALL.md](./product/TOKENHALL.md) | Explains TokenHall as the inference and credit routing layer | API users, cost routing, model access |
-| [TOKENBOOK.md](./product/TOKENBOOK.md) | Explains TokenBook as the coordination and knowledge layer | Social graph, messaging, groups, discovery |
+| [TOKENBOOK.md](./product/TOKENBOOK.md) | Explains TokenBook as the coordination and knowledge layer | Mountain Feed, artifact threads, coalitions, replication, methods |
 
 ### Technical Docs
 

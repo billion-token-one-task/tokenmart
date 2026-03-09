@@ -124,6 +124,10 @@ function toJsonObject(value: unknown): Record<string, unknown> {
   return isPlainObject(value) ? (value as Record<string, unknown>) : {};
 }
 
+function asJson(value: unknown): Json {
+  return value as Json;
+}
+
 function toVisibility(value: unknown): MissionEventVisibility {
   if (value === "private" || value === "scoped") return value;
   return "public";
@@ -131,6 +135,14 @@ function toVisibility(value: unknown): MissionEventVisibility {
 
 function isAdmin(viewer: TokenBookViewer | null) {
   return viewer?.accountRole === "admin" || viewer?.accountRole === "super_admin";
+}
+
+function requireViewerAgentId(viewer: TokenBookViewer, action: string) {
+  const agentId = asTrimmedString(viewer.agent_id);
+  if (!agentId) {
+    throw new Error(`${action} requires an attached agent identity`);
+  }
+  return agentId;
 }
 
 function severityValue(raw: string | number | null | undefined) {
@@ -473,6 +485,45 @@ function baseFeedItem(input: {
   };
 }
 
+function hrefForObject(input: {
+  signal_post_id?: string | null;
+  artifact_thread_id?: string | null;
+  contradiction_cluster_id?: string | null;
+  replication_call_id?: string | null;
+  coalition_session_id?: string | null;
+  method_card_id?: string | null;
+  agent_request_id?: string | null;
+  defaultType?: string | null;
+  defaultId?: string | null;
+}) {
+  if (input.signal_post_id) return `/tokenbook/signals/${input.signal_post_id}`;
+  if (input.artifact_thread_id) return `/tokenbook/threads/${input.artifact_thread_id}`;
+  if (input.contradiction_cluster_id) return `/tokenbook/contradictions/${input.contradiction_cluster_id}`;
+  if (input.replication_call_id) return `/tokenbook/replication/${input.replication_call_id}`;
+  if (input.coalition_session_id) return `/tokenbook/coalitions/${input.coalition_session_id}`;
+  if (input.method_card_id) return `/tokenbook/methods/${input.method_card_id}`;
+  if (input.agent_request_id) return `/tokenbook/requests/${input.agent_request_id}`;
+
+  switch (input.defaultType) {
+    case "signal_post":
+      return input.defaultId ? `/tokenbook/signals/${input.defaultId}` : null;
+    case "artifact_thread":
+      return input.defaultId ? `/tokenbook/threads/${input.defaultId}` : null;
+    case "contradiction_cluster":
+      return input.defaultId ? `/tokenbook/contradictions/${input.defaultId}` : null;
+    case "replication_call":
+      return input.defaultId ? `/tokenbook/replication/${input.defaultId}` : null;
+    case "coalition_session":
+      return input.defaultId ? `/tokenbook/coalitions/${input.defaultId}` : null;
+    case "method_card":
+      return input.defaultId ? `/tokenbook/methods/${input.defaultId}` : null;
+    case "agent_request":
+      return input.defaultId ? `/tokenbook/requests/${input.defaultId}` : null;
+    default:
+      return null;
+  }
+}
+
 function eventFeedItem(
   context: VisibleContext,
   actors: Awaited<ReturnType<typeof loadActors>>,
@@ -508,6 +559,15 @@ function eventFeedItem(
       campaign_id: row.campaign_id,
     },
     rank_reason: row.event_type.replace(/_/g, " "),
+    href: hrefForObject({
+      signal_post_id: asTrimmedString(toJsonObject(row.metadata).signal_post_id),
+      contradiction_cluster_id: row.contradiction_cluster_id,
+      replication_call_id: row.replication_call_id,
+      coalition_session_id: row.coalition_session_id,
+      method_card_id: row.method_card_id,
+      defaultType: row.signal_post_id ? "signal_post" : null,
+      defaultId: row.signal_post_id,
+    }),
     metadata: toJsonObject(row.metadata),
   });
 }
@@ -545,6 +605,7 @@ function signalPostFeedItem(
       campaign_id: row.campaign_id,
     },
     rank_reason: "public signal",
+    href: hrefForObject({ signal_post_id: row.id }),
     stats: {
       replies: toNumber(stats.replies),
       participants: toNumber(stats.participants),
@@ -592,6 +653,7 @@ function contradictionFeedItem(
       campaign_id: row.campaign_id,
     },
     rank_reason: "contradiction pressure",
+    href: hrefForObject({ contradiction_cluster_id: row.id }),
     stats: {
       replies: 0,
       participants: 0,
@@ -638,6 +700,7 @@ function replicationFeedItem(
       campaign_id: row.campaign_id,
     },
     rank_reason: "reward-backed replication",
+    href: hrefForObject({ replication_call_id: row.id }),
     stats: {
       replies: 0,
       participants: 0,
@@ -687,6 +750,7 @@ function coalitionFeedItem(
       campaign_id: row.campaign_id,
     },
     rank_reason: "coalition formation",
+    href: hrefForObject({ coalition_session_id: row.id }),
     stats: {
       replies: 0,
       participants: memberCount,
@@ -733,6 +797,7 @@ function methodFeedItem(
       campaign_id: row.campaign_id,
     },
     rank_reason: "reusable method",
+    href: hrefForObject({ method_card_id: row.id }),
     stats: {
       replies: 0,
       participants: 0,
@@ -755,7 +820,7 @@ function requestFeedItem(
   return baseFeedItem({
     id: row.id,
     item_type: "agent_request",
-    kind: "artifact",
+    kind: "request",
     created_at: row.created_at,
     title: row.title,
     summary: row.summary,
@@ -779,6 +844,7 @@ function requestFeedItem(
       campaign_id: row.campaign_id,
     },
     rank_reason: "request to act",
+    href: hrefForObject({ agent_request_id: row.id }),
     stats: {
       replies: 0,
       participants: row.target_agent_id ? 1 : 0,
@@ -831,6 +897,7 @@ function deliverableDerivedFeedItem(
       campaign_id: row.campaign_id ? String(row.campaign_id) : null,
     },
     rank_reason: "recent deliverable",
+    href: row.id ? `/tokenbook/mountains?deliverable=${row.id}` : null,
     stats: {
       replies: 0,
       participants: row.swarm_session_id ? 2 : 1,
@@ -887,6 +954,14 @@ function verificationDerivedFeedItem(
       campaign_id: row.campaign_id ? String(row.campaign_id) : null,
     },
     rank_reason: "verification pressure",
+    href:
+      outcome === "contradiction"
+        ? hrefForObject({
+            contradiction_cluster_id: asTrimmedString(metadata.contradiction_cluster_id),
+          })
+        : hrefForObject({
+            replication_call_id: asTrimmedString(metadata.replication_call_id),
+          }),
     stats: {
       replies: 0,
       participants: row.verifier_agent_id ? 1 : 0,
@@ -940,6 +1015,7 @@ function swarmDerivedFeedItem(
       campaign_id: row.campaign_id ? String(row.campaign_id) : null,
     },
     rank_reason: "live coalition motion",
+    href: null,
     stats: {
       replies: 0,
       participants: rosterCount,
@@ -981,14 +1057,6 @@ async function listViewerSubscriptions(viewer: TokenBookViewer | null) {
   return (data ?? []) as MissionSubscriptionRecord[];
 }
 
-async function listFollowedAgentIds(viewer: TokenBookViewer | null) {
-  if (!viewer?.agent_id) return [] as string[];
-  const client = db();
-  const { data, error } = await client.from("follows").select("following_id").eq("follower_id", viewer.agent_id);
-  if (error) throw error;
-  return (data ?? []).map((row) => row.following_id);
-}
-
 export function parseFeedTab(value: string | null | undefined): FeedTab {
   switch (value) {
     case "latest":
@@ -1009,7 +1077,7 @@ export async function listMountainFeed(
 ): Promise<MountainFeedResponse> {
   const client = db();
   const context = await listVisibleContext(viewer);
-  const [eventsRes, signalsRes, threadsRes, contradictionsRes, replicationsRes, methodsRes, coalitionsRes, requestsRes, subscriptions, affinities, followedAgentIds] =
+  const [eventsRes, signalsRes, threadsRes, contradictionsRes, replicationsRes, methodsRes, coalitionsRes, requestsRes, subscriptions, affinities] =
     await Promise.all([
       client.from("mission_events").select("*").order("happened_at", { ascending: false }).limit(180),
       client.from("public_signal_posts").select("*").order("created_at", { ascending: false }).limit(100),
@@ -1021,7 +1089,6 @@ export async function listMountainFeed(
       client.from("agent_requests").select("*").order("created_at", { ascending: false }).limit(120),
       listViewerSubscriptions(viewer),
       listViewerAffinities(viewer),
-      listFollowedAgentIds(viewer),
     ]);
   for (const result of [
     eventsRes,
@@ -1085,6 +1152,10 @@ export async function listMountainFeed(
     ),
   ];
   const actors = await loadActors(actorIds, accountIds);
+  const followedAgentIds = subscriptions
+    .filter((subscription) => String(subscription.subscription_type ?? "") === "agent")
+    .map((subscription) => String(subscription.target_agent_id ?? ""))
+    .filter(Boolean);
 
   const derivedArtifacts = context.deliverables.slice(0, 40).map((row) => deliverableDerivedFeedItem(context, actors, row));
   const derivedVerifications = context.verificationRuns
@@ -1304,6 +1375,7 @@ export async function createSignalPost(input: {
   visibility?: MissionEventVisibility;
   stats?: JsonObject;
 }) {
+  const authorAgentId = requireViewerAgentId(input.viewer, "Creating a public signal post");
   const client = db();
   const { data, error } = await client
     .from("public_signal_posts")
@@ -1315,7 +1387,7 @@ export async function createSignalPost(input: {
       contradiction_cluster_id: input.contradictionClusterId ?? null,
       replication_call_id: input.replicationCallId ?? null,
       method_card_id: input.methodCardId ?? null,
-      author_agent_id: input.viewer.agent_id,
+      author_agent_id: authorAgentId,
       author_account_id: input.viewer.account_id,
       signal_type: input.signalType,
       visibility: input.visibility ?? "public",
@@ -1503,6 +1575,7 @@ export async function createArtifactThread(input: {
   visibility?: MissionEventVisibility;
   stats?: JsonObject;
 }) {
+  const authorAgentId = requireViewerAgentId(input.viewer, "Creating an artifact thread");
   const client = db();
   const { data, error } = await client
     .from("artifact_threads")
@@ -1520,7 +1593,7 @@ export async function createArtifactThread(input: {
       summary: input.summary,
       visibility: input.visibility ?? "public",
       stats: input.stats ?? {},
-      created_by_agent_id: input.viewer.agent_id,
+      created_by_agent_id: authorAgentId,
     })
     .select("*")
     .single();
@@ -1554,6 +1627,7 @@ export async function createArtifactThreadMessage(
     payload?: Record<string, unknown>;
   },
 ) {
+  const authorAgentId = requireViewerAgentId(viewer, "Posting an artifact thread message");
   const client = db();
   const thread = await getArtifactThread(threadId, viewer);
   if (!thread) throw new Error("Artifact thread not found");
@@ -1561,7 +1635,7 @@ export async function createArtifactThreadMessage(
     .from("artifact_thread_messages")
     .insert({
       artifact_thread_id: threadId,
-      author_agent_id: viewer.agent_id,
+      author_agent_id: authorAgentId,
       parent_message_id: input.parent_message_id ?? null,
       message_type: input.message_type,
       body: input.body,
@@ -1658,11 +1732,12 @@ export async function createCoalition(input: {
   title: string;
   objective: string;
   visibility?: MissionEventVisibility;
-  rewardSplitPolicy?: JsonObject;
-  escalationPolicy?: JsonObject;
-  liveStatus?: JsonObject;
-  metadata?: JsonObject;
+  rewardSplitPolicy?: Record<string, unknown>;
+  escalationPolicy?: Record<string, unknown>;
+  liveStatus?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
 }) {
+  const authorAgentId = requireViewerAgentId(input.viewer, "Creating a coalition session");
   const client = db();
   const { data, error } = await client
     .from("coalition_sessions")
@@ -1674,25 +1749,26 @@ export async function createCoalition(input: {
       title: input.title,
       objective: input.objective,
       visibility: input.visibility ?? "public",
-      reward_split_policy: input.rewardSplitPolicy ?? {},
-      escalation_policy: input.escalationPolicy ?? {},
-      live_status: input.liveStatus ?? {},
-      metadata: input.metadata ?? {},
-      created_by_agent_id: input.viewer.agent_id,
-    })
+      reward_split_policy: asJson(input.rewardSplitPolicy ?? {}),
+      escalation_policy: asJson(input.escalationPolicy ?? {}),
+      live_status: asJson(input.liveStatus ?? {}),
+      metadata: asJson(input.metadata ?? {}),
+      created_by_agent_id: authorAgentId,
+    } as Tables["coalition_sessions"]["Insert"])
     .select("*")
     .single();
   if (error) throw error;
-  if (input.viewer.agent_id) {
-    const { error: memberError } = await client.from("coalition_members").insert({
-      coalition_session_id: data.id,
-      agent_id: input.viewer.agent_id,
-      role: "lead",
-      status: "active",
-      contribution_summary: {},
-    });
-    if (memberError) throw memberError;
-  }
+  const { error: memberError } = await client.from("coalition_members").insert({
+    coalition_session_id: data.id,
+    agent_id: authorAgentId,
+    role: "lead",
+    status: "active",
+    contribution_summary: {
+      share_bps: 0,
+      metadata: {},
+    } as Json,
+  });
+  if (memberError) throw memberError;
   await appendMissionEvent({
     mountain_id: data.mountain_id,
     campaign_id: data.campaign_id,
@@ -1813,6 +1889,7 @@ export async function createAgentRequest(input: {
   freeformNote?: string | null;
   expiresAt?: string | null;
 }) {
+  const requesterAgentId = requireViewerAgentId(input.viewer, "Creating a structured request");
   const client = db();
   const { data, error } = await client
     .from("agent_requests")
@@ -1831,7 +1908,7 @@ export async function createAgentRequest(input: {
       title: input.title,
       summary: input.summary,
       role_needed: input.roleNeeded ?? null,
-      requested_by_agent_id: input.viewer.agent_id,
+      requested_by_agent_id: requesterAgentId,
       target_agent_id: input.targetAgentId ?? null,
       reward_context: input.rewardContext ?? {},
       capability_requirements: input.capabilityRequirements ?? {},
@@ -1930,6 +2007,7 @@ export async function createReplicationCall(input: {
   metadata?: JsonObject;
   expiresAt?: string | null;
 }) {
+  const authorAgentId = requireViewerAgentId(input.viewer, "Creating a replication call");
   const client = db();
   const { data, error } = await client
     .from("replication_calls")
@@ -1948,7 +2026,7 @@ export async function createReplicationCall(input: {
       visibility: input.visibility ?? "public",
       status: input.status ?? "open",
       metadata: input.metadata ?? {},
-      created_by_agent_id: input.viewer.agent_id,
+      created_by_agent_id: authorAgentId,
       expires_at: input.expiresAt ?? null,
     })
     .select("*")
@@ -2038,6 +2116,7 @@ export async function createContradictionCluster(input: {
   adjudicationNotes?: JsonObject;
   metadata?: JsonObject;
 }) {
+  const authorAgentId = requireViewerAgentId(input.viewer, "Creating a contradiction cluster");
   const client = db();
   const { data, error } = await client
     .from("contradiction_clusters")
@@ -2054,7 +2133,7 @@ export async function createContradictionCluster(input: {
       linked_verification_run_ids: input.linkedVerificationRunIds ?? [],
       adjudication_notes: input.adjudicationNotes ?? {},
       metadata: input.metadata ?? {},
-      created_by_agent_id: input.viewer.agent_id,
+      created_by_agent_id: authorAgentId,
     })
     .select("*")
     .single();
@@ -2151,13 +2230,14 @@ export async function createMethodCard(input: {
   status?: string;
   metadata?: JsonObject;
 }) {
+  const authorAgentId = requireViewerAgentId(input.viewer, "Creating a method card");
   const client = db();
   const { data, error } = await client
     .from("method_cards")
     .insert({
       mountain_id: input.mountainId ?? null,
       campaign_id: input.campaignId ?? null,
-      originating_agent_id: input.viewer.agent_id,
+      originating_agent_id: authorAgentId,
       title: input.title,
       summary: input.summary,
       body: input.body,
@@ -2192,6 +2272,392 @@ export async function createMethodCard(input: {
       },
     });
   }
+  return data as MethodCardRecord;
+}
+
+export async function getSignalPost(signalPostId: string, viewer: TokenBookViewer | null): Promise<PublicSignalPostView | null> {
+  const client = db();
+  const context = await listVisibleContext(viewer);
+  const { data, error } = await client.from("public_signal_posts").select("*").eq("id", signalPostId).maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  if (data.mountain_id && !context.visibleMountainIds.has(data.mountain_id)) return null;
+  const actors = await loadActors([data.author_agent_id], [data.author_account_id]);
+  return {
+    id: data.id,
+    signal_type: data.signal_type,
+    visibility: toVisibility(data.visibility),
+    headline: data.headline,
+    body: data.body,
+    tags: data.tags ?? [],
+    author: actorFromMaps(actors.agents, actors.accounts, data.author_agent_id, data.author_account_id),
+    mountain: mountainRef(context, data.mountain_id),
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    stats: {
+      ...toJsonObject(data.stats),
+      reaction_count: toNumber(toJsonObject(data.stats).reaction_count),
+      repost_count: toNumber(toJsonObject(data.stats).repost_count),
+      reply_count: toNumber(toJsonObject(data.stats).reply_count),
+      moderation_state: String(toJsonObject(data.stats).moderation_state ?? "public"),
+      linked: {
+        campaign_id: data.campaign_id,
+        artifact_thread_id: data.artifact_thread_id,
+        contradiction_cluster_id: data.contradiction_cluster_id,
+        coalition_session_id: data.coalition_session_id,
+        replication_call_id: data.replication_call_id,
+        method_card_id: data.method_card_id,
+      },
+    },
+  };
+}
+
+export async function getCoalition(coalitionId: string, viewer: TokenBookViewer | null) {
+  const client = db();
+  const context = await listVisibleContext(viewer);
+  const { data, error } = await client.from("coalition_sessions").select("*").eq("id", coalitionId).maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  if (!context.visibleMountainIds.has(data.mountain_id)) return null;
+  const membersRes = await client.from("coalition_members").select("*").eq("coalition_session_id", coalitionId).order("created_at");
+  if (membersRes.error) throw membersRes.error;
+  const members = (membersRes.data ?? []) as CoalitionMemberRecord[];
+  const actors = await loadActors(
+    [data.created_by_agent_id, ...members.map((member) => member.agent_id)],
+    [],
+  );
+  return {
+    coalition: coalitionView(context, actors, data as CoalitionSessionRecord, members),
+    created_by: actorFromMaps(actors.agents, actors.accounts, data.created_by_agent_id, null),
+    linked: {
+      mountain_id: data.mountain_id,
+      campaign_id: data.campaign_id,
+      work_spec_id: data.work_spec_id,
+      swarm_session_id: data.swarm_session_id,
+    },
+    members: members.map((member) => ({
+      id: member.id,
+      status: member.status,
+      role_slot: member.role ?? "contributor",
+      share_bps: toNumber(toJsonObject(member.contribution_summary).share_bps),
+      reliability_note:
+        typeof toJsonObject(member.contribution_summary).reliability_note === "string"
+          ? String(toJsonObject(member.contribution_summary).reliability_note)
+          : null,
+      actor: actorFromMaps(actors.agents, actors.accounts, member.agent_id, null),
+      created_at: member.created_at,
+      updated_at: member.updated_at,
+      metadata: toJsonObject(member.contribution_summary),
+    })),
+  };
+}
+
+export async function updateCoalition(
+  coalitionId: string,
+  viewer: TokenBookViewer,
+  patch: {
+    title?: string;
+    objective?: string;
+    status?: string;
+    reward_split_policy?: Record<string, unknown>;
+    escalation_policy?: Record<string, unknown>;
+    live_status?: Record<string, unknown>;
+  },
+) {
+  requireViewerAgentId(viewer, "Updating a coalition session");
+  const client = db();
+  const coalition = await getCoalition(coalitionId, viewer);
+  if (!coalition) return null;
+  const { data, error } = await client
+    .from("coalition_sessions")
+    .update({
+      ...(patch.title !== undefined ? { title: patch.title } : {}),
+      ...(patch.objective !== undefined ? { objective: patch.objective } : {}),
+      ...(patch.status !== undefined ? { status: patch.status } : {}),
+      ...(patch.reward_split_policy !== undefined ? { reward_split_policy: asJson(patch.reward_split_policy) } : {}),
+      ...(patch.escalation_policy !== undefined ? { escalation_policy: asJson(patch.escalation_policy) } : {}),
+      ...(patch.live_status !== undefined ? { live_status: asJson(patch.live_status) } : {}),
+    } as Tables["coalition_sessions"]["Update"])
+    .eq("id", coalitionId)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as CoalitionSessionRecord;
+}
+
+export async function upsertCoalitionMembership(
+  coalitionId: string,
+  viewer: TokenBookViewer,
+  patch: {
+    status?: string;
+    role_slot?: string | null;
+    share_bps?: number | null;
+    reliability_note?: string | null;
+    metadata?: Record<string, unknown>;
+  },
+) {
+  const agentId = requireViewerAgentId(viewer, "Managing coalition membership");
+  const client = db();
+  const coalition = await getCoalition(coalitionId, viewer);
+  if (!coalition) return null;
+  const { data, error } = await client
+    .from("coalition_members")
+    .upsert(
+      {
+        coalition_session_id: coalitionId,
+        agent_id: agentId,
+        status: patch.status ?? "active",
+        role: patch.role_slot ?? "contributor",
+        contribution_summary: asJson({
+          share_bps: patch.share_bps ?? 0,
+          reliability_note: patch.reliability_note ?? null,
+          ...(patch.metadata ?? {}),
+        }),
+      },
+      { onConflict: "coalition_session_id,agent_id" },
+    )
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as CoalitionMemberRecord;
+}
+
+export async function getAgentRequest(requestId: string, viewer: TokenBookViewer | null): Promise<AgentRequestView | null> {
+  const client = db();
+  const context = await listVisibleContext(viewer);
+  const { data, error } = await client.from("agent_requests").select("*").eq("id", requestId).maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  if (!context.visibleMountainIds.has(data.mountain_id)) return null;
+  const actors = await loadActors([data.requested_by_agent_id, data.target_agent_id], []);
+  return requestView(context, actors, data as AgentRequestRecord);
+}
+
+export async function updateAgentRequest(
+  requestId: string,
+  viewer: TokenBookViewer,
+  patch: {
+    status?: string;
+    urgency?: string;
+    role_needed?: string | null;
+    target_agent_id?: string | null;
+    freeform_note?: string | null;
+    reward_context?: Record<string, unknown>;
+    capability_requirements?: Record<string, unknown>;
+    expires_at?: string | null;
+  },
+) {
+  requireViewerAgentId(viewer, "Updating a structured request");
+  const client = db();
+  const existing = await getAgentRequest(requestId, viewer);
+  if (!existing) return null;
+  const { data, error } = await client
+    .from("agent_requests")
+    .update({
+      ...(patch.status !== undefined ? { status: patch.status } : {}),
+      ...(patch.urgency !== undefined ? { urgency: patch.urgency } : {}),
+      ...(patch.role_needed !== undefined ? { role_needed: patch.role_needed } : {}),
+      ...(patch.target_agent_id !== undefined ? { target_agent_id: patch.target_agent_id } : {}),
+      ...(patch.freeform_note !== undefined ? { freeform_note: patch.freeform_note } : {}),
+      ...(patch.reward_context !== undefined ? { reward_context: asJson(patch.reward_context) } : {}),
+      ...(patch.capability_requirements !== undefined ? { capability_requirements: asJson(patch.capability_requirements) } : {}),
+      ...(patch.expires_at !== undefined ? { expires_at: patch.expires_at } : {}),
+    } as Tables["agent_requests"]["Update"])
+    .eq("id", requestId)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as AgentRequestRecord;
+}
+
+export async function getReplicationCall(replicationCallId: string, viewer: TokenBookViewer | null): Promise<ReplicationCallView | null> {
+  const client = db();
+  const context = await listVisibleContext(viewer);
+  const { data, error } = await client.from("replication_calls").select("*").eq("id", replicationCallId).maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  if (!context.visibleMountainIds.has(data.mountain_id)) return null;
+  return {
+    id: data.id,
+    title: data.title,
+    summary: data.summary,
+    urgency: String(data.urgency),
+    status: data.status,
+    reward_credits: toNumber(data.reward_credits),
+    domain_tags: data.domain_tags ?? [],
+    visibility: toVisibility(data.visibility),
+    mountain: mountainRef(context, data.mountain_id),
+    contradiction_cluster_id: data.contradiction_cluster_id,
+    deliverable_id: data.deliverable_id,
+    verification_run_id: data.verification_run_id,
+    created_at: data.created_at,
+    expires_at: data.expires_at,
+  };
+}
+
+export async function updateReplicationCall(
+  replicationCallId: string,
+  viewer: TokenBookViewer,
+  patch: {
+    status?: string;
+    urgency?: string | number;
+    reward_credits?: number | string;
+    summary?: string;
+    expires_at?: string | null;
+  },
+) {
+  requireViewerAgentId(viewer, "Updating a replication call");
+  const client = db();
+  const existing = await getReplicationCall(replicationCallId, viewer);
+  if (!existing) return null;
+  const { data, error } = await client
+    .from("replication_calls")
+    .update({
+      ...(patch.status !== undefined ? { status: patch.status } : {}),
+      ...(patch.urgency !== undefined
+        ? { urgency: typeof patch.urgency === "number" ? String(Math.round(patch.urgency)) : String(patch.urgency) }
+        : {}),
+      ...(patch.reward_credits !== undefined ? { reward_credits: String(patch.reward_credits) } : {}),
+      ...(patch.summary !== undefined ? { summary: patch.summary } : {}),
+      ...(patch.expires_at !== undefined ? { expires_at: patch.expires_at } : {}),
+    })
+    .eq("id", replicationCallId)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as ReplicationCallRecord;
+}
+
+export async function getContradictionCluster(
+  contradictionId: string,
+  viewer: TokenBookViewer | null,
+): Promise<ContradictionClusterView | null> {
+  const client = db();
+  const context = await listVisibleContext(viewer);
+  const { data, error } = await client.from("contradiction_clusters").select("*").eq("id", contradictionId).maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  if (!context.visibleMountainIds.has(data.mountain_id)) return null;
+  return {
+    id: data.id,
+    title: data.title,
+    summary: data.summary,
+    severity: String(data.severity),
+    status: data.status,
+    linked_deliverable_ids: data.linked_deliverable_ids ?? [],
+    linked_verification_run_ids: data.linked_verification_run_ids ?? [],
+    mountain: mountainRef(context, data.mountain_id),
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+  };
+}
+
+export async function updateContradictionCluster(
+  contradictionId: string,
+  viewer: TokenBookViewer,
+  patch: {
+    status?: string;
+    severity?: string | number;
+    summary?: string;
+    adjudication_notes?: Record<string, unknown>;
+    linked_deliverable_ids?: string[];
+    linked_verification_run_ids?: string[];
+  },
+) {
+  requireViewerAgentId(viewer, "Updating a contradiction cluster");
+  const client = db();
+  const existing = await getContradictionCluster(contradictionId, viewer);
+  if (!existing) return null;
+  const { data, error } = await client
+    .from("contradiction_clusters")
+    .update({
+      ...(patch.status !== undefined ? { status: patch.status } : {}),
+      ...(patch.severity !== undefined
+        ? { severity: typeof patch.severity === "number" ? String(Math.round(patch.severity)) : String(patch.severity) }
+        : {}),
+      ...(patch.summary !== undefined ? { summary: patch.summary } : {}),
+      ...(patch.adjudication_notes !== undefined ? { adjudication_notes: asJson(patch.adjudication_notes) } : {}),
+      ...(patch.linked_deliverable_ids !== undefined ? { linked_deliverable_ids: patch.linked_deliverable_ids } : {}),
+      ...(patch.linked_verification_run_ids !== undefined
+        ? { linked_verification_run_ids: patch.linked_verification_run_ids }
+        : {}),
+    } as Tables["contradiction_clusters"]["Update"])
+    .eq("id", contradictionId)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as ContradictionClusterRecord;
+}
+
+export async function getMethodCard(methodId: string, viewer: TokenBookViewer | null): Promise<MethodCardView | null> {
+  const client = db();
+  const context = await listVisibleContext(viewer);
+  const { data, error } = await client.from("method_cards").select("*").eq("id", methodId).maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  if (data.mountain_id && !context.visibleMountainIds.has(data.mountain_id)) return null;
+  const actors = await loadActors([data.originating_agent_id], []);
+  return {
+    id: data.id,
+    title: data.title,
+    summary: data.summary,
+    body: data.body,
+    domain_tags: data.domain_tags ?? [],
+    role_tags: data.role_tags ?? [],
+    reuse_count: toNumber(data.reuse_count),
+    usefulness_score: toNumber(data.usefulness_score),
+    status: data.status,
+    visibility: toVisibility(data.visibility),
+    mountain: mountainRef(context, data.mountain_id),
+    author: actorFromMaps(actors.agents, actors.accounts, data.originating_agent_id, null),
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    stats: {
+      ...toJsonObject(data.outcome_summary),
+      linked_deliverable_ids: data.linked_deliverable_ids ?? [],
+      linked_verification_run_ids: data.linked_verification_run_ids ?? [],
+    },
+  };
+}
+
+export async function updateMethodCard(
+  methodId: string,
+  viewer: TokenBookViewer,
+  patch: {
+    title?: string;
+    summary?: string;
+    body?: string;
+    status?: string;
+    reuse_count?: number | string;
+    usefulness_score?: number | string;
+    outcome_summary?: Record<string, unknown>;
+    linked_deliverable_ids?: string[];
+    linked_verification_run_ids?: string[];
+  },
+) {
+  requireViewerAgentId(viewer, "Updating a method card");
+  const client = db();
+  const existing = await getMethodCard(methodId, viewer);
+  if (!existing) return null;
+  const { data, error } = await client
+    .from("method_cards")
+    .update({
+      ...(patch.title !== undefined ? { title: patch.title } : {}),
+      ...(patch.summary !== undefined ? { summary: patch.summary } : {}),
+      ...(patch.body !== undefined ? { body: patch.body } : {}),
+      ...(patch.status !== undefined ? { status: patch.status } : {}),
+      ...(patch.reuse_count !== undefined ? { reuse_count: String(patch.reuse_count) } : {}),
+      ...(patch.usefulness_score !== undefined ? { usefulness_score: String(patch.usefulness_score) } : {}),
+      ...(patch.outcome_summary !== undefined ? { outcome_summary: asJson(patch.outcome_summary) } : {}),
+      ...(patch.linked_deliverable_ids !== undefined ? { linked_deliverable_ids: patch.linked_deliverable_ids } : {}),
+      ...(patch.linked_verification_run_ids !== undefined
+        ? { linked_verification_run_ids: patch.linked_verification_run_ids }
+        : {}),
+    } as Tables["method_cards"]["Update"])
+    .eq("id", methodId)
+    .select("*")
+    .single();
+  if (error) throw error;
   return data as MethodCardRecord;
 }
 

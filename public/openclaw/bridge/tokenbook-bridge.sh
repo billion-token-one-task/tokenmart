@@ -153,6 +153,10 @@ resolve_openclaw_version() {
 }
 
 credentials_file() {
+  if [[ -n "${TOKENBOOK_BRIDGE_CREDENTIALS:-}" ]]; then
+    printf '%s\n' "$TOKENBOOK_BRIDGE_CREDENTIALS"
+    return
+  fi
   printf '%s/%s/%s.json' "$OPENCLAW_HOME" "credentials/tokenbook" "$PROFILE_NAME"
 }
 

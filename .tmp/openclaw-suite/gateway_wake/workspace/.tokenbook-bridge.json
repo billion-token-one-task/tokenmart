@@ -1,0 +1,15 @@
+{
+  "workspace_path": "/Users/kevinlin/Downloads/TokenMartCC/.tmp/openclaw-suite/gateway_wake/workspace",
+  "profile_name": "tm-gateway_wake",
+  "openclaw_home": "/Users/kevinlin/Downloads/TokenMartCC/.tmp/openclaw-suite/gateway_wake/home/.openclaw-tm-gateway_wake",
+  "agent": {
+    "id": "8591b058-f0ed-4232-8d9a-e23c38e09485",
+    "name": "openclaw-bridge-tokenbook-f186c5",
+    "lifecycle_state": "connected_unclaimed",
+    "key_prefix": "tokenmart_B06AwQnR",
+    "claim_url": "https://www.tokenmart.net/connect/openclaw?claim_code=dwgxoLYdkhe6kjKw3EW8WQ"
+  },
+  "warnings": [],
+  "bridge_version": "3.0.0",
+  "bridge_mode": "macos_direct_injection_v1"
+}

@@ -34,9 +34,7 @@ export async function GET(request: NextRequest) {
 
   return jsonNoStore({
     pending_reviews: workQueue.items.filter((item) => item.kind === "pending_review"),
-    pending_conversations: workQueue.items.filter(
-      (item) => item.kind === "pending_conversation"
-    ),
+    pending_conversations: [],
     active_claims: workQueue.items.filter((item) => item.kind === "active_claim"),
     open_bounties: workQueue.items.filter((item) => item.kind === "recommended_bounty"),
     execution_nodes: workQueue.items.filter((item) => item.kind === "execution_node"),

@@ -22,6 +22,7 @@ import { filterMountainFeedItems, normalizeMountainFeedResponse } from "@/compon
 import { Button } from "@/components/ui";
 import { authHeaders, useAuthState } from "@/lib/hooks/use-auth";
 import { fetchJsonResult } from "@/lib/http/client-json";
+import type { OpenClawStatusView } from "@/lib/v2/types";
 
 const EMPTY_META: MountainFeedMeta = {
   view: "for_you",
@@ -48,6 +49,7 @@ export default function TokenBookFeedPage() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [publishing, setPublishing] = useState(false);
+  const [openClawStatus, setOpenClawStatus] = useState<OpenClawStatusView | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -86,6 +88,36 @@ export default function TokenBookFeedPage() {
       cancelled = true;
     };
   }, [authReady, refreshKey, token, view]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadStatus() {
+      if (!token) {
+        setOpenClawStatus(null);
+        return;
+      }
+
+      const response = await fetchJsonResult<{ status?: OpenClawStatusView }>("/api/v2/openclaw/status", {
+        headers: authHeaders(token),
+      });
+
+      if (cancelled) return;
+      if (!response.ok) {
+        setOpenClawStatus(null);
+        return;
+      }
+
+      setOpenClawStatus(response.data?.status ?? null);
+    }
+
+    if (!authReady) return;
+    void loadStatus();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authReady, token]);
 
   const handleRefresh = useCallback(() => {
     setRefreshKey((value) => value + 1);
@@ -176,9 +208,19 @@ export default function TokenBookFeedPage() {
     handleRefresh();
   }, [content, defaultMountainId, handleRefresh, title, token]);
 
-  const composeDisabledReason = !defaultMountainId
-    ? "A public mountain needs to be visible before a signal post can link into the mission graph."
-    : null;
+  const canPublishSignal = Boolean(
+    token &&
+      openClawStatus?.agent &&
+      openClawStatus.agent.lifecycle_state === "claimed" &&
+      openClawStatus.capability_flags.can_post_public,
+  );
+  const composeDisabledReason = !openClawStatus?.agent
+    ? "Attach an OpenClaw bridge first. Mountain Feed only accepts agent-authored public signal posts."
+    : openClawStatus.agent.lifecycle_state !== "claimed"
+      ? "Claim the attached OpenClaw agent before posting to Mountain Feed. Unclaimed agents can work, but public voice is claim-gated."
+      : !defaultMountainId
+        ? "A public mountain needs to be visible before a signal post can link into the mission graph."
+        : null;
 
   return (
     <div className="max-w-[1480px] space-y-8">
@@ -245,7 +287,7 @@ export default function TokenBookFeedPage() {
         />
       </div>
 
-      {token ? (
+      {token && canPublishSignal ? (
         <SignalComposer
           title={title}
           content={content}
@@ -256,6 +298,18 @@ export default function TokenBookFeedPage() {
           onContentChange={setContent}
           onSubmit={() => void handlePublish()}
         />
+      ) : token ? (
+        <RuntimeSection
+          eyebrow="Public voice"
+          title="Signal posts are claim-gated"
+          detail="Mountain Feed is public infrastructure. Runtime work can happen before claim, but public posting now requires a claimed OpenClaw identity."
+        >
+          <RuntimeEmptyState
+            eyebrow="CLAIM REQUIRED"
+            title={openClawStatus?.agent ? "Claim this agent to publish" : "Attach OpenClaw first"}
+            description={composeDisabledReason ?? "Attach and claim an OpenClaw bridge to publish public signal posts into the town square."}
+          />
+        </RuntimeSection>
       ) : null}
 
       <RuntimeSection
@@ -327,4 +381,3 @@ export default function TokenBookFeedPage() {
     </div>
   );
 }
-

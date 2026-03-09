@@ -7,14 +7,12 @@ import { ensureAccountWallet, ensureAgentWallet } from "@/lib/tokenhall/wallets"
 import { getAgentLifecycleRecord, lifecycleCapabilityFlags, type AgentLifecycleState } from "@/lib/auth/agent-lifecycle";
 import { getAgentRuntime } from "@/lib/v2/runtime";
 import {
-  V2_HEARTBEAT_ROOT_FILE,
   V2_OPENCLAW_INJECTOR_PATH,
   V2_OPENCLAW_CLAIM_ENDPOINT,
   V2_OPENCLAW_CLAIM_STATUS_ENDPOINT,
   V2_OPENCLAW_IDENTITY_FILE,
   V2_OPENCLAW_REGISTER_ENDPOINT,
   V2_OPENCLAW_REKEY_ENDPOINT,
-  V2_RUNTIME_INSTALL_PATH,
   V2_RUNTIME_PRIMARY_QUEUE_ENDPOINT,
   V3_OPENCLAW_BRIDGE_ATTACH_ENDPOINT,
   V3_OPENCLAW_BRIDGE_COMMAND,
@@ -184,73 +182,11 @@ function isMissingOpenClawBridgeTableError(error: { code?: string | null; messag
   return error?.code === "PGRST205" || message.includes("openclaw_bridge_instances");
 }
 
-function buildFallbackBridgeInstance(
-  patch: {
-    agent_id: string;
-    workspace_fingerprint: string;
-    bridge_mode: string;
-    bridge_version: string;
-    profile_name: string;
-    workspace_path: string;
-    openclaw_home: string;
-    openclaw_version: string | null;
-    platform: string;
-    cron_health: string;
-    hook_health: string;
-    runtime_online: boolean;
-    last_attach_at: string;
-    last_pulse_at: string | null;
-    last_self_check_at: string | null;
-    last_manifest_version: string | null;
-    last_manifest_checksum: string | null;
-    local_asset_path: string | null;
-    local_asset_checksum: string | null;
-    update_available: boolean;
-    update_required: boolean;
-    last_update_at: string | null;
-    last_update_error: string | null;
-    metadata: Json;
-    updated_at: string;
-  },
-): OpenClawBridgeInstanceRow {
-  const syntheticId = [
-    "fallback",
-    patch.agent_id,
-    patch.workspace_fingerprint,
-    patch.profile_name,
-  ]
-    .join(":")
-    .slice(0, 190);
-
-  return {
-    id: syntheticId,
-    agent_id: patch.agent_id,
-    workspace_fingerprint: patch.workspace_fingerprint,
-    bridge_mode: patch.bridge_mode,
-    bridge_version: patch.bridge_version,
-    profile_name: patch.profile_name,
-    workspace_path: patch.workspace_path,
-    openclaw_home: patch.openclaw_home,
-    openclaw_version: patch.openclaw_version,
-    platform: patch.platform,
-    cron_health: patch.cron_health,
-    hook_health: patch.hook_health,
-    runtime_online: patch.runtime_online,
-    last_attach_at: patch.last_attach_at,
-    last_pulse_at: patch.last_pulse_at,
-    last_self_check_at: patch.last_self_check_at,
-    last_manifest_version: patch.last_manifest_version,
-    last_manifest_checksum: patch.last_manifest_checksum,
-    local_asset_path: patch.local_asset_path,
-    local_asset_checksum: patch.local_asset_checksum,
-    update_available: patch.update_available,
-    update_required: patch.update_required,
-    last_update_at: patch.last_update_at,
-    last_update_error: patch.last_update_error,
-    metadata: (patch.metadata as Record<string, unknown>) ?? null,
-    created_at: patch.last_attach_at,
-    updated_at: patch.updated_at,
-  };
+function assertBridgeSchemaAvailable(error: { code?: string | null; message?: string | null } | null | undefined) {
+  if (!isMissingOpenClawBridgeTableError(error)) return;
+  throw new Error(
+    "OpenClaw bridge schema is unavailable. Apply the latest Supabase migrations before using bridge attach, status, or self-check routes.",
+  );
 }
 
 function slugifySegment(value: string | null | undefined) {
@@ -392,6 +328,14 @@ function buildBridgeDiagnostics(bridge: OpenClawBridgeStatusView | null, runtime
     hooks_registered: Boolean(bridge?.hook_health && bridge.hook_health !== "missing"),
     cron_registered: Boolean(bridge?.cron_health && bridge.cron_health !== "missing"),
     runtime_reachable: runtimeReachable,
+    pulse_recent: false,
+    self_check_recent: false,
+    challenge_fresh: false,
+    manifest_drift: Boolean(
+      bridge?.bridge_version &&
+        bridge?.last_manifest_version &&
+        bridge.bridge_version !== bridge.last_manifest_version,
+    ),
     last_error: bridge?.last_update_error
       ?? (bridge?.rekey_required
         ? "The local TokenBook bridge needs a claimed-owner rekey before runtime work can resume."
@@ -405,15 +349,11 @@ function buildInstallCommands(apiKey: string): OpenClawInstallCommands {
     env: `export TOKENMART_API_KEY="${apiKey}"`,
     injector: injectorCommand,
     workspace_install: [
-      "# Canonical injector path",
+      "# Canonical human path",
       injectorCommand,
       "",
-      "# Compatibility-only manual path",
-      `mkdir -p ${V2_RUNTIME_INSTALL_PATH}`,
-      `curl -fsSL ${SKILL_URL} > ${V2_RUNTIME_INSTALL_PATH}/SKILL.md`,
-      `curl -fsSL ${SKILL_JSON_URL} > ${V2_RUNTIME_INSTALL_PATH}/package.json`,
-      `curl -fsSL ${HEARTBEAT_URL} > ${V2_RUNTIME_INSTALL_PATH}/HEARTBEAT.md`,
-      `curl -fsSL ${HEARTBEAT_URL} > ${V2_HEARTBEAT_ROOT_FILE}`,
+      "# Compatibility exports still exist, but they are recovery references now.",
+      "# Read /docs/runtime/injector if you need the full backend and local-file contract.",
     ].join("\n"),
   };
 }
@@ -604,7 +544,8 @@ async function loadBridgeInstanceByAgentId(
     query = query.eq("workspace_fingerprint", options.workspaceFingerprint.trim());
   }
 
-  const { data } = await query.limit(1).maybeSingle();
+  const { data, error } = await query.limit(1).maybeSingle();
+  assertBridgeSchemaAvailable(error);
 
   return (data as OpenClawBridgeInstanceRow | null) ?? null;
 }
@@ -645,7 +586,8 @@ async function upsertBridgeInstance(
     .eq("profile_name", normalizeProfileName(input.profileName))
     .maybeSingle();
 
-  const safeExisting = isMissingOpenClawBridgeTableError(existingError) ? null : existing;
+  assertBridgeSchemaAvailable(existingError);
+  const safeExisting = existing;
 
   const patch = {
     agent_id: input.agentId,
@@ -690,9 +632,7 @@ async function upsertBridgeInstance(
     .single();
 
   if (error || !data) {
-    if (isMissingOpenClawBridgeTableError(error)) {
-      return buildFallbackBridgeInstance(patch);
-    }
+    assertBridgeSchemaAvailable(error);
     throw new Error(error?.message || "Failed to persist OpenClaw bridge instance state");
   }
 
@@ -737,7 +677,7 @@ async function getRuntimeMode(agentId: string, db: AdminClient) {
 
   return {
     runtime_mode: data?.runtime_mode ?? null,
-    challenge_capable: (data?.challenge_sample_count ?? 0) >= 0,
+    challenge_capable: Number(data?.challenge_sample_count ?? 0) > 0,
   };
 }
 
@@ -1271,7 +1211,25 @@ export async function getOpenClawStatus(input: {
     heartbeatAt ? Date.now() - heartbeatAt.getTime() < 10 * 60 * 1000 : false;
   const lifecycleState = (lifecycleRecord?.lifecycle_state ?? selected.lifecycle_state) as AgentLifecycleState;
   const bridge = buildBridgeStatus(bridgeInstance);
-  const diagnostics = buildBridgeDiagnostics(bridge, heartbeatRecent);
+  const pulseRecent = bridge?.last_pulse_at
+    ? Date.now() - new Date(bridge.last_pulse_at).getTime() < 10 * 60 * 1000
+    : false;
+  const selfCheckRecent = bridge?.last_self_check_at
+    ? Date.now() - new Date(bridge.last_self_check_at).getTime() < 15 * 60 * 1000
+    : false;
+  const runtimeReachable = Boolean(
+    bridge?.runtime_online &&
+      pulseRecent &&
+      selfCheckRecent &&
+      daemonInfo.runtime_mode &&
+      daemonInfo.challenge_capable,
+  );
+  const diagnostics = {
+    ...buildBridgeDiagnostics(bridge, runtimeReachable),
+    pulse_recent: pulseRecent,
+    self_check_recent: selfCheckRecent,
+    challenge_fresh: daemonInfo.challenge_capable,
+  };
 
   return {
     connected: true,
@@ -1282,8 +1240,8 @@ export async function getOpenClawStatus(input: {
       connected_at: selected.connected_at,
       claimed_at: selected.claimed_at,
     },
-    runtime_online: heartbeatRecent,
-    first_success_ready: heartbeatRecent,
+    runtime_online: runtimeReachable,
+    first_success_ready: runtimeReachable && heartbeatRecent,
     install_validator: {
       api_key_present: true,
       heartbeat_recent: heartbeatRecent,

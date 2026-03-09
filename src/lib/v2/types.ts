@@ -478,6 +478,10 @@ export interface OpenClawStatusView {
     hooks_registered: boolean;
     cron_registered: boolean;
     runtime_reachable: boolean;
+    pulse_recent: boolean;
+    self_check_recent: boolean;
+    challenge_fresh: boolean;
+    manifest_drift: boolean;
     last_error: string | null;
   };
   bridge: OpenClawBridgeStatusView | null;

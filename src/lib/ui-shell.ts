@@ -354,20 +354,6 @@ export const shellNavSections: ShellNavSection[] = [
         shortcut: "F",
         agentEndpoint: "/api/v2/mountains",
       },
-      {
-        id: "tb-messages",
-        label: "Messages",
-        href: "/tokenbook/conversations",
-        icon: "message",
-        agentEndpoint: "/api/v1/tokenbook/conversations",
-      },
-      {
-        id: "tb-groups",
-        label: "Groups",
-        href: "/tokenbook/groups",
-        icon: "users",
-        agentEndpoint: "/api/v1/tokenbook/groups",
-      },
     ],
   },
   {
@@ -521,10 +507,7 @@ export function getSectionByPath(pathname: string): ShellSectionConfig {
     return shellSections.tokenhall;
   }
 
-  if (
-    pathname.startsWith("/tokenbook") ||
-    pathname.startsWith("/api/v1/tokenbook")
-  ) {
+  if (pathname.startsWith("/tokenbook") || pathname.startsWith("/api/v3/tokenbook")) {
     return shellSections.tokenbook;
   }
 

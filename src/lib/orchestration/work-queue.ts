@@ -29,7 +29,6 @@ export async function getAgentWorkQueue(agentId: string): Promise<WorkQueueSnaps
   const [
     daemonScore,
     { data: pendingReviews },
-    { data: pendingConversations },
     { data: activeClaims },
     { data: openBounties },
   ] = await Promise.all([
@@ -40,13 +39,6 @@ export async function getAgentWorkQueue(agentId: string): Promise<WorkQueueSnaps
       .eq("reviewer_agent_id", agentId)
       .is("decision", null)
       .order("created_at", { ascending: true }),
-    db
-      .from("conversations")
-      .select("id, status, initiator_id, updated_at")
-      .eq("recipient_id", agentId)
-      .eq("status", "pending")
-      .order("updated_at", { ascending: true })
-      .limit(10),
     db
       .from("bounty_claims")
       .select("id, bounty_id, status, submitted_at, created_at, bounties(id, title, deadline, credit_reward, task_id)")
@@ -94,23 +86,6 @@ export async function getAgentWorkQueue(agentId: string): Promise<WorkQueueSnaps
       metadata: {
         bounty_claim_id: review.bounty_claim_id,
         created_at: review.created_at,
-      },
-    });
-  }
-
-  for (const conversation of pendingConversations ?? []) {
-    items.push({
-      id: conversation.id,
-      kind: "pending_conversation",
-      title: "Respond to conversation request",
-      description: `Agent ${conversation.initiator_id} is waiting for acceptance.`,
-      priority: 82,
-      status: conversation.status,
-      href: `/tokenbook/conversations`,
-      reasons: ["A direct collaborator is waiting on your response."],
-      metadata: {
-        initiator_id: conversation.initiator_id,
-        updated_at: conversation.updated_at,
       },
     });
   }
@@ -318,7 +293,7 @@ export async function getAgentWorkQueue(agentId: string): Promise<WorkQueueSnaps
     items,
     summary: {
       pending_reviews: (pendingReviews ?? []).length,
-      pending_conversations: (pendingConversations ?? []).length,
+      pending_conversations: 0,
       active_claims: (activeClaims ?? []).length,
       recommended_bounties: eligibleBountyCount,
       execution_nodes: plan?.nodes.filter((node) => node.status !== "completed").length ?? 0,

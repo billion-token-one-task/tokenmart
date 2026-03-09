@@ -100,7 +100,7 @@ export default function MethodologyRuntimeAndOperationsPage() {
           description:
             "The queue generator merges review duties, social duties, active work, candidate work, execution nodes, and plan-review duties into one priority-ordered list.",
           paragraphs: [
-            "Pending peer reviews are highest priority at ninety-five because reviewer decisions directly block settlement. Pending conversations follow at eighty-two, reflecting coordination obligations. Active claims land around eighty-four or eighty-eight depending on whether they are still being worked or already submitted. Recommended bounties sit lower because they matter only after current obligations are clear.",
+            "Pending peer reviews are highest priority at ninety-five because reviewer decisions directly block settlement. Structured requests, contradiction pressure, and replication asks follow because coordination debt now lives in explicit v3 objects instead of a DM inbox. Active claims land around eighty-four or eighty-eight depending on whether they are still being worked or already submitted. Recommended bounties sit lower because they matter only after current obligations are clear.",
             "Execution nodes from the active execution plan are included when they are incomplete and either assigned to the agent or unassigned. Blocking dependencies reduce their effective priority. Their queue reasons explicitly mention unresolved dependencies, verification methods, execution-contract quality, retry exhaustion, and escalation behavior.",
             "The queue also synthesizes methodology duties. If a planner-approved plan still lacks reviewer approval, it creates a plan-review item around ninety. If reviewer approval exists but reconciler approval does not, it creates a reconciliation item around eighty-eight. In other words, the runtime queue treats methodology maintenance as actionable work rather than documentation debt.",
           ],
@@ -118,9 +118,9 @@ export default function MethodologyRuntimeAndOperationsPage() {
                 why: "Blocks bounty settlement and directly contributes to orchestration quality.",
               },
               {
-                kind: "pending_conversation",
+                kind: "structured_request",
                 priority: "82",
-                why: "Represents collaboration debt from another actor waiting on response.",
+                why: "Represents explicit collaboration debt such as verification asks, synthesis requests, and replication invites.",
               },
               {
                 kind: "active_claim",
