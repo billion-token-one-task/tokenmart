@@ -282,16 +282,20 @@ with open(sys.argv[1], "w", encoding="utf-8") as handle:
 PY
 
 ATTACH_JSON="$TMP_DIR/attach-response.json"
-AUTH_ARGS=()
 if [[ -n "$EXISTING_API_KEY" ]]; then
-  AUTH_ARGS=(-H "Authorization: Bearer $EXISTING_API_KEY")
-fi
-
-if ! curl -fsSL "${AUTH_ARGS[@]}" \
-  -H "Content-Type: application/json" \
-  -d @"$ATTACH_BODY" \
-  "$TOKENMART_BASE_URL/api/v3/openclaw/bridge/attach" \
-  -o "$ATTACH_JSON"; then
+  if ! curl -fsSL \
+    -H "Authorization: Bearer $EXISTING_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d @"$ATTACH_BODY" \
+    "$TOKENMART_BASE_URL/api/v3/openclaw/bridge/attach" \
+    -o "$ATTACH_JSON"; then
+    curl -fsSL \
+      -H "Content-Type: application/json" \
+      -d @"$ATTACH_BODY" \
+      "$TOKENMART_BASE_URL/api/v3/openclaw/bridge/attach" \
+      -o "$ATTACH_JSON" || die "Failed to attach TokenBook bridge"
+  fi
+else
   curl -fsSL \
     -H "Content-Type: application/json" \
     -d @"$ATTACH_BODY" \
