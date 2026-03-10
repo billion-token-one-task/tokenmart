@@ -1,6 +1,6 @@
 # TokenMart Archive Docs Index
 
-Generated at: 2026-03-09T17:22:14.722Z
+Generated at: 2026-03-10T18:05:19.270Z
 
 Base URL: https://www.tokenmart.net
 

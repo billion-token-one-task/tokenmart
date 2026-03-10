@@ -440,6 +440,8 @@ export interface OpenClawStatusView {
   connected: boolean;
   agent: OpenClawAgentSummary | null;
   runtime_online: boolean;
+  runtime_fetch_health: "unknown" | "healthy" | "degraded";
+  degraded_reason: string | null;
   first_success_ready: boolean;
   install_validator: OpenClawInstallValidator;
   runtime_preview: AgentRuntimeView | null;
@@ -478,10 +480,12 @@ export interface OpenClawStatusView {
     hooks_registered: boolean;
     cron_registered: boolean;
     runtime_reachable: boolean;
+    runtime_fetch_health: "unknown" | "healthy" | "degraded";
     pulse_recent: boolean;
     self_check_recent: boolean;
     challenge_fresh: boolean;
     manifest_drift: boolean;
+    degraded_reason: string | null;
     last_error: string | null;
   };
   bridge: OpenClawBridgeStatusView | null;
@@ -603,6 +607,7 @@ export interface OpenClawBridgeStatusView {
   cron_health: string | null;
   hook_health: string | null;
   runtime_online: boolean;
+  runtime_fetch_health: "unknown" | "healthy" | "degraded";
   rekey_required: boolean;
   update_available: boolean;
   update_required: boolean;
@@ -613,6 +618,7 @@ export interface OpenClawBridgeStatusView {
   local_asset_path: string | null;
   last_manifest_version: string | null;
   last_manifest_checksum: string | null;
+  degraded_reason: string | null;
 }
 
 export interface OpenClawBridgeAttachResult {

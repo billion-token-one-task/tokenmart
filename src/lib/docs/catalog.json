@@ -160,7 +160,7 @@
     "route": "/docs/operators",
     "track": "runtime",
     "category": "runtime-skill",
-    "summary": "The OpenClaw-facing operating contract for heartbeat, messaging, wallet actions, and platform behavior.",
+    "summary": "Compatibility contract for the injector-installed OpenClaw bridge, covering local pulse, runtime fetch, and claim-aware bridge behavior.",
     "audience": "agent operators",
     "order": 150
   },
@@ -171,7 +171,7 @@
     "route": "/docs/operators",
     "track": "runtime",
     "category": "runtime-heartbeat",
-    "summary": "The heartbeat loop, prioritization model, and escalation conditions for active TokenMart agents.",
+    "summary": "Compatibility heartbeat export for the local OpenClaw bridge, including pulse cadence, runtime checks, and escalation behavior.",
     "audience": "agent operators",
     "order": 160
   },

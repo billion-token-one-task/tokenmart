@@ -295,6 +295,12 @@ function buildBridgeStatus(instance: OpenClawBridgeInstanceRow | null): OpenClaw
     ?? (typeof metadata.last_update_error === "string" ? metadata.last_update_error : null);
   const lastUpdateOutcome =
     typeof metadata.last_update_outcome === "string" ? metadata.last_update_outcome : null;
+  const runtimeFetchHealth =
+    metadata.runtime_fetch_health === "healthy" || metadata.runtime_fetch_health === "degraded"
+      ? metadata.runtime_fetch_health
+      : "unknown";
+  const degradedReason =
+    typeof metadata.degraded_reason === "string" ? metadata.degraded_reason : null;
   return {
     bridge_mode: instance.bridge_mode,
     bridge_version: instance.bridge_version,
@@ -308,6 +314,7 @@ function buildBridgeStatus(instance: OpenClawBridgeInstanceRow | null): OpenClaw
     cron_health: instance.cron_health,
     hook_health: instance.hook_health,
     runtime_online: instance.runtime_online,
+    runtime_fetch_health: runtimeFetchHealth,
     rekey_required: Boolean(metadata.rekey_required),
     update_available: instance.update_available || metadata.update_available === true,
     update_required: instance.update_required || metadata.update_required === true,
@@ -318,6 +325,7 @@ function buildBridgeStatus(instance: OpenClawBridgeInstanceRow | null): OpenClaw
     local_asset_path: localAssetPath,
     last_manifest_version: instance.last_manifest_version,
     last_manifest_checksum: instance.last_manifest_checksum,
+    degraded_reason: degradedReason,
   };
 }
 
@@ -328,6 +336,7 @@ function buildBridgeDiagnostics(bridge: OpenClawBridgeStatusView | null, runtime
     hooks_registered: Boolean(bridge?.hook_health && bridge.hook_health !== "missing"),
     cron_registered: Boolean(bridge?.cron_health && bridge.cron_health !== "missing"),
     runtime_reachable: runtimeReachable,
+    runtime_fetch_health: bridge?.runtime_fetch_health ?? "unknown",
     pulse_recent: false,
     self_check_recent: false,
     challenge_fresh: false,
@@ -336,7 +345,9 @@ function buildBridgeDiagnostics(bridge: OpenClawBridgeStatusView | null, runtime
         bridge?.last_manifest_version &&
         bridge.bridge_version !== bridge.last_manifest_version,
     ),
+    degraded_reason: bridge?.degraded_reason ?? null,
     last_error: bridge?.last_update_error
+      ?? bridge?.degraded_reason
       ?? (bridge?.rekey_required
         ? "The local TokenBook bridge needs a claimed-owner rekey before runtime work can resume."
         : null),
@@ -727,6 +738,7 @@ function buildDisconnectedStatus(): OpenClawStatusView {
     cron_health: null,
     hook_health: null,
     rekey_required: false,
+    runtime_fetch_health: "unknown",
     update_available: false,
     update_required: false,
     last_update_at: null,
@@ -736,6 +748,7 @@ function buildDisconnectedStatus(): OpenClawStatusView {
     local_asset_path: null,
     last_manifest_version: null,
     last_manifest_checksum: null,
+    degraded_reason: null,
     diagnostics: buildBridgeDiagnostics(bridge, false),
     bridge,
   };
@@ -1219,6 +1232,7 @@ export async function getOpenClawStatus(input: {
     : false;
   const runtimeReachable = Boolean(
     bridge?.runtime_online &&
+      bridge.runtime_fetch_health === "healthy" &&
       pulseRecent &&
       selfCheckRecent &&
       daemonInfo.runtime_mode &&
@@ -1270,6 +1284,7 @@ export async function getOpenClawStatus(input: {
     cron_health: bridge?.cron_health ?? null,
     hook_health: bridge?.hook_health ?? null,
     rekey_required: bridge?.rekey_required ?? false,
+    runtime_fetch_health: bridge?.runtime_fetch_health ?? "unknown",
     update_available: bridge?.update_available ?? false,
     update_required: bridge?.update_required ?? false,
     last_update_at: bridge?.last_update_at ?? null,
@@ -1279,6 +1294,7 @@ export async function getOpenClawStatus(input: {
     local_asset_path: bridge?.local_asset_path ?? null,
     last_manifest_version: bridge?.last_manifest_version ?? null,
     last_manifest_checksum: bridge?.last_manifest_checksum ?? null,
+    degraded_reason: bridge?.degraded_reason ?? null,
     diagnostics,
     bridge,
   };

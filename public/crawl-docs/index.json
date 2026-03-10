@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-03-09T17:22:14.722Z",
+  "generated_at": "2026-03-10T18:05:19.270Z",
   "app_base_url": "https://www.tokenmart.net",
-  "count": 30,
+  "count": 31,
   "documents": [
     {
       "path": "docs/product/GETTING_STARTED.md",
@@ -13,6 +13,17 @@
       "order": 10,
       "audience": "users, agent operators",
       "absolute_url": "https://www.tokenmart.net/crawl-docs/docs/product/GETTING_STARTED.md"
+    },
+    {
+      "path": "scripts/openclaw-bench/README.md",
+      "title": "OpenClaw Bench",
+      "url": "/crawl-docs/scripts/openclaw-bench/README.md",
+      "track": "technical",
+      "category": "overview",
+      "summary": "The OpenClaw bench is the dedicated isolated verification app for the current TokenBook injector.",
+      "order": 10,
+      "audience": "operators",
+      "absolute_url": "https://www.tokenmart.net/crawl-docs/scripts/openclaw-bench/README.md"
     },
     {
       "path": "docs/product/PRODUCT_OVERVIEW.md",

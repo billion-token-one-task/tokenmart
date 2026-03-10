@@ -73,6 +73,19 @@ compute_sha256() {
   die "Need shasum, sha256sum, or openssl to compute a workspace fingerprint"
 }
 
+make_temp_dir() {
+  local prefix="$1"
+  python3 - "$prefix" "${TMPDIR:-/tmp}" <<'PY'
+import os
+import sys
+import tempfile
+
+prefix, base_dir = sys.argv[1:3]
+os.makedirs(base_dir, exist_ok=True)
+print(tempfile.mkdtemp(prefix=prefix, dir=base_dir))
+PY
+}
+
 parse_common_options() {
   COMMAND="${1:-}"
   [[ -n "$COMMAND" ]] || {
@@ -296,8 +309,8 @@ PY
 attach_impl() {
   ensure_dirs
   local tmp_dir payload_file response_file
-  tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/tokenbook-bridge-attach.XXXXXX")"
-  trap '[[ -n "${tmp_dir:-}" ]] && rm -rf "$tmp_dir"' RETURN
+  tmp_dir="$(make_temp_dir "tokenbook-bridge-attach.")"
+  trap '[[ -n "${tmp_dir:-}" ]] && rm -rf "$tmp_dir"; [[ -n "${runtime_stderr_file:-}" ]] && rm -f "$runtime_stderr_file"; [[ -n "${runtime_status_file:-}" ]] && rm -f "$runtime_status_file"' RETURN
   payload_file="$tmp_dir/payload.json"
   response_file="$tmp_dir/response.json"
 
@@ -441,7 +454,7 @@ status_impl() {
   eval "$env_vars"
 
   local tmp_dir response_file
-  tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/tokenbook-bridge-status.XXXXXX")"
+  tmp_dir="$(make_temp_dir "tokenbook-bridge-status.")"
   trap '[[ -n "${tmp_dir:-}" ]] && rm -rf "$tmp_dir"' RETURN
   response_file="$tmp_dir/status.json"
 
@@ -504,7 +517,7 @@ claim_status_impl() {
 
   local url="$TOKENMART_BASE_URL/api/v2/openclaw/claim-status?claim_code=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$claim_code")"
   local tmp_dir response_file
-  tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/tokenbook-bridge-claim.XXXXXX")"
+  tmp_dir="$(make_temp_dir "tokenbook-bridge-claim.")"
   trap '[[ -n "${tmp_dir:-}" ]] && rm -rf "$tmp_dir"' RETURN
   response_file="$tmp_dir/claim.json"
   curl -fsSL "$url" -o "$response_file"
@@ -536,6 +549,9 @@ report_self_check() {
   local last_update_at="${7:-}"
   local last_update_error="${8:-}"
   local last_update_outcome="${9:-}"
+  local runtime_fetch_health="${10:-unknown}"
+  local degraded_reason="${11:-}"
+  local challenge_fresh="${12:-false}"
   local env_vars
   env_vars="$(read_credentials_env 2>/dev/null || true)"
   if [[ -z "$env_vars" ]]; then
@@ -565,7 +581,10 @@ report_self_check() {
     "$update_required" \
     "$last_update_at" \
     "$last_update_error" \
-    "$last_update_outcome" <<'PY'
+    "$last_update_outcome" \
+    "$runtime_fetch_health" \
+    "$degraded_reason" \
+    "$challenge_fresh" <<'PY'
 import json
 import sys
 
@@ -588,7 +607,10 @@ import sys
     last_update_at,
     last_update_error,
     last_update_outcome,
-) = sys.argv[1:19]
+    runtime_fetch_health,
+    degraded_reason,
+    challenge_fresh,
+) = sys.argv[1:22]
 
 payload = {
     "workspace_path": workspace_path,
@@ -622,6 +644,9 @@ payload = {
         "last_update_at": last_update_at or None,
         "last_update_error": last_update_error or None,
         "last_update_outcome": last_update_outcome or None,
+        "runtime_fetch_health": runtime_fetch_health or "unknown",
+        "degraded_reason": degraded_reason or None,
+        "challenge_fresh": challenge_fresh == "true",
     },
 }
 with open(output_path, "w", encoding="utf-8") as handle:
@@ -642,18 +667,19 @@ pulse_impl() {
   local env_vars
   env_vars="$(read_credentials_env 2>/dev/null || true)"
   [[ -n "$env_vars" ]] || {
-    printf 'TokenBook bridge needs a human claim or rekey before it can pulse. [needs_human_input]\n'
+    printf 'ATTACH_REQUIRED::true [needs_human_input]\n'
     return 0
   }
   eval "$env_vars"
 
-  local tmp_dir heartbeat_file runtime_file challenge_env status_file
-  tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/tokenbook-bridge-pulse.XXXXXX")"
-  trap '[[ -n "${tmp_dir:-}" ]] && rm -rf "$tmp_dir"' RETURN
-  heartbeat_file="$tmp_dir/heartbeat.json"
-  runtime_file="$tmp_dir/runtime.json"
-  challenge_env="$tmp_dir/challenge.env"
-  status_file="$tmp_dir/status.json"
+  local heartbeat_file runtime_file challenge_env status_file runtime_stderr_file runtime_status_file
+  heartbeat_file="$(mktemp "${TMPDIR:-/tmp}/tokenbook-bridge-heartbeat.XXXXXX")"
+  runtime_file="$(mktemp "${TMPDIR:-/tmp}/tokenbook-bridge-runtime.XXXXXX")"
+  challenge_env="$(mktemp "${TMPDIR:-/tmp}/tokenbook-bridge-challenge.XXXXXX")"
+  status_file="$(mktemp "${TMPDIR:-/tmp}/tokenbook-bridge-status.XXXXXX")"
+  runtime_stderr_file="$(mktemp "${TMPDIR:-/tmp}/tokenbook-bridge-pulse-stderr.XXXXXX")"
+  runtime_status_file="$(mktemp "${TMPDIR:-/tmp}/tokenbook-bridge-pulse-status.XXXXXX")"
+  trap 'rm -f "${heartbeat_file:-}" "${runtime_file:-}" "${challenge_env:-}" "${status_file:-}" "${runtime_stderr_file:-}" "${runtime_status_file:-}"' RETURN
 
   if ! curl -fsSL \
     -X POST \
@@ -662,8 +688,8 @@ pulse_impl() {
     --data '{}' \
     "$TOKENMART_BASE_URL/api/v1/agents/heartbeat" \
     -o "$heartbeat_file"; then
-    report_self_check "false" "false"
-    printf 'TokenBook bridge heartbeat failed. Inspect the local gateway and credentials. [needs_human_input]\n'
+    report_self_check "false" "false" "" "" "false" "false" "" "" "heartbeat_failed" "degraded" "heartbeat_failed" "false"
+    printf 'HEARTBEAT::degraded::heartbeat_failed [needs_human_input]\n'
     return 0
   fi
 
@@ -681,24 +707,104 @@ print(f"CALLBACK_URL={shlex.quote(callback_url)}")
 PY
   source "$challenge_env"
 
+  local challenge_fresh="false"
   if [[ -n "${CALLBACK_URL:-}" ]]; then
-    curl -fsSL \
+    if curl -fsSL \
       -X POST \
       -H "Authorization: Bearer $API_KEY" \
       -H "Content-Type: application/json" \
       "$TOKENMART_BASE_URL${CALLBACK_URL}" \
-      >/dev/null || warn "TokenBook micro-challenge response failed"
+      >/dev/null; then
+      challenge_fresh="true"
+    else
+      warn "TokenBook micro-challenge response failed"
+    fi
   fi
 
   local runtime_fetch_ok="true"
+  local runtime_fetch_health="healthy"
+  local runtime_fetch_reason=""
   local runtime_fetch_error=""
-  if ! runtime_fetch_error="$(
-    curl -fsSL \
-      -H "Authorization: Bearer $API_KEY" \
-      "$TOKENMART_BASE_URL/api/v2/agents/me/runtime" \
-      -o "$runtime_file" 2>&1
-  )"; then
+  local runtime_http_status=""
+  local runtime_curl_exit=0
+  : >"$runtime_stderr_file"
+  : >"$runtime_status_file"
+  runtime_curl_exit=0
+  if ! python3 - \
+    "$TOKENMART_BASE_URL/api/v2/agents/me/runtime" \
+    "$API_KEY" \
+    "$runtime_file" \
+    "$runtime_status_file" \
+    "$runtime_stderr_file" <<'PY'
+import sys
+import urllib.error
+import urllib.request
+
+url, api_key, runtime_file, status_file, stderr_file = sys.argv[1:6]
+
+def write_text(path: str, value: str) -> None:
+    with open(path, "w", encoding="utf-8") as handle:
+        handle.write(value)
+
+try:
+    request = urllib.request.Request(url, headers={"Authorization": f"Bearer {api_key}"})
+    with urllib.request.urlopen(request, timeout=20) as response:
+        body = response.read()
+        with open(runtime_file, "wb") as handle:
+            handle.write(body)
+        write_text(status_file, str(response.getcode()))
+        write_text(stderr_file, "")
+except urllib.error.HTTPError as exc:
+    with open(runtime_file, "wb") as handle:
+        handle.write(exc.read())
+    write_text(status_file, str(exc.code))
+    write_text(stderr_file, str(exc))
+    raise SystemExit(1)
+except Exception as exc:  # noqa: BLE001
+    write_text(status_file, "000")
+    write_text(stderr_file, str(exc))
+    raise SystemExit(2)
+PY
+  then
+    runtime_curl_exit=$?
     runtime_fetch_ok="false"
+  fi
+  runtime_http_status="$(tr -d '\r\n' <"$runtime_status_file" 2>/dev/null || true)"
+  runtime_fetch_error="$(cat "$runtime_stderr_file" 2>/dev/null || true)"
+
+  if [[ "$runtime_fetch_ok" == "true" && "$runtime_http_status" != "200" ]]; then
+    runtime_fetch_ok="false"
+    runtime_fetch_health="degraded"
+    runtime_fetch_reason="http_${runtime_http_status:-unknown}"
+  fi
+  if [[ "$runtime_fetch_ok" == "true" && ! -s "$runtime_file" ]]; then
+    runtime_fetch_ok="false"
+    runtime_fetch_health="degraded"
+    runtime_fetch_reason="empty_body"
+  fi
+  if [[ "$runtime_fetch_ok" == "true" ]]; then
+    if ! python3 - "$runtime_file" >/dev/null <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], "r", encoding="utf-8") as handle:
+    json.load(handle)
+PY
+    then
+      runtime_fetch_ok="false"
+      runtime_fetch_health="degraded"
+      runtime_fetch_reason="invalid_json"
+    fi
+  fi
+  if [[ "$runtime_fetch_ok" != "true" && -z "$runtime_fetch_reason" ]]; then
+    runtime_fetch_health="degraded"
+    if [[ -n "$runtime_http_status" && "$runtime_http_status" != "000" ]]; then
+      runtime_fetch_reason="http_${runtime_http_status}"
+    elif [[ -n "$runtime_curl_exit" && "$runtime_curl_exit" -ne 0 ]]; then
+      runtime_fetch_reason="curl_${runtime_curl_exit}"
+    else
+      runtime_fetch_reason="runtime_fetch_failed"
+    fi
   fi
 
   curl -fsSL \
@@ -733,23 +839,23 @@ PY
       sleep 2
     done
     if [[ "$runtime_online_from_status" == "true" ]]; then
-      report_self_check "true" "true"
+      report_self_check "true" "true" "" "" "false" "false" "" "" "status_fallback" "degraded" "$runtime_fetch_reason" "$challenge_fresh"
       if [[ "$JSON_OUTPUT" == "true" ]]; then
         cat "$status_file"
       else
-        printf 'HEARTBEAT_OK\n'
+        printf 'RUNTIME_FETCH::degraded::%s\nHEARTBEAT_OK\n' "$runtime_fetch_reason"
       fi
       return 0
     fi
-    report_self_check "false" "false"
+    report_self_check "false" "false" "" "" "false" "false" "" "" "runtime_fetch_failed" "$runtime_fetch_health" "$runtime_fetch_reason" "$challenge_fresh"
     if [[ -n "$runtime_fetch_error" ]]; then
       warn "$runtime_fetch_error"
     fi
-    printf 'TokenBook runtime fetch failed after heartbeat. [needs_human_input]\n'
+    printf 'RUNTIME_FETCH::degraded::%s [needs_human_input]\n' "$runtime_fetch_reason"
     return 0
   fi
 
-  report_self_check "true" "true"
+  report_self_check "true" "true" "" "" "false" "false" "" "" "runtime_fetch_ok" "$runtime_fetch_health" "" "$challenge_fresh"
 
   python3 - "$runtime_file" "$status_file" <<'PY'
 import json
@@ -764,7 +870,7 @@ if status_path.exists() and status_path.read_text(encoding="utf-8").strip():
 
 bridge = status.get("bridge") or {}
 if bridge.get("rekey_required"):
-    print("TokenBook bridge requires a human rekey before runtime work can resume. [needs_human_input]")
+    print("REKEY_REQUIRED::true [needs_human_input]")
     raise SystemExit(0)
 
 sections = [
@@ -805,7 +911,7 @@ reconcile_impl() {
 
 self_update_impl() {
   local tmp_dir manifest_file asset_file current_path current_checksum
-  tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/tokenbook-bridge-update.XXXXXX")"
+  tmp_dir="$(make_temp_dir "tokenbook-bridge-update.")"
   trap '[[ -n "${tmp_dir:-}" ]] && rm -rf "$tmp_dir"' RETURN
   manifest_file="$tmp_dir/manifest.json"
   asset_file="$tmp_dir/tokenbook-bridge.sh"
@@ -822,6 +928,7 @@ import pathlib
 import shutil
 import sys
 import urllib.request
+from datetime import datetime, UTC
 
 manifest_path, asset_path, current_path, current_checksum = sys.argv[1:5]
 payload = json.loads(pathlib.Path(manifest_path).read_text(encoding="utf-8"))
@@ -840,7 +947,7 @@ if downloaded_checksum != expected_checksum:
         "update_required": True,
         "updated": False,
         "last_update_error": f"checksum mismatch: expected {expected_checksum}, got {downloaded_checksum}",
-        "last_update_at": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+        "last_update_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         "expected_checksum": expected_checksum,
         "current_checksum": current_checksum,
         "local_asset_path": current_path,
@@ -868,7 +975,7 @@ print(json.dumps({
     "update_required": False,
     "updated": updated,
     "last_update_error": None,
-    "last_update_at": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+    "last_update_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
     "expected_checksum": expected_checksum,
     "current_checksum": expected_checksum if updated else current_checksum,
     "local_asset_path": current_path,

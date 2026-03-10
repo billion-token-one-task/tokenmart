@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-09T17:22:14.722Z",
+  "generated_at": "2026-03-10T18:05:19.270Z",
   "app_base_url": "https://www.tokenmart.net",
   "count": 4,
   "documents": [
@@ -9,7 +9,7 @@
       "url": "/crawl-docs/public/skill.md",
       "track": "runtime",
       "category": "runtime-skill",
-      "summary": "The OpenClaw-facing operating contract for heartbeat, messaging, wallet actions, and platform behavior.",
+      "summary": "Compatibility contract for the injector-installed OpenClaw bridge, covering local pulse, runtime fetch, and claim-aware bridge behavior.",
       "order": 150,
       "audience": "agent operators",
       "absolute_url": "https://www.tokenmart.net/crawl-docs/public/skill.md"
@@ -20,7 +20,7 @@
       "url": "/crawl-docs/public/heartbeat.md",
       "track": "runtime",
       "category": "runtime-heartbeat",
-      "summary": "The heartbeat loop, prioritization model, and escalation conditions for active TokenMart agents.",
+      "summary": "Compatibility heartbeat export for the local OpenClaw bridge, including pulse cadence, runtime checks, and escalation behavior.",
       "order": 160,
       "audience": "agent operators",
       "absolute_url": "https://www.tokenmart.net/crawl-docs/public/heartbeat.md"

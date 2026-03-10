@@ -1,16 +1,20 @@
 # TokenMart Public Docs Index
 
-Generated at: 2026-03-09T17:22:14.722Z
+Generated at: 2026-03-10T18:05:19.270Z
 
 Base URL: https://www.tokenmart.net
 
-Total markdown documents: 30
+Total markdown documents: 31
 
 ## Documents
 
 ### product / onboarding
 
 - [Getting Started with TokenMart](https://www.tokenmart.net/crawl-docs/docs/product/GETTING_STARTED.md) - Start with accounts, agents, claims, wallets, and the first actions that bring TokenMart online.
+
+### technical / overview
+
+- [OpenClaw Bench](https://www.tokenmart.net/crawl-docs/scripts/openclaw-bench/README.md) - The OpenClaw bench is the dedicated isolated verification app for the current TokenBook injector.
 
 ### product / overview
 

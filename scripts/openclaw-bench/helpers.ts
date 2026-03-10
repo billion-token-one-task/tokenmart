@@ -22,6 +22,11 @@ export interface BridgeBenchServer {
   close(): Promise<void>;
 }
 
+export interface BridgeFixtureOptions {
+  runtimeResponseMode?: "healthy" | "http_500" | "invalid_json" | "empty_body";
+  statusRuntimeOnline?: boolean;
+}
+
 export interface FakeOpenClawEnv {
   binDir: string;
   logPath: string;
@@ -80,7 +85,9 @@ interface AttachPayload {
   bridge_version?: string;
 }
 
-export async function createBridgeFixtureServer(): Promise<BridgeBenchServer> {
+export async function createBridgeFixtureServer(
+  options: BridgeFixtureOptions = {},
+): Promise<BridgeBenchServer> {
   const injectorText = await readFile(
     path.join(process.cwd(), "public", "openclaw", "inject.sh"),
     "utf8",
@@ -243,6 +250,18 @@ export async function createBridgeFixtureServer(): Promise<BridgeBenchServer> {
 
     if (request.method === "GET" && requestUrl.pathname === "/api/v2/agents/me/runtime") {
       runtimeCalls += 1;
+      if (options.runtimeResponseMode === "http_500") {
+        respondJson(response, 500, { error: { code: 500, message: "bench runtime failure" } });
+        return;
+      }
+      if (options.runtimeResponseMode === "invalid_json") {
+        respondText(response, 200, "{invalid json");
+        return;
+      }
+      if (options.runtimeResponseMode === "empty_body") {
+        respondText(response, 200, "");
+        return;
+      }
       respondJson(response, 200, {
         current_assignments: [
           {
@@ -282,7 +301,7 @@ export async function createBridgeFixtureServer(): Promise<BridgeBenchServer> {
               lifecycle_state: "connected_unclaimed",
             }
           : null,
-        runtime_online: true,
+        runtime_online: options.statusRuntimeOnline ?? true,
         first_success_ready: true,
         install_validator: {
           api_key_present: true,
@@ -332,12 +351,31 @@ export async function createBridgeFixtureServer(): Promise<BridgeBenchServer> {
           credentials_present: true,
           hooks_registered: true,
           cron_registered: true,
-          runtime_reachable: true,
+          runtime_reachable: options.statusRuntimeOnline ?? true,
+          runtime_fetch_health:
+            options.runtimeResponseMode && options.runtimeResponseMode !== "healthy"
+              ? "degraded"
+              : "healthy",
           pulse_recent: true,
           self_check_recent: true,
           challenge_fresh: false,
           manifest_drift: false,
-          last_error: null,
+          degraded_reason:
+            options.runtimeResponseMode === "http_500"
+              ? "http_500"
+              : options.runtimeResponseMode === "invalid_json"
+                ? "invalid_json"
+                : options.runtimeResponseMode === "empty_body"
+                  ? "empty_body"
+                  : null,
+          last_error:
+            options.runtimeResponseMode === "http_500"
+              ? "http_500"
+              : options.runtimeResponseMode === "invalid_json"
+                ? "invalid_json"
+                : options.runtimeResponseMode === "empty_body"
+                  ? "empty_body"
+                  : null,
         },
         bridge: {
           bridge_mode: "macos_direct_injection_v1",
@@ -351,7 +389,11 @@ export async function createBridgeFixtureServer(): Promise<BridgeBenchServer> {
           last_self_check_at: new Date().toISOString(),
           cron_health: "healthy",
           hook_health: "healthy",
-          runtime_online: true,
+          runtime_online: options.statusRuntimeOnline ?? true,
+          runtime_fetch_health:
+            options.runtimeResponseMode && options.runtimeResponseMode !== "healthy"
+              ? "degraded"
+              : "healthy",
           rekey_required: false,
           update_available: false,
           update_required: false,
@@ -362,6 +404,14 @@ export async function createBridgeFixtureServer(): Promise<BridgeBenchServer> {
           local_asset_path: "/bench/home/.openclaw/bin/tokenbook-bridge",
           last_manifest_version: "3.0.0",
           last_manifest_checksum: bridgeChecksum,
+          degraded_reason:
+            options.runtimeResponseMode === "http_500"
+              ? "http_500"
+              : options.runtimeResponseMode === "invalid_json"
+                ? "invalid_json"
+                : options.runtimeResponseMode === "empty_body"
+                  ? "empty_body"
+                  : null,
         },
       });
       return;
@@ -529,6 +579,7 @@ exit 0
     configPath,
     env: {
       HOME: homeDir,
+      NODE_ENV: "test" as const,
       OPENCLAW_HOME: openclawHome,
       OPENCLAW_PROFILE: profileName,
       NO_PROXY: "127.0.0.1,localhost",
@@ -540,7 +591,7 @@ exit 0
       https_proxy: "",
       all_proxy: "",
       PATH: `${binDir}:${process.env.PATH ?? ""}`,
-    },
+    } satisfies NodeJS.ProcessEnv,
     fake: {
       binDir,
       logPath,
@@ -577,7 +628,7 @@ export async function runOneLineInjector(options: {
   return await runProcess(
     "bash",
     [
-      "-lc",
+      "-c",
       'curl -fsSL "$TOKENMART_BENCH_URL/openclaw/inject.sh" | bash',
     ],
     {
@@ -597,7 +648,7 @@ export async function runBridgeCommand(options: {
   env: NodeJS.ProcessEnv;
   args: string[];
 }) {
-  return await runProcess("bash", ["-lc", `~/.openclaw/bin/tokenbook-bridge ${options.args.join(" ")}`], {
+  return await runProcess("bash", ["-c", `~/.openclaw/bin/tokenbook-bridge ${options.args.join(" ")}`], {
     cwd: options.workspaceDir,
     env: {
       ...process.env,

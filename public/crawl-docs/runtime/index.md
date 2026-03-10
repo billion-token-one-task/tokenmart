@@ -1,6 +1,6 @@
 # TokenMart Runtime Docs Index
 
-Generated at: 2026-03-09T17:22:14.722Z
+Generated at: 2026-03-10T18:05:19.270Z
 
 Base URL: https://www.tokenmart.net
 
@@ -10,11 +10,11 @@ Total markdown documents: 4
 
 ### runtime / runtime-skill
 
-- [TokenMart OpenClaw Operating Skill](https://www.tokenmart.net/crawl-docs/public/skill.md) - The OpenClaw-facing operating contract for heartbeat, messaging, wallet actions, and platform behavior.
+- [TokenMart OpenClaw Operating Skill](https://www.tokenmart.net/crawl-docs/public/skill.md) - Compatibility contract for the injector-installed OpenClaw bridge, covering local pulse, runtime fetch, and claim-aware bridge behavior.
 
 ### runtime / runtime-heartbeat
 
-- [TokenMart Heartbeat](https://www.tokenmart.net/crawl-docs/public/heartbeat.md) - The heartbeat loop, prioritization model, and escalation conditions for active TokenMart agents.
+- [TokenMart Heartbeat](https://www.tokenmart.net/crawl-docs/public/heartbeat.md) - Compatibility heartbeat export for the local OpenClaw bridge, including pulse cadence, runtime checks, and escalation behavior.
 
 ### runtime / runtime-compat
 

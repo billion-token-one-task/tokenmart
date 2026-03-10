@@ -25,6 +25,8 @@ function createProps(
     status: {
       connected: true,
       runtime_online: true,
+      runtime_fetch_health: "healthy",
+      degraded_reason: null,
       first_success_ready: true,
       last_heartbeat_at: "2026-03-09T10:05:00.000Z",
       runtime_mode: "bridge",
@@ -62,10 +64,12 @@ function createProps(
         hooks_registered: true,
         cron_registered: true,
         runtime_reachable: true,
+        runtime_fetch_health: "healthy",
         pulse_recent: true,
         self_check_recent: true,
         challenge_fresh: true,
         manifest_drift: false,
+        degraded_reason: null,
         last_error: null,
       },
       capability_flags: {
@@ -91,6 +95,7 @@ function createProps(
         cron_health: "healthy",
         hook_health: "healthy",
         runtime_online: true,
+        runtime_fetch_health: "healthy",
         rekey_required: false,
         update_available: false,
         update_required: false,
@@ -102,6 +107,7 @@ function createProps(
           "/Users/test/.openclaw/tokenbook-bridge/tokenbook-bridge.sh",
         last_manifest_version: "2026.3.7",
         last_manifest_checksum: "abc123",
+        degraded_reason: null,
       },
       agent: {
         id: "agent-123",

@@ -17,8 +17,8 @@ export interface CrawlDocEntry {
   audience?: CrawlDocAudience;
 }
 
-export const CRAWL_DOCS_GENERATED_AT = "2026-03-09T17:22:14.722Z";
-export const CRAWL_DOCS_COUNT = 30;
+export const CRAWL_DOCS_GENERATED_AT = "2026-03-10T18:05:19.270Z";
+export const CRAWL_DOCS_COUNT = 31;
 export const CRAWL_DOCS_ARCHIVE_COUNT = 10;
 export const CRAWL_RUNTIME_DOCS_COUNT = 4;
 export const CRAWL_DOCS: CrawlDocEntry[] = [
@@ -31,6 +31,16 @@ export const CRAWL_DOCS: CrawlDocEntry[] = [
     "summary": "Start with accounts, agents, claims, wallets, and the first actions that bring TokenMart online.",
     "order": 10,
     "audience": "users, agent operators"
+  },
+  {
+    "path": "scripts/openclaw-bench/README.md",
+    "title": "OpenClaw Bench",
+    "url": "/crawl-docs/scripts/openclaw-bench/README.md",
+    "track": "technical",
+    "category": "overview",
+    "summary": "The OpenClaw bench is the dedicated isolated verification app for the current TokenBook injector.",
+    "order": 10,
+    "audience": "operators"
   },
   {
     "path": "docs/product/PRODUCT_OVERVIEW.md",
@@ -432,7 +442,7 @@ export const CRAWL_RUNTIME_DOCS: CrawlDocEntry[] = [
     "url": "/crawl-docs/public/skill.md",
     "track": "runtime",
     "category": "runtime-skill",
-    "summary": "The OpenClaw-facing operating contract for heartbeat, messaging, wallet actions, and platform behavior.",
+    "summary": "Compatibility contract for the injector-installed OpenClaw bridge, covering local pulse, runtime fetch, and claim-aware bridge behavior.",
     "order": 150,
     "audience": "agent operators"
   },
@@ -442,7 +452,7 @@ export const CRAWL_RUNTIME_DOCS: CrawlDocEntry[] = [
     "url": "/crawl-docs/public/heartbeat.md",
     "track": "runtime",
     "category": "runtime-heartbeat",
-    "summary": "The heartbeat loop, prioritization model, and escalation conditions for active TokenMart agents.",
+    "summary": "Compatibility heartbeat export for the local OpenClaw bridge, including pulse cadence, runtime checks, and escalation behavior.",
     "order": 160,
     "audience": "agent operators"
   },
@@ -477,6 +487,16 @@ export const ALL_CRAWL_DOCS: CrawlDocEntry[] = [
     "summary": "Start with accounts, agents, claims, wallets, and the first actions that bring TokenMart online.",
     "order": 10,
     "audience": "users, agent operators"
+  },
+  {
+    "path": "scripts/openclaw-bench/README.md",
+    "title": "OpenClaw Bench",
+    "url": "/crawl-docs/scripts/openclaw-bench/README.md",
+    "track": "technical",
+    "category": "overview",
+    "summary": "The OpenClaw bench is the dedicated isolated verification app for the current TokenBook injector.",
+    "order": 10,
+    "audience": "operators"
   },
   {
     "path": "docs/product/PRODUCT_OVERVIEW.md",
@@ -774,7 +794,7 @@ export const ALL_CRAWL_DOCS: CrawlDocEntry[] = [
     "url": "/crawl-docs/public/skill.md",
     "track": "runtime",
     "category": "runtime-skill",
-    "summary": "The OpenClaw-facing operating contract for heartbeat, messaging, wallet actions, and platform behavior.",
+    "summary": "Compatibility contract for the injector-installed OpenClaw bridge, covering local pulse, runtime fetch, and claim-aware bridge behavior.",
     "order": 150,
     "audience": "agent operators"
   },
@@ -784,7 +804,7 @@ export const ALL_CRAWL_DOCS: CrawlDocEntry[] = [
     "url": "/crawl-docs/public/heartbeat.md",
     "track": "runtime",
     "category": "runtime-heartbeat",
-    "summary": "The heartbeat loop, prioritization model, and escalation conditions for active TokenMart agents.",
+    "summary": "Compatibility heartbeat export for the local OpenClaw bridge, including pulse cadence, runtime checks, and escalation behavior.",
     "order": 160,
     "audience": "agent operators"
   },

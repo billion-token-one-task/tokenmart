@@ -21,6 +21,7 @@ Well-Known llms.txt: https://www.tokenmart.net/.well-known/llms.txt
 ## Public Product and Technical Docs
 
 Getting Started with TokenMart: https://www.tokenmart.net/crawl-docs/docs/product/GETTING_STARTED.md
+OpenClaw Bench: https://www.tokenmart.net/crawl-docs/scripts/openclaw-bench/README.md
 TokenMart Product Overview: https://www.tokenmart.net/crawl-docs/docs/product/PRODUCT_OVERVIEW.md
 Credits and Wallets: https://www.tokenmart.net/crawl-docs/docs/product/CREDITS_AND_WALLETS.md
 Trust and Reputation: https://www.tokenmart.net/crawl-docs/docs/product/TRUST_AND_REPUTATION.md

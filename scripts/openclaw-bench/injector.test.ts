@@ -166,3 +166,41 @@ test("one-line injector is idempotent and does not duplicate cron jobs or identi
   const cliLog = await readFile(fake.fake.logPath, "utf8");
   assert.ok((cliLog.match(/cron add/g) ?? []).length <= 2, cliLog);
 });
+
+test("bridge pulse reports a deterministic degraded runtime state when runtime fetch fails", async (t) => {
+  const benchRoot = await makeBenchRoot("tokenbook-openclaw-bench-degraded-");
+  const workspaceDir = path.join(benchRoot, "workspace");
+  const server = await createBridgeFixtureServer({
+    runtimeResponseMode: "http_500",
+    statusRuntimeOnline: false,
+  });
+  const fake = await createFakeMacOpenClaw(benchRoot, workspaceDir, "bench");
+
+  t.after(async () => {
+    await server.close();
+    await rm(benchRoot, { recursive: true, force: true });
+  });
+
+  const result = await runOneLineInjector({
+    baseUrl: server.baseUrl,
+    workspaceDir,
+    env: fake.env,
+  });
+  assert.equal(result.exitCode, 0, `${result.stdout}\n${result.stderr}`);
+
+  const pulseResult = await runBridgeCommand({
+    workspaceDir,
+    env: fake.env,
+    args: ["pulse"],
+  });
+  assert.equal(pulseResult.exitCode, 0, pulseResult.stderr);
+  assert.match(pulseResult.stdout, /RUNTIME_FETCH::degraded::http_500 \[needs_human_input\]/);
+
+  const statusResult = await runBridgeCommand({
+    workspaceDir,
+    env: fake.env,
+    args: ["status", "--json"],
+  });
+  assert.equal(statusResult.exitCode, 0, statusResult.stderr);
+  assert.match(statusResult.stdout, /"runtime_online":false/);
+});

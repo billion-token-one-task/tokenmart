@@ -74,3 +74,12 @@ test("injector doc explains the bridge backend contract in detail", () => {
     injectorDoc?.sections.some((section) => section.id === "backend-verification-checklist"),
   );
 });
+
+test("openclaw bench doc exists as a first-class runtime page", () => {
+  const benchDoc = humanDocPages.find((page) => page.route === "/docs/runtime/openclaw-bench");
+
+  assert.ok(benchDoc);
+  assert.ok(
+    benchDoc?.sections.some((section) => section.id === "how-to-run"),
+  );
+});
