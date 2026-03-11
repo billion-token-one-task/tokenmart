@@ -15,6 +15,9 @@ export async function GET(request: NextRequest) {
     return jsonNoStore(status);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load claim status";
-    return jsonNoStore({ error: { code: 500, message } }, { status: 500 });
+    const normalized = message.toLowerCase();
+    const status =
+      normalized.includes("invalid claim code") ? 404 : 500;
+    return jsonNoStore({ error: { code: status, message } }, { status });
   }
 }

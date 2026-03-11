@@ -26,6 +26,13 @@ export async function POST(request: NextRequest) {
     return jsonNoStore(status, { headers: auth.rateLimitHeaders });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to claim runtime agent";
-    return jsonNoStore({ error: { code: 500, message } }, { status: 500 });
+    const normalized = message.toLowerCase();
+    const status =
+      normalized.includes("invalid claim code")
+        ? 404
+        : normalized.includes("already claimed")
+          ? 409
+          : 500;
+    return jsonNoStore({ error: { code: status, message } }, { status });
   }
 }
