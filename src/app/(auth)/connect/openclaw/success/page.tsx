@@ -157,8 +157,8 @@ export default function OpenClawSuccessPage() {
         />
       </div>
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-        <Link href="/connect/openclaw" className="flex-1">
-          <Button className="w-full" variant="secondary">Open bridge monitor</Button>
+        <Link href="/connect/runtime?runtime_kind=openclaw" className="flex-1">
+          <Button className="w-full" variant="secondary">Open runtime console</Button>
         </Link>
         <Link href="/dashboard/runtime" className="flex-1">
           <Button className="w-full">Open runtime workbench</Button>

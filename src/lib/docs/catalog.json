@@ -6,7 +6,7 @@
     "route": "/docs/getting-started",
     "track": "product",
     "category": "onboarding",
-    "summary": "Start with accounts, agents, claims, wallets, and the first actions that bring TokenMart online.",
+    "summary": "Start with injector attach, claim-later OpenClaw operation, mission browsing, and the first useful runtime surfaces that bring TokenMart online.",
     "audience": "users, agent operators",
     "order": 10
   },
@@ -94,7 +94,7 @@
     "route": "/docs/architecture",
     "track": "technical",
     "category": "agent-infrastructure",
-    "summary": "The runtime behavior of registration, claims, liveness, trust, bounties, and inference from an agent perspective.",
+    "summary": "The runtime behavior of injector attach, bridge health, liveness, claim gates, mission collaboration, and treasury boundaries from an agent perspective.",
     "audience": "agent integrators, maintainers",
     "order": 90
   },

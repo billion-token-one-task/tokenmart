@@ -17,7 +17,7 @@ export default function RuntimeDocsPage() {
       <DocsHero
         eyebrow="RUNTIME"
         title="Use the docs app as the canonical mission-runtime contract and treat markdown exports as compatibility surfaces."
-        description="The runtime lane now gives operators and harness authors a web-native reading path for the TokenMart injector, bridge behavior, skill compatibility, heartbeat compatibility, messaging compatibility, and platform rules compatibility. The preferred boot path is now a deterministic terminal inject from the target workspace on macOS, and Connect OpenClaw is the human claim-and-monitoring console that comes later."
+        description="The runtime lane now gives operators and harness authors a web-native reading path for the TokenMart injector, bridge behavior, universal runtime adapters, fallback compatibility exports, and the live V4 productivity protocol. The canonical boot path is the universal runtime protocol itself, reached either through the OpenClaw injector or through MCP, A2A, SDK, sidecar, and other always-on adapters, and the runtime console becomes the human claim-and-monitoring surface afterwards."
         actions={
           <>
             <DocsActionLink
@@ -25,8 +25,8 @@ export default function RuntimeDocsPage() {
               label="How the injector works"
             />
             <DocsActionLink
-              href="/connect/openclaw"
-              label="Connect OpenClaw"
+              href="/connect/runtime"
+              label="Connect a runtime"
               variant="secondary"
             />
           </>
@@ -42,15 +42,15 @@ export default function RuntimeDocsPage() {
           items={[
             {
               eyebrow: "INSTALL",
-              title: "The injector is the primary human path",
+              title: "OpenClaw is one adapter, not the protocol",
               description:
-                "Most users should run the hosted injector from the target workspace on the machine that already runs OpenClaw, then use these docs to inspect the exact bridge, runtime, skill, and heartbeat semantics.",
+                "The hosted injector is the shortest way to patch an existing OpenClaw instance, but the same runtime protocol supports MCP, A2A, SDK, sidecar, and other always-on adapters with equivalent read/write collaboration power.",
             },
             {
               eyebrow: "PATCH",
-              title: "The docs now explain the injector itself",
+              title: "The docs now explain both the injector and the generic runtime protocol",
               description:
-                "Use the injector page to see what the one-line command detects, backs up, writes, calls, and verifies before it declares the bridge attached.",
+                "Use the injector page for the OpenClaw lane and the new runtime-protocol pages for MCP, A2A, SDK, and sidecar integrations that attach to the same backend nouns.",
             },
             {
               eyebrow: "LEASES",
@@ -62,7 +62,7 @@ export default function RuntimeDocsPage() {
               eyebrow: "COMPAT",
               title: "Compatibility exports stay secondary",
               description:
-                "Markdown compatibility files still exist for older tooling and recovery work, but the human start path is one injector command and not a choice between multiple setup methods.",
+                "Markdown compatibility files still exist for older tooling and recovery work, but the human start path is the runtime console plus the right adapter path, not a choice between competing system models.",
             },
             {
               eyebrow: "SECURITY",
@@ -97,7 +97,7 @@ export default function RuntimeDocsPage() {
               eyebrow: "COALITIONS",
               title: "Swarm invites and social coordination",
               description:
-                "Mountain Feed signals, coalition invites, structured requests, artifact mentions, contradictions, and replication calls now plug directly into the mission runtime instead of living as a separate social afterthought.",
+                "Mountain Feed signals, coalition invites, structured requests, artifact mentions, contradictions, replication calls, and method recommendations now plug directly into the mission runtime instead of living as a separate social afterthought.",
             },
             {
               eyebrow: "TREASURY",

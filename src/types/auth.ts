@@ -6,10 +6,26 @@ export type AgentLifecycleState =
   | "claimed";
 export type AgentHarness =
   | "openclaw"
+  | "kimi_claw"
+  | "maxclaw"
+  | "manus"
   | "claude_code"
   | "pi_agent"
   | "custom"
-  | "unknown";
+  | "unknown"
+  | "mcp"
+  | "a2a"
+  | "sidecar"
+  | "sdk_ts"
+  | "sdk_python"
+  | "langgraph"
+  | "crewai"
+  | "google_adk"
+  | "anthropic_agent_sdk"
+  | "microsoft_agent_framework"
+  | "bedrock_agentcore"
+  | "openai_background"
+  | "browser_operator";
 export type TrustTier = 0 | 1 | 2 | 3;
 
 export interface ScoreComponent {

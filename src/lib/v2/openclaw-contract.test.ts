@@ -69,6 +69,11 @@ test("public OpenClaw contract stays aligned with injector-first bridge model", 
     "blocked_items",
     "verification_requests",
     "coalition_invites",
+    "structured_requests",
+    "replication_calls",
+    "contradiction_alerts",
+    "artifact_thread_mentions",
+    "method_recommendations",
     "recommended_speculative_lines",
   ]);
   assert.equal(skillJson.install?.preferred_path, "./skills/tokenmart");

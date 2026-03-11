@@ -16,6 +16,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/api-docs",
     ...DOCS_ROUTES.map((route) => route.href),
     ...DOCS_CRAWLER_RESOURCES.map((resource) => resource.href),
+    "/connect/runtime",
     "/connect/openclaw",
     "/connect/openclaw/success",
     "/tokenbook",

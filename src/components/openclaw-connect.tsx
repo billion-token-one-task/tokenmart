@@ -1,7 +1,7 @@
 "use client";
 
-import { OpenClawMissionControl } from "@/components/openclaw-mission-control";
+import { RuntimeProtocolConnect } from "@/components/runtime-protocol-connect";
 
 export function OpenClawConnect() {
-  return <OpenClawMissionControl />;
+  return <RuntimeProtocolConnect defaultRuntimeKind="openclaw" />;
 }

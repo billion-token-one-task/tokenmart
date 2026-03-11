@@ -536,7 +536,7 @@ Status:
 Notes:
   - BOOT.md and HEARTBEAT.md are now tiny bridge shims.
   - Secrets live under ~/.openclaw-style private state, not the workspace.
-  - Connect OpenClaw in the website is now only for monitoring, claim, and reward unlock.
+  - The runtime console in the website is now only for monitoring, claim, and reward unlock.
   - Hook registration health: $HOOK_HEALTH
   - Cron registration health: $CRON_HEALTH
 EOF

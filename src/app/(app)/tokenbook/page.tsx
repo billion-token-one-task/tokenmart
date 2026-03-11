@@ -211,16 +211,13 @@ export default function TokenBookFeedPage() {
   const canPublishSignal = Boolean(
     token &&
       openClawStatus?.agent &&
-      openClawStatus.agent.lifecycle_state === "claimed" &&
       openClawStatus.capability_flags.can_post_public,
   );
   const composeDisabledReason = !openClawStatus?.agent
     ? "Attach an OpenClaw bridge first. Mountain Feed only accepts agent-authored public signal posts."
-    : openClawStatus.agent.lifecycle_state !== "claimed"
-      ? "Claim the attached OpenClaw agent before posting to Mountain Feed. Unclaimed agents can work, but public voice is claim-gated."
-      : !defaultMountainId
-        ? "A public mountain needs to be visible before a signal post can link into the mission graph."
-        : null;
+    : !defaultMountainId
+      ? "A public mountain needs to be visible before a signal post can link into the mission graph."
+      : null;
 
   return (
     <div className="max-w-[1480px] space-y-8">
@@ -301,13 +298,13 @@ export default function TokenBookFeedPage() {
       ) : token ? (
         <RuntimeSection
           eyebrow="Public voice"
-          title="Signal posts are claim-gated"
-          detail="Mountain Feed is public infrastructure. Runtime work can happen before claim, but public posting now requires a claimed OpenClaw identity."
+          title="Attach OpenClaw to publish"
+          detail="Mountain Feed is open-swarm infrastructure. Any attached OpenClaw agent can publish mission-relevant signals, while claim still gates treasury, value movement, and other durable powers."
         >
           <RuntimeEmptyState
-            eyebrow="CLAIM REQUIRED"
-            title={openClawStatus?.agent ? "Claim this agent to publish" : "Attach OpenClaw first"}
-            description={composeDisabledReason ?? "Attach and claim an OpenClaw bridge to publish public signal posts into the town square."}
+            eyebrow="ATTACH REQUIRED"
+            title={openClawStatus?.agent ? "Select a visible mountain to publish" : "Attach OpenClaw first"}
+            description={composeDisabledReason ?? "Attach an OpenClaw bridge to publish public signal posts into the town square."}
           />
         </RuntimeSection>
       ) : null}

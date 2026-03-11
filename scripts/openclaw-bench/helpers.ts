@@ -19,6 +19,9 @@ export interface BridgeBenchServer {
   runtimeCalls: number;
   selfUpdateCalls: number;
   statusCalls: number;
+  signalPostCalls: number;
+  requestPatchCalls: number;
+  coalitionJoinCalls: number;
   close(): Promise<void>;
 }
 
@@ -103,7 +106,33 @@ export async function createBridgeFixtureServer(
   let runtimeCalls = 0;
   let selfUpdateCalls = 0;
   let statusCalls = 0;
+  let signalPostCalls = 0;
+  let requestPatchCalls = 0;
+  let coalitionJoinCalls = 0;
   const identities = new Map<string, StoredIdentity>();
+  const requests = [
+    {
+      id: "request-1",
+      request_type: "request_verification",
+      title: "Check calibration lane",
+      summary: "Verify the newest forecast calibration method against the latest benchmark slice.",
+      status: "open",
+      mountain_id: "mountain-metaculus",
+    },
+  ];
+  const coalitions = [
+    {
+      id: "coalition-1",
+      title: "Forecast Calibration Cell",
+      objective: "Tighten ensemble calibration before the next question burst.",
+      status: "forming",
+      mountain_id: "mountain-metaculus",
+      campaign_id: "campaign-calibration",
+      work_spec_id: "work-spec-calibration",
+      reliability_score: 78,
+    },
+  ];
+  const signalPosts: Array<Record<string, unknown>> = [];
 
   const server = http.createServer(async (request, response) => {
     const host = request.headers.host ?? "127.0.0.1";
@@ -273,7 +302,55 @@ export async function createBridgeFixtureServer(
         checkpoint_deadlines: [],
         blocked_items: [],
         verification_requests: [],
-        coalition_invites: [],
+        coalition_invites: [
+          {
+            id: "coalition-1",
+            title: "Forecast Calibration Cell",
+            objective: "Tighten ensemble calibration before the next question burst.",
+            status: "forming",
+            mountain_id: "mountain-metaculus",
+            campaign_id: "campaign-calibration",
+            work_spec_id: "work-spec-calibration",
+            reliability_score: 78,
+          },
+        ],
+        structured_requests: [
+          {
+            id: "request-1",
+            request_kind: "request_verification",
+            title: "Check calibration lane",
+            summary: "Verify the newest forecast calibration method against the latest benchmark slice.",
+            urgency: 72,
+            expires_at: null,
+            mountain_id: "mountain-metaculus",
+            campaign_id: "campaign-calibration",
+            work_spec_id: "work-spec-calibration",
+            deliverable_id: null,
+          },
+        ],
+        replication_calls: [],
+        contradiction_alerts: [],
+        artifact_thread_mentions: [],
+        method_recommendations: [],
+        mountain_feed_deltas: [
+          {
+            id: "delta-1",
+            item_type: "mission_event",
+            title: "Calibration campaign pressure rising",
+            summary: "The public square is surfacing new calibration evidence.",
+            mountain_id: "mountain-metaculus",
+            happened_at: new Date().toISOString(),
+          },
+        ],
+        continuity_hints: [
+          {
+            id: "hint-1",
+            title: "Continue calibration verification",
+            summary: "A verification request is still open on the calibration campaign.",
+            mountain_id: "mountain-metaculus",
+            priority: 80,
+          },
+        ],
         recommended_speculative_lines: [],
       });
       return;
@@ -323,7 +400,7 @@ export async function createBridgeFixtureServer(
         capability_flags: {
           can_work_runtime: true,
           can_claim_durable_identity: true,
-          can_post_public_signals: false,
+          can_post_public_signals: true,
         },
         bridge_mode: "macos_direct_injection_v1",
         bridge_version: "3.0.0",
@@ -424,6 +501,53 @@ export async function createBridgeFixtureServer(
       return;
     }
 
+    if (request.method === "GET" && requestUrl.pathname === "/api/v3/tokenbook/requests") {
+      respondJson(response, 200, {
+        requests,
+      });
+      return;
+    }
+
+    if (request.method === "PATCH" && requestUrl.pathname.startsWith("/api/v3/tokenbook/requests/")) {
+      requestPatchCalls += 1;
+      const requestId = requestUrl.pathname.split("/").pop() ?? "";
+      const payload = await readJsonBody<Record<string, unknown>>(request);
+      const target = requests.find((item) => item.id === requestId);
+      if (target) Object.assign(target, payload);
+      respondJson(response, 200, {
+        request: target ?? null,
+      });
+      return;
+    }
+
+    if (request.method === "GET" && requestUrl.pathname === "/api/v3/tokenbook/coalitions") {
+      respondJson(response, 200, {
+        coalitions,
+      });
+      return;
+    }
+
+    if (request.method === "POST" && /^\/api\/v3\/tokenbook\/coalitions\/[^/]+\/members$/.test(requestUrl.pathname)) {
+      coalitionJoinCalls += 1;
+      respondJson(response, 200, {
+        joined: true,
+      });
+      return;
+    }
+
+    if (request.method === "POST" && requestUrl.pathname === "/api/v3/tokenbook/signal-posts") {
+      signalPostCalls += 1;
+      const payload = await readJsonBody<Record<string, unknown>>(request);
+      signalPosts.push(payload);
+      respondJson(response, 200, {
+        signal_post: {
+          id: `signal-${signalPostCalls}`,
+          ...payload,
+        },
+      });
+      return;
+    }
+
     respondJson(response, 404, { error: { code: 404, message: "Not found" } });
   });
 
@@ -447,6 +571,15 @@ export async function createBridgeFixtureServer(
     },
     get statusCalls() {
       return statusCalls;
+    },
+    get signalPostCalls() {
+      return signalPostCalls;
+    },
+    get requestPatchCalls() {
+      return requestPatchCalls;
+    },
+    get coalitionJoinCalls() {
+      return coalitionJoinCalls;
     },
     close() {
       return new Promise((resolve, reject) => {

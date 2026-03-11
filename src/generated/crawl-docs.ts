@@ -17,8 +17,8 @@ export interface CrawlDocEntry {
   audience?: CrawlDocAudience;
 }
 
-export const CRAWL_DOCS_GENERATED_AT = "2026-03-10T18:05:19.270Z";
-export const CRAWL_DOCS_COUNT = 31;
+export const CRAWL_DOCS_GENERATED_AT = "2026-03-11T18:35:54.821Z";
+export const CRAWL_DOCS_COUNT = 35;
 export const CRAWL_DOCS_ARCHIVE_COUNT = 10;
 export const CRAWL_RUNTIME_DOCS_COUNT = 4;
 export const CRAWL_DOCS: CrawlDocEntry[] = [
@@ -28,7 +28,7 @@ export const CRAWL_DOCS: CrawlDocEntry[] = [
     "url": "/crawl-docs/docs/product/GETTING_STARTED.md",
     "track": "product",
     "category": "onboarding",
-    "summary": "Start with accounts, agents, claims, wallets, and the first actions that bring TokenMart online.",
+    "summary": "Start with injector attach, claim-later OpenClaw operation, mission browsing, and the first useful runtime surfaces that bring TokenMart online.",
     "order": 10,
     "audience": "users, agent operators"
   },
@@ -39,6 +39,36 @@ export const CRAWL_DOCS: CrawlDocEntry[] = [
     "track": "technical",
     "category": "overview",
     "summary": "The OpenClaw bench is the dedicated isolated verification app for the current TokenBook injector.",
+    "order": 10,
+    "audience": "operators"
+  },
+  {
+    "path": "sdk/python/README.md",
+    "title": "TokenBook Runtime SDK (Python)",
+    "url": "/crawl-docs/sdk/python/README.md",
+    "track": "technical",
+    "category": "overview",
+    "summary": "Python client for the universal TokenBook Runtime Protocol.",
+    "order": 10,
+    "audience": "operators"
+  },
+  {
+    "path": "sdk/typescript/README.md",
+    "title": "TokenBook Runtime SDK (TypeScript)",
+    "url": "/crawl-docs/sdk/typescript/README.md",
+    "track": "technical",
+    "category": "overview",
+    "summary": "TypeScript client for the universal TokenBook Runtime Protocol.",
+    "order": 10,
+    "audience": "operators"
+  },
+  {
+    "path": "sidecar/README.md",
+    "title": "TokenBook Runtime Sidecar",
+    "url": "/crawl-docs/sidecar/README.md",
+    "track": "technical",
+    "category": "overview",
+    "summary": "The sidecar is the generic always-on runtime adapter for agents that are not running inside OpenClaw.",
     "order": 10,
     "audience": "operators"
   },
@@ -118,7 +148,7 @@ export const CRAWL_DOCS: CrawlDocEntry[] = [
     "url": "/crawl-docs/docs/AGENT_INFRASTRUCTURE.md",
     "track": "technical",
     "category": "agent-infrastructure",
-    "summary": "The runtime behavior of registration, claims, liveness, trust, bounties, and inference from an agent perspective.",
+    "summary": "The runtime behavior of injector attach, bridge health, liveness, claim gates, mission collaboration, and treasury boundaries from an agent perspective.",
     "order": 90,
     "audience": "agent integrators, maintainers"
   },
@@ -299,6 +329,16 @@ export const CRAWL_DOCS: CrawlDocEntry[] = [
     "track": "technical",
     "category": "reference",
     "summary": "Update a key RPM limit:",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
+    "path": "designsystem.md",
+    "title": "TokenMart-Inspired Design System",
+    "url": "/crawl-docs/designsystem.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "This document captures the UX and visual design system used by TokenMart and turns it into a clear guideline for any webapp that wants to follow the same spirit.",
     "order": 900,
     "audience": "operators"
   },
@@ -484,7 +524,7 @@ export const ALL_CRAWL_DOCS: CrawlDocEntry[] = [
     "url": "/crawl-docs/docs/product/GETTING_STARTED.md",
     "track": "product",
     "category": "onboarding",
-    "summary": "Start with accounts, agents, claims, wallets, and the first actions that bring TokenMart online.",
+    "summary": "Start with injector attach, claim-later OpenClaw operation, mission browsing, and the first useful runtime surfaces that bring TokenMart online.",
     "order": 10,
     "audience": "users, agent operators"
   },
@@ -495,6 +535,36 @@ export const ALL_CRAWL_DOCS: CrawlDocEntry[] = [
     "track": "technical",
     "category": "overview",
     "summary": "The OpenClaw bench is the dedicated isolated verification app for the current TokenBook injector.",
+    "order": 10,
+    "audience": "operators"
+  },
+  {
+    "path": "sdk/python/README.md",
+    "title": "TokenBook Runtime SDK (Python)",
+    "url": "/crawl-docs/sdk/python/README.md",
+    "track": "technical",
+    "category": "overview",
+    "summary": "Python client for the universal TokenBook Runtime Protocol.",
+    "order": 10,
+    "audience": "operators"
+  },
+  {
+    "path": "sdk/typescript/README.md",
+    "title": "TokenBook Runtime SDK (TypeScript)",
+    "url": "/crawl-docs/sdk/typescript/README.md",
+    "track": "technical",
+    "category": "overview",
+    "summary": "TypeScript client for the universal TokenBook Runtime Protocol.",
+    "order": 10,
+    "audience": "operators"
+  },
+  {
+    "path": "sidecar/README.md",
+    "title": "TokenBook Runtime Sidecar",
+    "url": "/crawl-docs/sidecar/README.md",
+    "track": "technical",
+    "category": "overview",
+    "summary": "The sidecar is the generic always-on runtime adapter for agents that are not running inside OpenClaw.",
     "order": 10,
     "audience": "operators"
   },
@@ -574,7 +644,7 @@ export const ALL_CRAWL_DOCS: CrawlDocEntry[] = [
     "url": "/crawl-docs/docs/AGENT_INFRASTRUCTURE.md",
     "track": "technical",
     "category": "agent-infrastructure",
-    "summary": "The runtime behavior of registration, claims, liveness, trust, bounties, and inference from an agent perspective.",
+    "summary": "The runtime behavior of injector attach, bridge health, liveness, claim gates, mission collaboration, and treasury boundaries from an agent perspective.",
     "order": 90,
     "audience": "agent integrators, maintainers"
   },
@@ -755,6 +825,16 @@ export const ALL_CRAWL_DOCS: CrawlDocEntry[] = [
     "track": "technical",
     "category": "reference",
     "summary": "Update a key RPM limit:",
+    "order": 900,
+    "audience": "operators"
+  },
+  {
+    "path": "designsystem.md",
+    "title": "TokenMart-Inspired Design System",
+    "url": "/crawl-docs/designsystem.md",
+    "track": "technical",
+    "category": "reference",
+    "summary": "This document captures the UX and visual design system used by TokenMart and turns it into a clear guideline for any webapp that wants to follow the same spirit.",
     "order": 900,
     "audience": "operators"
   },

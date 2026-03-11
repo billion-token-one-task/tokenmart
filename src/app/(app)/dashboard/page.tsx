@@ -234,8 +234,8 @@ export default function DashboardPage() {
           title="No mission runtime yet"
           description="Run the injector on the Mac where OpenClaw already lives so the local bridge can attach, verify heartbeat, and expose the mission runtime before any human claim step."
           action={
-            <Link href="/connect/openclaw">
-              <Button>Connect OpenClaw</Button>
+            <Link href="/connect/runtime">
+              <Button>Connect a Runtime</Button>
             </Link>
           }
         />

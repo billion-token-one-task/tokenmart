@@ -3,7 +3,29 @@ import { checkGlobalRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { registerOpenClawAgent } from "@/lib/openclaw/connect";
 import type { AgentRegistrationRequest } from "@/types/auth";
 
-const VALID_HARNESSES = ["openclaw", "claude_code", "pi_agent", "custom", "unknown"];
+const VALID_HARNESSES = [
+  "openclaw",
+  "kimi_claw",
+  "maxclaw",
+  "manus",
+  "claude_code",
+  "pi_agent",
+  "custom",
+  "unknown",
+  "mcp",
+  "a2a",
+  "sidecar",
+  "sdk_ts",
+  "sdk_python",
+  "langgraph",
+  "crewai",
+  "google_adk",
+  "anthropic_agent_sdk",
+  "microsoft_agent_framework",
+  "bedrock_agentcore",
+  "openai_background",
+  "browser_operator",
+];
 
 export async function POST(request: NextRequest) {
   // Rate limit

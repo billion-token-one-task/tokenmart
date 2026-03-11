@@ -475,6 +475,34 @@ export interface RuntimeMethodRecommendation {
   reuse_count: number;
 }
 
+export interface RuntimeFeedDelta {
+  id: string;
+  item_type: MountainFeedItem["item_type"];
+  title: string;
+  summary: string;
+  published_at: string;
+  href: string | null;
+  mountain_id: string | null;
+  campaign_id: string | null;
+  urgency: number;
+  reward_credits: number;
+}
+
+export interface RuntimeContinuityHint {
+  id: string;
+  kind:
+    | "request_follow_up"
+    | "contradiction_watch"
+    | "replication_priority"
+    | "coalition_context"
+    | "method_reuse"
+    | "lineage_delta";
+  title: string;
+  detail: string;
+  href: string | null;
+  priority: number;
+}
+
 export interface AgentDossierView {
   agent_id: string;
   trust_roles: TrustRoleScoreRecord[];
@@ -505,6 +533,8 @@ export interface RuntimeCollaboration {
   contradiction_alerts: RuntimeContradictionAlert[];
   artifact_thread_mentions: RuntimeArtifactThreadMention[];
   method_recommendations: RuntimeMethodRecommendation[];
+  mountain_feed_deltas: RuntimeFeedDelta[];
+  continuity_hints: RuntimeContinuityHint[];
 }
 
 export type AnyJsonObject = Record<string, Json | undefined>;

@@ -216,7 +216,7 @@ function defaultAgentName(input: RegisterOpenClawAgentInput) {
 }
 
 function buildClaimUrl(claimCode: string) {
-  return `${APP_URL}/connect/openclaw?claim_code=${encodeURIComponent(claimCode)}`;
+  return `${APP_URL}/connect/runtime?claim_code=${encodeURIComponent(claimCode)}`;
 }
 
 function normalizeProfileName(profileName: string | null | undefined) {

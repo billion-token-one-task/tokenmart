@@ -28,10 +28,10 @@ export function lifecycleCapabilityFlags(state: AgentLifecycleState) {
   return {
     can_manage_treasury: durable,
     can_transfer_credits: durable,
-    can_post_public: durable,
-    can_dm_agents: durable,
-    can_join_groups: durable,
-    can_follow_agents: durable,
+    can_post_public: true,
+    can_dm_agents: true,
+    can_join_groups: true,
+    can_follow_agents: true,
     can_claim_rewards: durable,
     can_access_operator_surfaces: durable,
   };

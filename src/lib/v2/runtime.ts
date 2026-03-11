@@ -1400,6 +1400,7 @@ export async function getAgentRuntime(agentId: string): Promise<AgentRuntimeView
               title: invite.title,
               objective: invite.objective,
               status: invite.status,
+              reliability_score: invite.reliability_score,
               coalition_terms: {},
               credit_split_policy: { reliability_score: invite.reliability_score },
               coordination_context: {},
@@ -1407,7 +1408,32 @@ export async function getAgentRuntime(agentId: string): Promise<AgentRuntimeView
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             }))
-          : swarmSessions.filter((session) => session.status === "forming"),
+          : swarmSessions
+              .filter((session) => session.status === "forming")
+              .map((session) => ({
+                id: session.id,
+                mountain_id: session.mountain_id,
+                campaign_id: session.campaign_id,
+                work_spec_id: session.work_spec_id,
+                title: session.title,
+                objective: session.objective,
+                status: session.status,
+                reliability_score:
+                  typeof session.credit_split_policy.reliability_score === "number"
+                    ? Number(session.credit_split_policy.reliability_score)
+                    : 50,
+                coalition_terms: {},
+                credit_split_policy: {
+                  reliability_score:
+                    typeof session.credit_split_policy.reliability_score === "number"
+                      ? Number(session.credit_split_policy.reliability_score)
+                      : 50,
+                },
+                coordination_context: {},
+                created_by_agent_id: null,
+                created_at: session.created_at,
+                updated_at: session.updated_at,
+              })),
       verification_requests: verificationRuns.filter(
         (run) => run.verifier_agent_id === agentId || run.outcome === "needs_replication",
       ),

@@ -39,6 +39,8 @@ import type {
   RuntimeCoalitionInvite,
   RuntimeCollaboration,
   RuntimeContradictionAlert,
+  RuntimeContinuityHint,
+  RuntimeFeedDelta,
   RuntimeMethodRecommendation,
   RuntimeReplicationAlert,
   RuntimeStructuredRequest,
@@ -92,10 +94,14 @@ interface LooseQueryResult<T> {
   error: Error | null;
 }
 
+interface MountainMembershipQueryBuilder {
+  eq(column: string, value: string): MountainMembershipQueryBuilder;
+  or(filters: string): MountainMembershipQueryBuilder;
+  limit(value: number): Promise<LooseQueryResult<Record<string, unknown>>>;
+}
+
 interface MountainMembershipQuery {
-  select(columns: string): {
-    or(filters: string): Promise<LooseQueryResult<Record<string, unknown>>>;
-  };
+  select(columns: string): MountainMembershipQueryBuilder;
 }
 
 interface LooseMembershipClient {
@@ -143,6 +149,263 @@ function requireViewerAgentId(viewer: TokenBookViewer, action: string) {
     throw new Error(`${action} requires an attached agent identity`);
   }
   return agentId;
+}
+
+type LinkedMissionScope = {
+  mountainId: string;
+  campaignId?: string | null;
+  workSpecId?: string | null;
+  deliverableId?: string | null;
+  verificationRunId?: string | null;
+  contradictionClusterId?: string | null;
+  replicationCallId?: string | null;
+  methodCardId?: string | null;
+  coalitionSessionId?: string | null;
+};
+
+type ViewerMountainAuthority = {
+  isAdmin: boolean;
+  activeMember: boolean;
+  roles: Set<string>;
+};
+
+async function loadViewerMountainAuthority(
+  viewer: TokenBookViewer,
+  mountainId: string,
+): Promise<ViewerMountainAuthority> {
+  if (isAdmin(viewer)) {
+    return { isAdmin: true, activeMember: true, roles: new Set(["admin"]) };
+  }
+  if (!viewer.account_id && !viewer.agent_id) {
+    return { isAdmin: false, activeMember: false, roles: new Set() };
+  }
+  const client = db() as unknown as LooseMembershipClient;
+  let query = client
+    .from("mountain_memberships")
+    .select("role,status")
+    .eq("mountain_id", mountainId);
+  if (viewer.account_id && viewer.agent_id) {
+    query = query.or(`account_id.eq.${viewer.account_id},agent_id.eq.${viewer.agent_id}`);
+  } else if (viewer.agent_id) {
+    query = query.eq("agent_id", viewer.agent_id);
+  } else {
+    query = query.eq("account_id", viewer.account_id!);
+  }
+  const { data, error } = await query.limit(20);
+  if (error) throw error;
+  const active = (data ?? []).filter((row) => String(row.status ?? "active") === "active");
+  return {
+    isAdmin: false,
+    activeMember: active.length > 0,
+    roles: new Set(active.map((row) => String(row.role ?? ""))),
+  };
+}
+
+async function ensureVisibleMountain(viewer: TokenBookViewer | null, mountainId: string, action: string) {
+  const context = await listVisibleContext(viewer);
+  if (!context.visibleMountainIds.has(mountainId)) {
+    throw new Error(`${action} requires access to the target mountain`);
+  }
+  return context;
+}
+
+async function loadLinkedMissionRows(scope: LinkedMissionScope) {
+  const client = db();
+  const results = await Promise.all([
+    scope.campaignId
+      ? client.from("campaigns").select("id,mountain_id").eq("id", scope.campaignId).maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    scope.workSpecId
+      ? client
+          .from("work_specs")
+          .select("id,mountain_id,campaign_id,owner_account_id")
+          .eq("id", scope.workSpecId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    scope.deliverableId
+      ? client
+          .from("deliverables")
+          .select("id,mountain_id,campaign_id,work_spec_id,agent_id")
+          .eq("id", scope.deliverableId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    scope.verificationRunId
+      ? client
+          .from("verification_runs")
+          .select("id,mountain_id,campaign_id,work_spec_id,verifier_agent_id")
+          .eq("id", scope.verificationRunId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    scope.contradictionClusterId
+      ? client
+          .from("contradiction_clusters")
+          .select("id,mountain_id,campaign_id,work_spec_id,created_by_agent_id")
+          .eq("id", scope.contradictionClusterId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    scope.replicationCallId
+      ? client
+          .from("replication_calls")
+          .select("id,mountain_id,campaign_id,work_spec_id,created_by_agent_id")
+          .eq("id", scope.replicationCallId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    scope.methodCardId
+      ? client
+          .from("method_cards")
+          .select("id,mountain_id,campaign_id,originating_agent_id")
+          .eq("id", scope.methodCardId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    scope.coalitionSessionId
+      ? client
+          .from("coalition_sessions")
+          .select("id,mountain_id,campaign_id,work_spec_id,created_by_agent_id")
+          .eq("id", scope.coalitionSessionId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+  ]);
+  for (const result of results) {
+    if (result.error) throw result.error;
+  }
+  return {
+    campaign: results[0].data,
+    workSpec: results[1].data,
+    deliverable: results[2].data,
+    verificationRun: results[3].data,
+    contradiction: results[4].data,
+    replication: results[5].data,
+    method: results[6].data,
+    coalition: results[7].data,
+  };
+}
+
+function assertRowsMatchMountain(scope: LinkedMissionScope, rows: Awaited<ReturnType<typeof loadLinkedMissionRows>>) {
+  for (const [label, row] of Object.entries(rows)) {
+    if (!row) continue;
+    if (String((row as { mountain_id?: string | null }).mountain_id ?? "") !== scope.mountainId) {
+      throw new Error(`Linked ${label} does not belong to the requested mountain`);
+    }
+    if (
+      scope.campaignId &&
+      "campaign_id" in row &&
+      row.campaign_id &&
+      String(row.campaign_id) !== scope.campaignId
+    ) {
+      throw new Error(`Linked ${label} does not belong to the requested campaign`);
+    }
+  }
+}
+
+async function ensureLinkedScopeForCreate(
+  viewer: TokenBookViewer,
+  action: string,
+  scope: LinkedMissionScope,
+) {
+  const context = await ensureVisibleMountain(viewer, scope.mountainId, action);
+  const authority = await loadViewerMountainAuthority(viewer, scope.mountainId);
+  const rows = await loadLinkedMissionRows(scope);
+  assertRowsMatchMountain(scope, rows);
+  const mountainVisibility =
+    context.mountains.find((mountain) => mountain.id === scope.mountainId)?.visibility ?? "scoped";
+  const hasLinkedAnchor = Boolean(
+    scope.deliverableId ||
+      scope.verificationRunId ||
+      scope.contradictionClusterId ||
+      scope.replicationCallId ||
+      scope.methodCardId ||
+      scope.coalitionSessionId ||
+      scope.workSpecId,
+  );
+  const canOpenSwarmWrite = mountainVisibility === "public";
+  if (!authority.activeMember && !authority.isAdmin && !hasLinkedAnchor && !canOpenSwarmWrite) {
+    throw new Error(`${action} requires either an active mountain membership or a linked mission object`);
+  }
+  return { authority, rows };
+}
+
+function hasOperatorAuthority(authority: ViewerMountainAuthority) {
+  return authority.isAdmin || authority.roles.has("operator") || authority.roles.has("verifier");
+}
+
+async function ensureCoalitionWriteAuthority(viewer: TokenBookViewer, coalitionId: string) {
+  const viewerAgentId = requireViewerAgentId(viewer, "Updating a coalition session");
+  const client = db();
+  const coalitionRes = await client
+    .from("coalition_sessions")
+    .select("id,mountain_id,created_by_agent_id")
+    .eq("id", coalitionId)
+    .maybeSingle();
+  if (coalitionRes.error) throw coalitionRes.error;
+  if (!coalitionRes.data) return null;
+  await ensureVisibleMountain(viewer, coalitionRes.data.mountain_id, "Updating a coalition session");
+  const authority = await loadViewerMountainAuthority(viewer, coalitionRes.data.mountain_id);
+  if (coalitionRes.data.created_by_agent_id === viewerAgentId || hasOperatorAuthority(authority)) {
+    return { coalition: coalitionRes.data, authority };
+  }
+  const memberRes = await client
+    .from("coalition_members")
+    .select("role,status")
+    .eq("coalition_session_id", coalitionId)
+    .eq("agent_id", viewerAgentId)
+    .eq("status", "active")
+    .maybeSingle();
+  if (memberRes.error) throw memberRes.error;
+  if (memberRes.data && ["lead", "operator"].includes(String(memberRes.data.role ?? ""))) {
+    return { coalition: coalitionRes.data, authority };
+  }
+  throw new Error("Updating this coalition requires lead or operator authority");
+}
+
+async function ensureRequestWriteAuthority(viewer: TokenBookViewer, requestId: string) {
+  const viewerAgentId = requireViewerAgentId(viewer, "Updating a structured request");
+  const client = db();
+  const requestRes = await client
+    .from("agent_requests")
+    .select("id,mountain_id,requested_by_agent_id,target_agent_id")
+    .eq("id", requestId)
+    .maybeSingle();
+  if (requestRes.error) throw requestRes.error;
+  if (!requestRes.data) return null;
+  await ensureVisibleMountain(viewer, requestRes.data.mountain_id, "Updating a structured request");
+  const authority = await loadViewerMountainAuthority(viewer, requestRes.data.mountain_id);
+  if (
+    requestRes.data.requested_by_agent_id === viewerAgentId ||
+    requestRes.data.target_agent_id === viewerAgentId ||
+    hasOperatorAuthority(authority)
+  ) {
+    return { request: requestRes.data, authority };
+  }
+  throw new Error("Updating this request requires requester, target, or operator authority");
+}
+
+async function ensureCreatorOrOperatorAuthority(
+  viewer: TokenBookViewer,
+  action: string,
+  config: {
+    table: "replication_calls" | "contradiction_clusters" | "method_cards";
+    id: string;
+    creatorColumn: "created_by_agent_id" | "originating_agent_id";
+  },
+) {
+  const viewerAgentId = requireViewerAgentId(viewer, action);
+  const client = db();
+  const rowRes = (await client
+    .from(config.table as never)
+    .select(`id,mountain_id,${config.creatorColumn}`)
+    .eq("id", config.id)
+    .maybeSingle()) as {
+    data: ({ mountain_id?: string | null } & Record<string, unknown>) | null;
+    error: Error | null;
+  };
+  if (rowRes.error) throw rowRes.error;
+  if (!rowRes.data) return null;
+  await ensureVisibleMountain(viewer, String(rowRes.data.mountain_id ?? ""), action);
+  const authority = await loadViewerMountainAuthority(viewer, String(rowRes.data.mountain_id ?? ""));
+  if (String((rowRes.data as Record<string, unknown>)[config.creatorColumn] ?? "") === viewerAgentId || hasOperatorAuthority(authority)) {
+    return rowRes.data;
+  }
+  throw new Error(`${action} requires creator or operator authority`);
 }
 
 function severityValue(raw: string | number | null | undefined) {
@@ -255,6 +518,7 @@ async function listVisibleContext(viewer: TokenBookViewer | null): Promise<Visib
                 .filter(Boolean)
                 .join(","),
             )
+            .limit(200)
         : Promise.resolve({ data: [], error: null }),
     ]);
 
@@ -1377,10 +1641,47 @@ export async function createSignalPost(input: {
 }) {
   const authorAgentId = requireViewerAgentId(input.viewer, "Creating a public signal post");
   const client = db();
+  let artifactThreadMountainId: string | null = null;
+  if (input.artifactThreadId) {
+    const artifactThreadRes = await client
+      .from("artifact_threads")
+      .select("mountain_id")
+      .eq("id", input.artifactThreadId)
+      .maybeSingle();
+    if (artifactThreadRes.error) throw artifactThreadRes.error;
+    artifactThreadMountainId = artifactThreadRes.data?.mountain_id
+      ? String(artifactThreadRes.data.mountain_id)
+      : null;
+  }
+  const inferredRows = await loadLinkedMissionRows({
+    mountainId: input.mountainId ?? "",
+    campaignId: input.campaignId ?? null,
+    contradictionClusterId: input.contradictionClusterId ?? null,
+    replicationCallId: input.replicationCallId ?? null,
+    methodCardId: input.methodCardId ?? null,
+    coalitionSessionId: input.coalitionSessionId ?? null,
+  });
+  const resolvedMountainId =
+    input.mountainId ??
+    artifactThreadMountainId ??
+    (inferredRows.contradiction?.mountain_id ? String(inferredRows.contradiction.mountain_id) : null) ??
+    (inferredRows.replication?.mountain_id ? String(inferredRows.replication.mountain_id) : null) ??
+    (inferredRows.method?.mountain_id ? String(inferredRows.method.mountain_id) : null) ??
+    (inferredRows.coalition?.mountain_id ? String(inferredRows.coalition.mountain_id) : null);
+  if (resolvedMountainId) {
+    await ensureLinkedScopeForCreate(input.viewer, "Creating a public signal post", {
+      mountainId: resolvedMountainId,
+      campaignId: input.campaignId ?? null,
+      contradictionClusterId: input.contradictionClusterId ?? null,
+      replicationCallId: input.replicationCallId ?? null,
+      methodCardId: input.methodCardId ?? null,
+      coalitionSessionId: input.coalitionSessionId ?? null,
+    });
+  }
   const { data, error } = await client
     .from("public_signal_posts")
     .insert({
-      mountain_id: input.mountainId ?? null,
+      mountain_id: resolvedMountainId ?? null,
       campaign_id: input.campaignId ?? null,
       artifact_thread_id: input.artifactThreadId ?? null,
       coalition_session_id: input.coalitionSessionId ?? null,
@@ -1576,6 +1877,16 @@ export async function createArtifactThread(input: {
   stats?: JsonObject;
 }) {
   const authorAgentId = requireViewerAgentId(input.viewer, "Creating an artifact thread");
+  await ensureLinkedScopeForCreate(input.viewer, "Creating an artifact thread", {
+    mountainId: input.mountainId,
+    campaignId: input.campaignId ?? null,
+    workSpecId: input.workSpecId ?? null,
+    deliverableId: input.deliverableId ?? null,
+    verificationRunId: input.verificationRunId ?? null,
+    contradictionClusterId: input.contradictionClusterId ?? null,
+    replicationCallId: input.replicationCallId ?? null,
+    methodCardId: input.methodCardId ?? null,
+  });
   const client = db();
   const { data, error } = await client
     .from("artifact_threads")
@@ -1738,6 +2049,11 @@ export async function createCoalition(input: {
   metadata?: Record<string, unknown>;
 }) {
   const authorAgentId = requireViewerAgentId(input.viewer, "Creating a coalition session");
+  await ensureLinkedScopeForCreate(input.viewer, "Creating a coalition session", {
+    mountainId: input.mountainId,
+    campaignId: input.campaignId ?? null,
+    workSpecId: input.workSpecId ?? null,
+  });
   const client = db();
   const { data, error } = await client
     .from("coalition_sessions")
@@ -1890,6 +2206,15 @@ export async function createAgentRequest(input: {
   expiresAt?: string | null;
 }) {
   const requesterAgentId = requireViewerAgentId(input.viewer, "Creating a structured request");
+  await ensureLinkedScopeForCreate(input.viewer, "Creating a structured request", {
+    mountainId: input.mountainId,
+    campaignId: input.campaignId ?? null,
+    workSpecId: input.workSpecId ?? null,
+    deliverableId: input.deliverableId ?? null,
+    verificationRunId: input.verificationRunId ?? null,
+    contradictionClusterId: input.contradictionClusterId ?? null,
+    coalitionSessionId: input.coalitionSessionId ?? null,
+  });
   const client = db();
   const { data, error } = await client
     .from("agent_requests")
@@ -2008,6 +2333,14 @@ export async function createReplicationCall(input: {
   expiresAt?: string | null;
 }) {
   const authorAgentId = requireViewerAgentId(input.viewer, "Creating a replication call");
+  await ensureLinkedScopeForCreate(input.viewer, "Creating a replication call", {
+    mountainId: input.mountainId,
+    campaignId: input.campaignId ?? null,
+    workSpecId: input.workSpecId ?? null,
+    deliverableId: input.deliverableId ?? null,
+    verificationRunId: input.verificationRunId ?? null,
+    contradictionClusterId: input.contradictionClusterId ?? null,
+  });
   const client = db();
   const { data, error } = await client
     .from("replication_calls")
@@ -2117,6 +2450,11 @@ export async function createContradictionCluster(input: {
   metadata?: JsonObject;
 }) {
   const authorAgentId = requireViewerAgentId(input.viewer, "Creating a contradiction cluster");
+  await ensureLinkedScopeForCreate(input.viewer, "Creating a contradiction cluster", {
+    mountainId: input.mountainId,
+    campaignId: input.campaignId ?? null,
+    workSpecId: input.workSpecId ?? null,
+  });
   const client = db();
   const { data, error } = await client
     .from("contradiction_clusters")
@@ -2231,11 +2569,30 @@ export async function createMethodCard(input: {
   metadata?: JsonObject;
 }) {
   const authorAgentId = requireViewerAgentId(input.viewer, "Creating a method card");
+  const inferredScopeRows = await loadLinkedMissionRows({
+    mountainId: input.mountainId ?? "",
+    campaignId: input.campaignId ?? null,
+    deliverableId: input.linkedDeliverableIds?.[0] ?? null,
+    verificationRunId: input.linkedVerificationRunIds?.[0] ?? null,
+  });
+  const resolvedMountainId =
+    input.mountainId ??
+    (inferredScopeRows.deliverable?.mountain_id ? String(inferredScopeRows.deliverable.mountain_id) : null) ??
+    (inferredScopeRows.verificationRun?.mountain_id ? String(inferredScopeRows.verificationRun.mountain_id) : null);
+  if (!resolvedMountainId) {
+    throw new Error("Creating a method card requires a mountain context or linked mission evidence");
+  }
+  await ensureLinkedScopeForCreate(input.viewer, "Creating a method card", {
+    mountainId: resolvedMountainId,
+    campaignId: input.campaignId ?? null,
+    deliverableId: input.linkedDeliverableIds?.[0] ?? null,
+    verificationRunId: input.linkedVerificationRunIds?.[0] ?? null,
+  });
   const client = db();
   const { data, error } = await client
     .from("method_cards")
     .insert({
-      mountain_id: input.mountainId ?? null,
+      mountain_id: resolvedMountainId,
       campaign_id: input.campaignId ?? null,
       originating_agent_id: authorAgentId,
       title: input.title,
@@ -2364,7 +2721,7 @@ export async function updateCoalition(
     live_status?: Record<string, unknown>;
   },
 ) {
-  requireViewerAgentId(viewer, "Updating a coalition session");
+  await ensureCoalitionWriteAuthority(viewer, coalitionId);
   const client = db();
   const coalition = await getCoalition(coalitionId, viewer);
   if (!coalition) return null;
@@ -2382,6 +2739,19 @@ export async function updateCoalition(
     .select("*")
     .single();
   if (error) throw error;
+  if (patch.status && patch.status !== coalition.coalition.status) {
+    await appendMissionEvent({
+      mountain_id: data.mountain_id,
+      campaign_id: data.campaign_id,
+      coalition_session_id: data.id,
+      actor_agent_id: viewer.agent_id,
+      event_type: "coalition_status_changed",
+      visibility: toVisibility(data.visibility),
+      title: data.title,
+      summary: `Coalition moved to ${data.status}.`,
+      score_hints: { mission_relevance: 68, action_likelihood: 64, trust_signal: 56 },
+    });
+  }
   return data as CoalitionSessionRecord;
 }
 
@@ -2397,21 +2767,24 @@ export async function upsertCoalitionMembership(
   },
 ) {
   const agentId = requireViewerAgentId(viewer, "Managing coalition membership");
+  const authority = await ensureCoalitionWriteAuthority(viewer, coalitionId);
+  if (!authority) return null;
   const client = db();
-  const coalition = await getCoalition(coalitionId, viewer);
-  if (!coalition) return null;
+  const isPrivileged = hasOperatorAuthority(authority.authority) || authority.coalition.created_by_agent_id === agentId;
+  const requestedStatus = patch.status ?? "active";
+  const requestedRole = patch.role_slot ?? "contributor";
   const { data, error } = await client
     .from("coalition_members")
     .upsert(
       {
         coalition_session_id: coalitionId,
         agent_id: agentId,
-        status: patch.status ?? "active",
-        role: patch.role_slot ?? "contributor",
+        status: requestedStatus,
+        role: isPrivileged ? requestedRole : "contributor",
         contribution_summary: asJson({
-          share_bps: patch.share_bps ?? 0,
-          reliability_note: patch.reliability_note ?? null,
-          ...(patch.metadata ?? {}),
+          share_bps: isPrivileged ? patch.share_bps ?? 0 : 0,
+          reliability_note: isPrivileged ? patch.reliability_note ?? null : null,
+          ...(isPrivileged ? patch.metadata ?? {} : {}),
         }),
       },
       { onConflict: "coalition_session_id,agent_id" },
@@ -2447,26 +2820,50 @@ export async function updateAgentRequest(
     expires_at?: string | null;
   },
 ) {
-  requireViewerAgentId(viewer, "Updating a structured request");
+  const authority = await ensureRequestWriteAuthority(viewer, requestId);
+  if (!authority) return null;
   const client = db();
   const existing = await getAgentRequest(requestId, viewer);
   if (!existing) return null;
+  const viewerAgentId = requireViewerAgentId(viewer, "Updating a structured request");
+  const limitedTargetEdit =
+    authority.request.target_agent_id === viewerAgentId &&
+    authority.request.requested_by_agent_id !== viewerAgentId &&
+    !hasOperatorAuthority(authority.authority);
   const { data, error } = await client
     .from("agent_requests")
     .update({
       ...(patch.status !== undefined ? { status: patch.status } : {}),
-      ...(patch.urgency !== undefined ? { urgency: patch.urgency } : {}),
-      ...(patch.role_needed !== undefined ? { role_needed: patch.role_needed } : {}),
-      ...(patch.target_agent_id !== undefined ? { target_agent_id: patch.target_agent_id } : {}),
+      ...(!limitedTargetEdit && patch.urgency !== undefined ? { urgency: patch.urgency } : {}),
+      ...(!limitedTargetEdit && patch.role_needed !== undefined ? { role_needed: patch.role_needed } : {}),
+      ...(!limitedTargetEdit && patch.target_agent_id !== undefined ? { target_agent_id: patch.target_agent_id } : {}),
       ...(patch.freeform_note !== undefined ? { freeform_note: patch.freeform_note } : {}),
-      ...(patch.reward_context !== undefined ? { reward_context: asJson(patch.reward_context) } : {}),
-      ...(patch.capability_requirements !== undefined ? { capability_requirements: asJson(patch.capability_requirements) } : {}),
-      ...(patch.expires_at !== undefined ? { expires_at: patch.expires_at } : {}),
+      ...(!limitedTargetEdit && patch.reward_context !== undefined ? { reward_context: asJson(patch.reward_context) } : {}),
+      ...(!limitedTargetEdit && patch.capability_requirements !== undefined
+        ? { capability_requirements: asJson(patch.capability_requirements) }
+        : {}),
+      ...(!limitedTargetEdit && patch.expires_at !== undefined ? { expires_at: patch.expires_at } : {}),
     } as Tables["agent_requests"]["Update"])
     .eq("id", requestId)
     .select("*")
     .single();
   if (error) throw error;
+  if (patch.status && patch.status !== existing.status) {
+    await appendMissionEvent({
+      mountain_id: data.mountain_id,
+      campaign_id: data.campaign_id,
+      work_spec_id: data.work_spec_id,
+      deliverable_id: data.deliverable_id,
+      contradiction_cluster_id: data.contradiction_cluster_id,
+      coalition_session_id: data.coalition_session_id,
+      actor_agent_id: viewer.agent_id,
+      event_type: "agent_request_progressed",
+      visibility: data.visibility === "coalition" ? "scoped" : toVisibility(data.visibility),
+      title: data.title,
+      summary: `Structured request moved to ${data.status}.`,
+      score_hints: { mission_relevance: 62, action_likelihood: 68, trust_signal: 54 },
+    });
+  }
   return data as AgentRequestRecord;
 }
 
@@ -2506,7 +2903,11 @@ export async function updateReplicationCall(
     expires_at?: string | null;
   },
 ) {
-  requireViewerAgentId(viewer, "Updating a replication call");
+  await ensureCreatorOrOperatorAuthority(viewer, "Updating a replication call", {
+    table: "replication_calls",
+    id: replicationCallId,
+    creatorColumn: "created_by_agent_id",
+  });
   const client = db();
   const existing = await getReplicationCall(replicationCallId, viewer);
   if (!existing) return null;
@@ -2525,6 +2926,28 @@ export async function updateReplicationCall(
     .select("*")
     .single();
   if (error) throw error;
+  if (patch.status && patch.status !== existing.status) {
+    await appendMissionEvent({
+      mountain_id: data.mountain_id,
+      campaign_id: data.campaign_id,
+      work_spec_id: data.work_spec_id,
+      deliverable_id: data.deliverable_id,
+      verification_run_id: data.verification_run_id,
+      contradiction_cluster_id: data.contradiction_cluster_id,
+      replication_call_id: data.id,
+      actor_agent_id: viewer.agent_id,
+      event_type: "replication_progressed",
+      visibility: toVisibility(data.visibility),
+      title: data.title,
+      summary: `Replication call moved to ${data.status}.`,
+      score_hints: {
+        mission_relevance: 74,
+        action_likelihood: 78,
+        trust_signal: 60,
+        reward_credits: toNumber(data.reward_credits),
+      },
+    });
+  }
   return data as ReplicationCallRecord;
 }
 
@@ -2564,7 +2987,11 @@ export async function updateContradictionCluster(
     linked_verification_run_ids?: string[];
   },
 ) {
-  requireViewerAgentId(viewer, "Updating a contradiction cluster");
+  await ensureCreatorOrOperatorAuthority(viewer, "Updating a contradiction cluster", {
+    table: "contradiction_clusters",
+    id: contradictionId,
+    creatorColumn: "created_by_agent_id",
+  });
   const client = db();
   const existing = await getContradictionCluster(contradictionId, viewer);
   if (!existing) return null;
@@ -2586,6 +3013,25 @@ export async function updateContradictionCluster(
     .select("*")
     .single();
   if (error) throw error;
+  if (patch.status && patch.status !== existing.status) {
+    await appendMissionEvent({
+      mountain_id: data.mountain_id,
+      campaign_id: data.campaign_id,
+      work_spec_id: data.work_spec_id,
+      contradiction_cluster_id: data.id,
+      actor_agent_id: viewer.agent_id,
+      event_type: "contradiction_progressed",
+      visibility: toVisibility(data.visibility),
+      title: data.title,
+      summary: `Contradiction moved to ${data.status}.`,
+      score_hints: {
+        mission_relevance: 82,
+        action_likelihood: 70,
+        trust_signal: 64,
+        urgency: severityValue(data.severity),
+      },
+    });
+  }
   return data as ContradictionClusterRecord;
 }
 
@@ -2635,7 +3081,11 @@ export async function updateMethodCard(
     linked_verification_run_ids?: string[];
   },
 ) {
-  requireViewerAgentId(viewer, "Updating a method card");
+  await ensureCreatorOrOperatorAuthority(viewer, "Updating a method card", {
+    table: "method_cards",
+    id: methodId,
+    creatorColumn: "originating_agent_id",
+  });
   const client = db();
   const existing = await getMethodCard(methodId, viewer);
   if (!existing) return null;
@@ -2658,6 +3108,29 @@ export async function updateMethodCard(
     .select("*")
     .single();
   if (error) throw error;
+  if (
+    patch.reuse_count !== undefined ||
+    patch.usefulness_score !== undefined ||
+    patch.status !== undefined
+  ) {
+    if (data.mountain_id) {
+      await appendMissionEvent({
+        mountain_id: data.mountain_id,
+        campaign_id: data.campaign_id,
+        method_card_id: data.id,
+        actor_agent_id: viewer.agent_id,
+        event_type: "method_updated",
+        visibility: toVisibility(data.visibility),
+        title: data.title,
+        summary: `Method updated with reuse=${data.reuse_count} and usefulness=${data.usefulness_score}.`,
+        score_hints: {
+          mission_relevance: 64,
+          action_likelihood: 66,
+          trust_signal: toNumber(data.usefulness_score),
+        },
+      });
+    }
+  }
   return data as MethodCardRecord;
 }
 
@@ -2856,17 +3329,75 @@ export async function getAgentDossier(
 }
 
 export async function getRuntimeCollaboration(agentId: string): Promise<RuntimeCollaboration> {
+  const relevantMountainIds = await listRuntimeRelevantMountainIds(agentId);
   return {
-    structured_requests: await listRuntimeStructuredRequests(agentId),
-    coalition_invites: await listRuntimeCoalitionInvites(agentId),
-    replication_calls: await listRuntimeReplicationCalls(agentId),
-    contradiction_alerts: await listRuntimeContradictionAlerts(agentId),
-    artifact_thread_mentions: await listRuntimeArtifactThreadMentions(agentId),
-    method_recommendations: await listRuntimeMethodRecommendations(agentId),
+    structured_requests: await listRuntimeStructuredRequests(agentId, relevantMountainIds),
+    coalition_invites: await listRuntimeCoalitionInvites(agentId, relevantMountainIds),
+    replication_calls: await listRuntimeReplicationCalls(agentId, relevantMountainIds),
+    contradiction_alerts: await listRuntimeContradictionAlerts(agentId, relevantMountainIds),
+    artifact_thread_mentions: await listRuntimeArtifactThreadMentions(agentId, relevantMountainIds),
+    method_recommendations: await listRuntimeMethodRecommendations(agentId, relevantMountainIds),
+    mountain_feed_deltas: await listRuntimeMountainFeedDeltas(agentId, relevantMountainIds),
+    continuity_hints: await listRuntimeContinuityHints(agentId, relevantMountainIds),
   };
 }
 
-export async function listRuntimeStructuredRequests(agentId: string): Promise<RuntimeStructuredRequest[]> {
+async function listRuntimeRelevantMountainIds(agentId: string): Promise<Set<string>> {
+  const client = db();
+  const membershipClient = db() as unknown as LooseMembershipClient;
+  const [leaseRes, membershipRes, requestRes, coalitionMemberRes, deliverableRes] = await Promise.all([
+    client
+      .from("work_leases")
+      .select("mountain_id,status")
+      .eq("assigned_agent_id", agentId)
+      .in("status", ["offered", "accepted", "active", "checkpoint_due", "submitted"])
+      .limit(50),
+    membershipClient
+      .from("mountain_memberships")
+      .select("mountain_id")
+      .eq("agent_id", agentId)
+      .eq("status", "active")
+      .limit(50),
+    client
+      .from("agent_requests")
+      .select("mountain_id")
+      .or(`target_agent_id.eq.${agentId},requested_by_agent_id.eq.${agentId}`)
+      .limit(50),
+    client.from("coalition_members").select("coalition_session_id").eq("agent_id", agentId).limit(50),
+    client.from("deliverables").select("mountain_id").eq("agent_id", agentId).limit(50),
+  ]);
+  for (const result of [leaseRes, membershipRes, requestRes, coalitionMemberRes, deliverableRes]) {
+    if (result.error) throw result.error;
+  }
+  const ids = new Set<string>();
+  for (const row of [...(leaseRes.data ?? []), ...(membershipRes.data ?? []), ...(requestRes.data ?? []), ...(deliverableRes.data ?? [])]) {
+    const mountainId = asTrimmedString((row as { mountain_id?: string | null }).mountain_id);
+    if (mountainId) ids.add(mountainId);
+  }
+  const coalitionIds = (coalitionMemberRes.data ?? []).map((row) => String(row.coalition_session_id ?? ""));
+  if (coalitionIds.length > 0) {
+    const coalitionRes = await client.from("coalition_sessions").select("mountain_id").in("id", coalitionIds);
+    if (coalitionRes.error) throw coalitionRes.error;
+    for (const row of coalitionRes.data ?? []) {
+      const mountainId = asTrimmedString(row.mountain_id);
+      if (mountainId) ids.add(mountainId);
+    }
+  }
+  return ids;
+}
+
+function filterByRelevantMountains<T extends { mountain_id?: string | null }>(rows: T[], ids: Set<string>) {
+  if (ids.size === 0) return rows;
+  return rows.filter((row) => {
+    const mountainId = asTrimmedString(row.mountain_id);
+    return Boolean(mountainId && ids.has(mountainId));
+  });
+}
+
+export async function listRuntimeStructuredRequests(
+  agentId: string,
+  relevantMountainIds?: Set<string>,
+): Promise<RuntimeStructuredRequest[]> {
   const client = db();
   const { data, error } = await client
     .from("agent_requests")
@@ -2876,7 +3407,7 @@ export async function listRuntimeStructuredRequests(agentId: string): Promise<Ru
     .order("created_at", { ascending: false })
     .limit(20);
   if (error) throw error;
-  return (data ?? []).map((row) => ({
+  return filterByRelevantMountains((data ?? []) as AgentRequestRecord[], relevantMountainIds ?? new Set()).map((row) => ({
     id: row.id,
     request_kind: row.request_type,
     title: row.title,
@@ -2890,7 +3421,10 @@ export async function listRuntimeStructuredRequests(agentId: string): Promise<Ru
   }));
 }
 
-export async function listRuntimeCoalitionInvites(agentId: string): Promise<RuntimeCoalitionInvite[]> {
+export async function listRuntimeCoalitionInvites(
+  agentId: string,
+  relevantMountainIds?: Set<string>,
+): Promise<RuntimeCoalitionInvite[]> {
   const client = db();
   const { data, error } = await client
     .from("coalition_members")
@@ -2909,7 +3443,7 @@ export async function listRuntimeCoalitionInvites(agentId: string): Promise<Runt
   const coalitionsById = new Map(
     (coalitionsRes.data ?? []).map((coalition) => [coalition.id, coalition as CoalitionSessionRecord]),
   );
-  return (data ?? []).flatMap((member) => {
+  const invites = (data ?? []).flatMap((member) => {
     const coalition = coalitionsById.get(member.coalition_session_id);
     if (!coalition) return [];
     return [
@@ -2925,9 +3459,14 @@ export async function listRuntimeCoalitionInvites(agentId: string): Promise<Runt
       } satisfies RuntimeCoalitionInvite,
     ];
   });
+  if (!relevantMountainIds || relevantMountainIds.size === 0) return invites;
+  return invites.filter((invite) => invite.mountain_id && relevantMountainIds.has(invite.mountain_id));
 }
 
-export async function listRuntimeReplicationCalls(agentId: string): Promise<RuntimeReplicationAlert[]> {
+export async function listRuntimeReplicationCalls(
+  agentId: string,
+  relevantMountainIds?: Set<string>,
+): Promise<RuntimeReplicationAlert[]> {
   const lifecycle = await getAgentLifecycleRecord(agentId);
   const client = db();
   const { data, error } = await client
@@ -2937,7 +3476,7 @@ export async function listRuntimeReplicationCalls(agentId: string): Promise<Runt
     .order("created_at", { ascending: false })
     .limit(lifecycle?.lifecycle_state === "claimed" ? 20 : 10);
   if (error) throw error;
-  return (data ?? []).map((row) => ({
+  return filterByRelevantMountains((data ?? []) as ReplicationCallRecord[], relevantMountainIds ?? new Set()).map((row) => ({
     id: row.id,
     title: row.title,
     summary: row.summary,
@@ -2951,6 +3490,7 @@ export async function listRuntimeReplicationCalls(agentId: string): Promise<Runt
 
 export async function listRuntimeContradictionAlerts(
   agentId?: string,
+  relevantMountainIds?: Set<string>,
 ): Promise<RuntimeContradictionAlert[]> {
   const lifecycle = agentId ? await getAgentLifecycleRecord(agentId) : null;
   const client = db();
@@ -2961,7 +3501,7 @@ export async function listRuntimeContradictionAlerts(
     .order("updated_at", { ascending: false })
     .limit(lifecycle?.lifecycle_state === "claimed" ? 16 : 8);
   if (error) throw error;
-  return (data ?? []).map((row) => ({
+  return filterByRelevantMountains((data ?? []) as ContradictionClusterRecord[], relevantMountainIds ?? new Set()).map((row) => ({
     id: row.id,
     title: row.title,
     summary: row.summary,
@@ -2973,9 +3513,9 @@ export async function listRuntimeContradictionAlerts(
 }
 
 export async function listRuntimeArtifactThreadMentions(
-  agentId?: string,
+  agentId: string,
+  relevantMountainIds?: Set<string>,
 ): Promise<RuntimeArtifactThreadMention[]> {
-  void agentId;
   const client = db();
   const { data, error } = await client
     .from("artifact_threads")
@@ -2983,7 +3523,7 @@ export async function listRuntimeArtifactThreadMentions(
     .order("updated_at", { ascending: false })
     .limit(12);
   if (error) throw error;
-  return (data ?? []).map((row) => ({
+  return filterByRelevantMountains((data ?? []) as ArtifactThreadRecord[], relevantMountainIds ?? new Set()).map((row) => ({
     id: row.id,
     title: row.title,
     summary: row.summary,
@@ -2994,7 +3534,10 @@ export async function listRuntimeArtifactThreadMentions(
   }));
 }
 
-export async function listRuntimeMethodRecommendations(agentId: string): Promise<RuntimeMethodRecommendation[]> {
+export async function listRuntimeMethodRecommendations(
+  agentId: string,
+  relevantMountainIds?: Set<string>,
+): Promise<RuntimeMethodRecommendation[]> {
   const lifecycle = await getAgentLifecycleRecord(agentId);
   const client = db();
   const { data, error } = await client
@@ -3004,16 +3547,127 @@ export async function listRuntimeMethodRecommendations(agentId: string): Promise
     .order("updated_at", { ascending: false })
     .limit(lifecycle?.lifecycle_state === "claimed" ? 12 : 6);
   if (error) throw error;
-  return (data ?? []).map((row) => ({
-    id: row.id,
-    title: row.title,
+  return (data ?? [])
+    .filter((row) => !row.mountain_id || (relevantMountainIds?.size ? relevantMountainIds.has(String(row.mountain_id)) : true))
+    .map((row) => ({
+      id: row.id,
+      title: row.title,
     summary: row.summary,
     method_type: row.status,
     mountain_id: row.mountain_id,
-    campaign_id: row.campaign_id,
-    verified_usefulness: toNumber(row.usefulness_score),
-    reuse_count: toNumber(row.reuse_count),
+      campaign_id: row.campaign_id,
+      verified_usefulness: toNumber(row.usefulness_score),
+      reuse_count: toNumber(row.reuse_count),
+    }));
+}
+
+export async function listRuntimeMountainFeedDeltas(
+  agentId: string,
+  relevantMountainIds: Set<string>,
+): Promise<RuntimeFeedDelta[]> {
+  const viewer: TokenBookViewer = {
+    account_id: null,
+    agent_id: agentId,
+    accountRole: null,
+    permissions: [],
+  };
+  const feed = await listMountainFeed(viewer, {
+    tab: "for_you",
+    limit: 8,
+    offset: 0,
+    mountainId: relevantMountainIds.size === 1 ? Array.from(relevantMountainIds)[0] : null,
+    campaignId: null,
+  });
+  return feed.items.slice(0, 8).map((item) => ({
+    id: item.id,
+    item_type: item.item_type,
+    title: item.title,
+    summary: item.summary,
+    published_at: item.published_at,
+    href: item.href,
+    mountain_id: item.object_ref.mountain_id,
+    campaign_id: item.object_ref.campaign_id,
+    urgency: item.urgency,
+    reward_credits: item.reward_credits,
   }));
+}
+
+export async function listRuntimeContinuityHints(
+  agentId: string,
+  relevantMountainIds: Set<string>,
+): Promise<RuntimeContinuityHint[]> {
+  const [requests, contradictions, replications, coalitions, methods] = await Promise.all([
+    listRuntimeStructuredRequests(agentId, relevantMountainIds),
+    listRuntimeContradictionAlerts(agentId, relevantMountainIds),
+    listRuntimeReplicationCalls(agentId, relevantMountainIds),
+    listRuntimeCoalitionInvites(agentId),
+    listRuntimeMethodRecommendations(agentId, relevantMountainIds),
+  ]);
+  const hints: RuntimeContinuityHint[] = [];
+  const pushHint = (hint: RuntimeContinuityHint | null) => {
+    if (hint) hints.push(hint);
+  };
+  pushHint(
+    requests[0]
+      ? {
+          id: `request:${requests[0].id}`,
+          kind: "request_follow_up",
+          title: requests[0].title,
+          detail: "A structured request still needs follow-through or a state transition.",
+          href: `/tokenbook/requests/${requests[0].id}`,
+          priority: requests[0].urgency,
+        }
+      : null,
+  );
+  pushHint(
+    contradictions[0]
+      ? {
+          id: `contradiction:${contradictions[0].id}`,
+          kind: "contradiction_watch",
+          title: contradictions[0].title,
+          detail: "Contradiction pressure remains unresolved in a mountain you are already touching.",
+          href: `/tokenbook/contradictions/${contradictions[0].id}`,
+          priority: contradictions[0].severity,
+        }
+      : null,
+  );
+  pushHint(
+    replications[0]
+      ? {
+          id: `replication:${replications[0].id}`,
+          kind: "replication_priority",
+          title: replications[0].title,
+          detail: "Verification market pressure is live and reward-backed.",
+          href: `/tokenbook/replication/${replications[0].id}`,
+          priority: replications[0].urgency,
+        }
+      : null,
+  );
+  pushHint(
+    coalitions[0]
+      ? {
+          id: `coalition:${coalitions[0].id}`,
+          kind: "coalition_context",
+          title: coalitions[0].title,
+          detail: "A coalition invite is waiting and can preserve momentum instead of restarting context.",
+          href: `/tokenbook/coalitions/${coalitions[0].id}`,
+          priority: Math.round(coalitions[0].reliability_score),
+        }
+      : null,
+  );
+  pushHint(
+    methods[0]
+      ? {
+          id: `method:${methods[0].id}`,
+          kind: "method_reuse",
+          title: methods[0].title,
+          detail: "A reusable method already exists for the terrain you are operating in.",
+          href: `/tokenbook/methods/${methods[0].id}`,
+          priority: methods[0].verified_usefulness,
+        }
+      : null,
+  );
+  return hints.sort((a, b) => b.priority - a.priority).slice(0, 5);
 }
 
 export const listRuntimeArtifactMentions = listRuntimeArtifactThreadMentions;

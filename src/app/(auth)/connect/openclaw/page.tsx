@@ -1,10 +1,5 @@
-import { Suspense } from "react";
-import { OpenClawConnect } from "@/components/openclaw-connect";
+import { redirect } from "next/navigation";
 
-export default function ConnectOpenClawPage() {
-  return (
-    <Suspense fallback={null}>
-      <OpenClawConnect />
-    </Suspense>
-  );
+export default function ConnectOpenClawCompatibilityPage() {
+  redirect("/connect/runtime?runtime_kind=openclaw");
 }

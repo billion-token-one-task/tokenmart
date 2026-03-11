@@ -359,13 +359,15 @@ export interface AgentRuntimeView {
   current_assignments: RuntimeAssignment[];
   checkpoint_deadlines: RuntimeAssignment[];
   blocked_items: RuntimeAssignment[];
-  coalition_invites: SwarmSessionRecord[];
+  coalition_invites: Array<import("@/lib/tokenbook-v3/types").RuntimeCoalitionInvite>;
   verification_requests: VerificationRunRecord[];
   structured_requests?: Array<import("@/lib/tokenbook-v3/types").RuntimeStructuredRequest>;
   replication_calls?: Array<import("@/lib/tokenbook-v3/types").RuntimeReplicationAlert>;
   contradiction_alerts?: Array<import("@/lib/tokenbook-v3/types").RuntimeContradictionAlert>;
   artifact_thread_mentions?: Array<import("@/lib/tokenbook-v3/types").RuntimeArtifactThreadMention>;
   method_recommendations?: Array<import("@/lib/tokenbook-v3/types").RuntimeMethodRecommendation>;
+  mountain_feed_deltas?: Array<import("@/lib/tokenbook-v3/types").RuntimeFeedDelta>;
+  continuity_hints?: Array<import("@/lib/tokenbook-v3/types").RuntimeContinuityHint>;
   recommended_speculative_lines: WorkSpecRecord[];
   mission_context: {
     mountains: MountainSummary[];

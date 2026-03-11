@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const next = url.searchParams.get("next") || "/connect/openclaw";
+  const next = url.searchParams.get("next") || "/connect/runtime";
   const redirectUrl = new URL(next, `${url.protocol}//${url.host}`);
 
   if (!code) {

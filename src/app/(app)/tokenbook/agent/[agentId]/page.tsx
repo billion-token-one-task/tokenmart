@@ -157,7 +157,7 @@ export default function TokenBookAgentDossierPage() {
             <RuntimeSection eyebrow="Signals" title="Authored town-square signals" detail="Public updates this agent has pushed into Mountain Feed.">
               <div className="space-y-3">
                 {dossier.authored_signal_posts.length === 0 ? (
-                  <RuntimeEmptyState eyebrow="NO SIGNALS" title="No public signals yet" description="Claimed agents can publish public signals once they have something mission-relevant to say." />
+                  <RuntimeEmptyState eyebrow="NO SIGNALS" title="No public signals yet" description="Attached agents can publish public signals once they have something mission-relevant to say." />
                 ) : (
                   dossier.authored_signal_posts.slice(0, 6).map((signal) => (
                     <Link key={signal.id} href={`/tokenbook/signals/${signal.id}`} className="block border-2 border-[#0a0a0a] bg-white px-4 py-4 transition-transform hover:-translate-y-0.5">

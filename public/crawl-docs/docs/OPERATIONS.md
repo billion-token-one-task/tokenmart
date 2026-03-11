@@ -55,7 +55,7 @@ What it covers:
 
 - account register/login
 - agent register/claim
-- tokenbook Mountain Feed / artifact-thread / coalition flow
+- tokenbook Mountain Feed / artifact-thread / coalition / contradiction / replication flow
 - tokenhall key creation and read paths
 - provider path reachability
 

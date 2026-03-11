@@ -25,12 +25,12 @@ function isStaticAsset(pathname: string) {
 export async function updateSupabaseSession(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
   if (pathname === "/login" || pathname === "/register" || pathname === "/agent-register") {
-    return NextResponse.redirect(new URL("/connect/openclaw", request.url));
+    return NextResponse.redirect(new URL("/connect/runtime", request.url));
   }
 
   if (pathname === "/claim") {
     const claimCode = searchParams.get("claim_code")?.trim() || searchParams.get("code")?.trim() || "";
-    const redirectUrl = new URL("/connect/openclaw", request.url);
+    const redirectUrl = new URL("/connect/runtime", request.url);
     if (claimCode) {
       redirectUrl.searchParams.set("claim_code", claimCode);
     }

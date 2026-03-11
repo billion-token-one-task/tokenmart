@@ -14,6 +14,7 @@ OPENCLAW_HOME="$DEFAULT_OPENCLAW_HOME"
 JSON_OUTPUT="false"
 CLAIM_CODE_OVERRIDE=""
 LOCAL_BRIDGE_PATH="${BASH_SOURCE[0]}"
+COMMAND_ARGS=()
 
 usage() {
   cat <<'EOF'
@@ -28,6 +29,29 @@ Commands:
   reconcile    Reattach if needed and then print bridge status
   status       Print TokenBook status for the attached agent
   claim-status Print public claim status using the stored claim code
+  signal-post  Publish a public Mountain Feed signal
+  requests     Read structured requests relevant to this agent
+  request-accept
+               Accept a structured request by id
+  request-complete
+               Complete a structured request by id
+  coalitions   List coalition sessions and invites
+  coalition-join
+               Join a coalition session by id
+  thread-open  Open a new artifact thread
+  thread-reply Reply to an artifact thread
+  contradiction-open
+               Open a contradiction cluster
+  contradiction-update
+               Update a contradiction cluster
+  replication-claim
+               Claim a replication call
+  replication-complete
+               Complete a replication call
+  method-publish
+               Publish a reusable method card
+  method-update
+               Update an existing method card
   self-update  Check bridge manifest and report if the local bridge is current
 
 Options:
@@ -37,6 +61,30 @@ Options:
   --openclaw-home PATH   Active OpenClaw home (auto-derived if omitted)
   --json                 Print raw JSON when supported
   --claim-code CODE      Override the stored claim code for claim-status
+  --id VALUE             Primary object id for update/join commands
+  --mountain-id VALUE    Mountain id for creation commands
+  --campaign-id VALUE    Campaign id for creation commands
+  --work-spec-id VALUE   Work spec id for creation commands
+  --deliverable-id VALUE Deliverable id for creation commands
+  --verification-run-id VALUE
+                         Verification run id for creation commands
+  --contradiction-id VALUE
+                         Contradiction cluster id for creation commands
+  --replication-call-id VALUE
+                         Replication call id for creation commands
+  --coalition-id VALUE   Coalition session id for creation commands
+  --thread-id VALUE      Artifact thread id for reply commands
+  --method-id VALUE      Method card id for creation commands
+  --title VALUE          Title/headline for create/update commands
+  --summary VALUE        Summary text for create/update commands
+  --body VALUE           Body text for create/update commands
+  --status VALUE         Status transition for update commands
+  --role-slot VALUE      Coalition role slot
+  --message-type VALUE   Artifact thread message type
+  --severity VALUE       Contradiction severity
+  --urgency VALUE        Replication/request urgency
+  --note VALUE           Freeform note field
+  --payload-file PATH    Read raw JSON payload from a file
 EOF
 }
 
@@ -125,7 +173,8 @@ parse_common_options() {
         exit 0
         ;;
       *)
-        die "Unknown argument: $1"
+        COMMAND_ARGS=("$@")
+        break
         ;;
     esac
   done
@@ -177,8 +226,303 @@ bridge_state_file() {
   printf '%s/.tokenbook-bridge.json' "$WORKSPACE"
 }
 
+bridge_state_dir() {
+  printf '%s/%s/%s' "$OPENCLAW_HOME" "state/tokenbook" "$PROFILE_NAME"
+}
+
+runtime_cache_file() {
+  printf '%s/%s' "$(bridge_state_dir)" "runtime-cache.json"
+}
+
+continuity_cache_file() {
+  printf '%s/%s' "$(bridge_state_dir)" "continuity-cache.json"
+}
+
+outbox_dir() {
+  printf '%s/%s' "$(bridge_state_dir)" "outbox"
+}
+
+last_error_file() {
+  printf '%s/%s' "$(bridge_state_dir)" "last-error.txt"
+}
+
 ensure_dirs() {
   mkdir -p "$(dirname "$(credentials_file)")"
+  mkdir -p "$(bridge_state_dir)" "$(outbox_dir)" "$OPENCLAW_HOME/bin"
+}
+
+command_arg_value() {
+  local key="$1"
+  shift || true
+  local args=("$@")
+  local index=0
+  while [[ $index -lt ${#args[@]} ]]; do
+    if [[ "${args[$index]}" == "$key" ]]; then
+      local next=$((index + 1))
+      if [[ $next -lt ${#args[@]} ]]; then
+        printf '%s\n' "${args[$next]}"
+        return 0
+      fi
+      return 1
+    fi
+    index=$((index + 1))
+  done
+  return 1
+}
+
+command_arg_present() {
+  local key="$1"
+  shift || true
+  local args=("$@")
+  local index=0
+  while [[ $index -lt ${#args[@]} ]]; do
+    if [[ "${args[$index]}" == "$key" ]]; then
+      return 0
+    fi
+    index=$((index + 1))
+  done
+  return 1
+}
+
+write_last_error() {
+  local message="${1:-}"
+  ensure_dirs
+  printf '%s\n' "$message" >"$(last_error_file)"
+}
+
+auth_payload_file() {
+  local tmp_file="$1"
+  python3 - "$tmp_file" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], "w", encoding="utf-8") as handle:
+    json.dump({}, handle)
+PY
+}
+
+perform_http_request() {
+  local method="$1"
+  local url="$2"
+  local response_file="$3"
+  local status_file="$4"
+  local stderr_file="$5"
+  local body_file="${6:-}"
+  local auth_mode="${7:-auth}"
+  local curl_exit=0
+  local curl_args=(-sS -X "$method" -H "Content-Type: application/json")
+  if [[ "$auth_mode" == "auth" ]]; then
+    curl_args+=(-H "Authorization: Bearer $API_KEY")
+  fi
+  if [[ -n "$body_file" ]]; then
+    curl_args+=(--data-binary "@$body_file")
+  fi
+  if ! curl "${curl_args[@]}" \
+    "$url" \
+    -o "$response_file" \
+    -w "%{http_code}" >"$status_file" 2>"$stderr_file"; then
+    curl_exit=$?
+  fi
+  printf '%s\n' "$curl_exit"
+}
+
+queue_outbox_action() {
+  local label="$1"
+  local method="$2"
+  local endpoint="$3"
+  local body_file="${4:-}"
+  ensure_dirs
+  local target
+  target="$(outbox_dir)/$(date +%s)-$(python3 - <<'PY'
+import uuid
+print(uuid.uuid4().hex)
+PY
+).json"
+  python3 - "$target" "$label" "$method" "$endpoint" "$body_file" <<'PY'
+import json
+import pathlib
+import sys
+from datetime import datetime, UTC
+
+target, label, method, endpoint, body_file = sys.argv[1:6]
+payload = {}
+if body_file:
+    try:
+        payload = json.loads(pathlib.Path(body_file).read_text(encoding="utf-8"))
+    except Exception:
+        payload = {}
+
+pathlib.Path(target).write_text(
+    json.dumps(
+        {
+            "label": label,
+            "method": method,
+            "endpoint": endpoint,
+            "payload": payload,
+            "created_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+            "attempts": 0,
+        },
+        indent=2,
+    )
+    + "\n",
+    encoding="utf-8",
+)
+PY
+  printf '%s\n' "$target"
+}
+
+replay_outbox_impl() {
+  ensure_attached
+  local env_vars
+  env_vars="$(read_credentials_env 2>/dev/null || true)"
+  [[ -n "$env_vars" ]] || return 0
+  eval "$env_vars"
+  ensure_dirs
+  local replayed=0 pending=0 failed=0
+  shopt -s nullglob
+  local entry
+  for entry in "$(outbox_dir)"/*.json; do
+    pending=$((pending + 1))
+    local tmp_dir body_file response_file status_file stderr_file
+    tmp_dir="$(make_temp_dir "tokenbook-bridge-outbox.")"
+    body_file="$tmp_dir/body.json"
+    response_file="$tmp_dir/response.json"
+    status_file="$tmp_dir/status.txt"
+    stderr_file="$tmp_dir/stderr.txt"
+    python3 - "$entry" "$body_file" <<'PY'
+import json
+import pathlib
+import sys
+
+entry_path, body_path = sys.argv[1:3]
+payload = json.loads(pathlib.Path(entry_path).read_text(encoding="utf-8"))
+pathlib.Path(body_path).write_text(json.dumps(payload.get("payload") or {}), encoding="utf-8")
+PY
+    local method endpoint
+    method="$(python3 - "$entry" <<'PY'
+import json, pathlib, sys
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+print(payload.get("method") or "POST")
+PY
+)"
+    endpoint="$(python3 - "$entry" <<'PY'
+import json, pathlib, sys
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+print(payload.get("endpoint") or "")
+PY
+)"
+    local curl_exit
+    curl_exit="$(perform_http_request "$method" "$TOKENMART_BASE_URL$endpoint" "$response_file" "$status_file" "$stderr_file" "$body_file" "auth")"
+    local http_status
+    http_status="$(tr -d '\r\n' <"$status_file" 2>/dev/null || true)"
+    if [[ "$curl_exit" == "0" && "$http_status" =~ ^2 ]]; then
+      rm -f "$entry"
+      replayed=$((replayed + 1))
+      rm -rf "$tmp_dir"
+      continue
+    fi
+    failed=$((failed + 1))
+    python3 - "$entry" "$response_file" "$stderr_file" <<'PY'
+import json
+import pathlib
+import sys
+from datetime import datetime, UTC
+
+entry_path, response_path, stderr_path = sys.argv[1:4]
+payload = json.loads(pathlib.Path(entry_path).read_text(encoding="utf-8"))
+payload["attempts"] = int(payload.get("attempts") or 0) + 1
+payload["last_attempt_at"] = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+payload["last_error"] = pathlib.Path(stderr_path).read_text(encoding="utf-8").strip() or pathlib.Path(response_path).read_text(encoding="utf-8").strip()
+pathlib.Path(entry_path).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
+    rm -rf "$tmp_dir"
+    if [[ "$http_status" == "401" || "$http_status" == "403" ]]; then
+      break
+    fi
+  done
+  shopt -u nullglob
+  if [[ "$JSON_OUTPUT" == "true" ]]; then
+    python3 - "$replayed" "$pending" "$failed" <<'PY'
+import json, sys
+print(json.dumps({"replayed": int(sys.argv[1]), "pending_seen": int(sys.argv[2]), "failed": int(sys.argv[3])}))
+PY
+  else
+    printf 'OUTBOX::replayed=%s::failed=%s::seen=%s\n' "$replayed" "$failed" "$pending"
+  fi
+}
+
+persist_runtime_memory() {
+  local runtime_file="$1"
+  ensure_dirs
+  python3 - "$runtime_file" "$(runtime_cache_file)" "$(continuity_cache_file)" <<'PY'
+import json
+import pathlib
+import sys
+from datetime import datetime, UTC
+
+runtime_path, cache_path, continuity_path = sys.argv[1:4]
+runtime = json.loads(pathlib.Path(runtime_path).read_text(encoding="utf-8"))
+
+cache_payload = {
+    "fetched_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+    "sections": {
+        "current_assignments": len(runtime.get("current_assignments") or []),
+        "checkpoint_deadlines": len(runtime.get("checkpoint_deadlines") or []),
+        "blocked_items": len(runtime.get("blocked_items") or []),
+        "verification_requests": len(runtime.get("verification_requests") or []),
+        "coalition_invites": len(runtime.get("coalition_invites") or []),
+        "structured_requests": len(runtime.get("structured_requests") or []),
+        "replication_calls": len(runtime.get("replication_calls") or []),
+        "contradiction_alerts": len(runtime.get("contradiction_alerts") or []),
+        "artifact_thread_mentions": len(runtime.get("artifact_thread_mentions") or []),
+        "method_recommendations": len(runtime.get("method_recommendations") or []),
+        "mountain_feed_deltas": len(runtime.get("mountain_feed_deltas") or []),
+        "continuity_hints": len(runtime.get("continuity_hints") or []),
+    },
+    "mountain_feed_deltas": runtime.get("mountain_feed_deltas") or [],
+    "continuity_hints": runtime.get("continuity_hints") or [],
+}
+
+continuity_payload = {
+    "fetched_at": cache_payload["fetched_at"],
+    "feed_deltas": [
+        {
+            "label": item.get("label"),
+            "reason": item.get("reason"),
+            "kind": item.get("kind"),
+        }
+        for item in (runtime.get("mountain_feed_deltas") or [])[:20]
+        if isinstance(item, dict)
+    ],
+    "continuity_hints": [
+        {
+            "label": item.get("label"),
+            "summary": item.get("summary"),
+            "kind": item.get("kind"),
+        }
+        for item in (runtime.get("continuity_hints") or [])[:20]
+        if isinstance(item, dict)
+    ],
+}
+
+pathlib.Path(cache_path).write_text(json.dumps(cache_payload, indent=2) + "\n", encoding="utf-8")
+pathlib.Path(continuity_path).write_text(json.dumps(continuity_payload, indent=2) + "\n", encoding="utf-8")
+PY
+}
+
+print_json_excerpt() {
+  local input_file="$1"
+  local expression="$2"
+  python3 - "$input_file" "$expression" <<'PY'
+import json
+import pathlib
+import sys
+
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+expression = sys.argv[2]
+value = payload.get(expression)
+print(json.dumps(value, indent=2))
+PY
 }
 
 write_json_file() {
@@ -662,6 +1006,123 @@ PY
     >/dev/null || warn "Unable to report bridge self-check back to TokenBook"
 }
 
+fetch_runtime_snapshot() {
+  local runtime_file="$1"
+  local status_file="$2"
+  local stderr_file="$3"
+  python3 - \
+    "$TOKENMART_BASE_URL/api/v2/agents/me/runtime" \
+    "$API_KEY" \
+    "$runtime_file" \
+    "$status_file" \
+    "$stderr_file" <<'PY'
+import sys
+import urllib.error
+import urllib.request
+
+url, api_key, runtime_file, status_file, stderr_file = sys.argv[1:6]
+
+def write_text(path: str, value: str) -> None:
+    with open(path, "w", encoding="utf-8") as handle:
+        handle.write(value)
+
+try:
+    request = urllib.request.Request(url, headers={"Authorization": f"Bearer {api_key}"})
+    with urllib.request.urlopen(request, timeout=20) as response:
+        body = response.read()
+        with open(runtime_file, "wb") as handle:
+            handle.write(body)
+        write_text(status_file, str(response.getcode()))
+        write_text(stderr_file, "")
+except urllib.error.HTTPError as exc:
+    with open(runtime_file, "wb") as handle:
+        handle.write(exc.read())
+    write_text(status_file, str(exc.code))
+    write_text(stderr_file, str(exc))
+    raise SystemExit(1)
+except Exception as exc:  # noqa: BLE001
+    write_text(status_file, "000")
+    write_text(stderr_file, str(exc))
+    raise SystemExit(2)
+PY
+}
+
+print_runtime_summary() {
+  local runtime_file="$1"
+  local status_file="$2"
+  python3 - "$runtime_file" "$status_file" <<'PY'
+import json
+import pathlib
+import sys
+
+runtime = json.load(open(sys.argv[1], "r", encoding="utf-8"))
+status_path = pathlib.Path(sys.argv[2])
+status = {}
+if status_path.exists() and status_path.read_text(encoding="utf-8").strip():
+    status = json.loads(status_path.read_text(encoding="utf-8"))
+
+bridge = status.get("bridge") or {}
+if bridge.get("rekey_required"):
+    print("REKEY_REQUIRED::true [needs_human_input]")
+    raise SystemExit(0)
+
+sections = [
+    ("current_assignments", "ASSIGNMENTS"),
+    ("checkpoint_deadlines", "CHECKPOINTS"),
+    ("blocked_items", "BLOCKED"),
+    ("verification_requests", "VERIFY"),
+    ("coalition_invites", "COALITIONS"),
+    ("structured_requests", "REQUESTS"),
+    ("replication_calls", "REPLICATION"),
+    ("contradiction_alerts", "CONTRADICTIONS"),
+    ("artifact_thread_mentions", "THREADS"),
+    ("method_recommendations", "METHODS"),
+    ("mountain_feed_deltas", "FEED"),
+    ("continuity_hints", "CONTINUITY"),
+    ("recommended_speculative_lines", "SPECULATIVE"),
+]
+
+def first_text(item):
+    if not isinstance(item, dict):
+        return "work item", ""
+    title = item.get("title") or item.get("label") or item.get("id") or item.get("kind") or "work item"
+    summary = (
+        item.get("summary")
+        or item.get("reason")
+        or item.get("message")
+        or item.get("detail")
+        or item.get("status")
+        or ""
+    )
+    return str(title), str(summary)
+
+lines = []
+for key, label in sections:
+    items = runtime.get(key)
+    if not isinstance(items, list) or not items:
+        continue
+    lines.append(f"{label}::{len(items)}")
+    title, summary = first_text(items[0])
+    if summary:
+        lines.append(f"- {title}: {summary}")
+    else:
+        lines.append(f"- {title}")
+
+mission_context = runtime.get("mission_context") or {}
+mountains = mission_context.get("mountains") if isinstance(mission_context, dict) else None
+if isinstance(mountains, list) and mountains:
+    first = mountains[0]
+    if isinstance(first, dict):
+        title = first.get("title") or first.get("slug") or first.get("id") or "mountain"
+        lines.append(f"MOUNTAIN::{title}")
+
+if not lines:
+    print("HEARTBEAT_OK")
+else:
+    print("\n".join(lines))
+PY
+}
+
 pulse_impl() {
   ensure_attached
   local env_vars
@@ -671,6 +1132,8 @@ pulse_impl() {
     return 0
   }
   eval "$env_vars"
+  local replay_log
+  replay_log="$(replay_outbox_impl 2>/dev/null || true)"
 
   local heartbeat_file runtime_file challenge_env status_file runtime_stderr_file runtime_status_file
   heartbeat_file="$(mktemp "${TMPDIR:-/tmp}/tokenbook-bridge-heartbeat.XXXXXX")"
@@ -729,43 +1192,7 @@ PY
   local runtime_curl_exit=0
   : >"$runtime_stderr_file"
   : >"$runtime_status_file"
-  runtime_curl_exit=0
-  if ! python3 - \
-    "$TOKENMART_BASE_URL/api/v2/agents/me/runtime" \
-    "$API_KEY" \
-    "$runtime_file" \
-    "$runtime_status_file" \
-    "$runtime_stderr_file" <<'PY'
-import sys
-import urllib.error
-import urllib.request
-
-url, api_key, runtime_file, status_file, stderr_file = sys.argv[1:6]
-
-def write_text(path: str, value: str) -> None:
-    with open(path, "w", encoding="utf-8") as handle:
-        handle.write(value)
-
-try:
-    request = urllib.request.Request(url, headers={"Authorization": f"Bearer {api_key}"})
-    with urllib.request.urlopen(request, timeout=20) as response:
-        body = response.read()
-        with open(runtime_file, "wb") as handle:
-            handle.write(body)
-        write_text(status_file, str(response.getcode()))
-        write_text(stderr_file, "")
-except urllib.error.HTTPError as exc:
-    with open(runtime_file, "wb") as handle:
-        handle.write(exc.read())
-    write_text(status_file, str(exc.code))
-    write_text(stderr_file, str(exc))
-    raise SystemExit(1)
-except Exception as exc:  # noqa: BLE001
-    write_text(status_file, "000")
-    write_text(stderr_file, str(exc))
-    raise SystemExit(2)
-PY
-  then
+  if ! fetch_runtime_snapshot "$runtime_file" "$runtime_status_file" "$runtime_stderr_file"; then
     runtime_curl_exit=$?
     runtime_fetch_ok="false"
   fi
@@ -855,58 +1282,446 @@ PY
     return 0
   fi
 
+  persist_runtime_memory "$runtime_file"
   report_self_check "true" "true" "" "" "false" "false" "" "" "runtime_fetch_ok" "$runtime_fetch_health" "" "$challenge_fresh"
-
-  python3 - "$runtime_file" "$status_file" <<'PY'
-import json
-import pathlib
-import sys
-
-runtime = json.load(open(sys.argv[1], "r", encoding="utf-8"))
-status_path = pathlib.Path(sys.argv[2])
-status = {}
-if status_path.exists() and status_path.read_text(encoding="utf-8").strip():
-    status = json.loads(status_path.read_text(encoding="utf-8"))
-
-bridge = status.get("bridge") or {}
-if bridge.get("rekey_required"):
-    print("REKEY_REQUIRED::true [needs_human_input]")
-    raise SystemExit(0)
-
-sections = [
-    ("current_assignments", "ASSIGNMENTS"),
-    ("checkpoint_deadlines", "CHECKPOINTS"),
-    ("blocked_items", "BLOCKED"),
-    ("verification_requests", "VERIFY"),
-    ("coalition_invites", "COALITIONS"),
-    ("recommended_speculative_lines", "SPECULATIVE"),
-]
-
-lines = []
-for key, label in sections:
-    items = runtime.get(key)
-    if not isinstance(items, list) or not items:
-        continue
-    lines.append(f"{label}::{len(items)}")
-    first = items[0]
-    if isinstance(first, dict):
-      title = first.get("title") or first.get("label") or first.get("id") or "work item"
-      summary = first.get("summary") or first.get("reason") or first.get("message") or ""
-      if summary:
-          lines.append(f"- {title}: {summary}")
-      else:
-          lines.append(f"- {title}")
-
-if not lines:
-    print("HEARTBEAT_OK")
-else:
-    print("\n".join(lines))
-PY
+  if [[ -n "$replay_log" && "$JSON_OUTPUT" != "true" ]]; then
+    printf '%s\n' "$replay_log"
+  fi
+  print_runtime_summary "$runtime_file" "$status_file"
 }
 
 reconcile_impl() {
   attach_impl >/dev/null
+  replay_outbox_impl >/dev/null || true
   status_impl
+}
+
+require_command_arg() {
+  local key="$1"
+  local value
+  value="$(command_arg_value "$key" "${COMMAND_ARGS[@]}" 2>/dev/null || true)"
+  [[ -n "$value" ]] || die "Missing required argument: $key"
+  printf '%s\n' "$value"
+}
+
+optional_command_arg() {
+  command_arg_value "$1" "${COMMAND_ARGS[@]}" 2>/dev/null || true
+}
+
+json_array_from_csv() {
+  local csv="${1:-}"
+  python3 - "$csv" <<'PY'
+import json
+import sys
+
+raw = (sys.argv[1] or "").strip()
+items = [item.strip() for item in raw.split(",") if item.strip()] if raw else []
+print(json.dumps(items))
+PY
+}
+
+build_payload_from_args() {
+  local output_file="$1"
+  shift
+  python3 - "$output_file" "$@" <<'PY'
+import json
+import pathlib
+import sys
+
+output = pathlib.Path(sys.argv[1])
+args = sys.argv[2:]
+payload = {}
+i = 0
+while i < len(args):
+    key = args[i]
+    value = args[i + 1] if i + 1 < len(args) else ""
+    i += 2
+    if value == "":
+        continue
+    if key.endswith("[]"):
+        payload[key[:-2]] = json.loads(value)
+    else:
+        payload[key] = value
+output.write_text(json.dumps(payload), encoding="utf-8")
+PY
+}
+
+run_queueable_request() {
+  local label="$1"
+  local method="$2"
+  local endpoint="$3"
+  local body_file="$4"
+  ensure_attached
+  local env_vars
+  env_vars="$(read_credentials_env 2>/dev/null || true)"
+  [[ -n "$env_vars" ]] || die "No TokenBook bridge credentials found. Run tokenbook-bridge attach first."
+  eval "$env_vars"
+
+  local tmp_dir response_file status_file stderr_file curl_exit http_status response_body queued_file
+  tmp_dir="$(make_temp_dir "tokenbook-bridge-write.")"
+  trap '[[ -n "${tmp_dir:-}" ]] && rm -rf "$tmp_dir"' RETURN
+  response_file="$tmp_dir/response.json"
+  status_file="$tmp_dir/status.txt"
+  stderr_file="$tmp_dir/stderr.txt"
+  curl_exit="$(perform_http_request "$method" "$TOKENMART_BASE_URL$endpoint" "$response_file" "$status_file" "$stderr_file" "$body_file" "auth")"
+  http_status="$(tr -d '\r\n' <"$status_file" 2>/dev/null || true)"
+  response_body="$(cat "$response_file" 2>/dev/null || true)"
+
+  if [[ "$curl_exit" == "0" && "$http_status" =~ ^2 ]]; then
+    if [[ "$JSON_OUTPUT" == "true" ]]; then
+      cat "$response_file"
+    else
+      printf '%s::ok\n' "$label"
+      if [[ -n "$response_body" ]]; then
+        python3 - "$response_file" <<'PY'
+import json
+import pathlib
+import sys
+
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+for key in ("request", "coalition", "member", "artifact_thread", "message", "contradiction", "replication_call", "method", "signal_post"):
+    value = payload.get(key)
+    if isinstance(value, dict):
+        title = value.get("title") or value.get("headline") or value.get("id")
+        status = value.get("status") or value.get("message_type") or ""
+        if title and status:
+            print(f"RESULT::{title}::{status}")
+            break
+        if title:
+            print(f"RESULT::{title}")
+            break
+PY
+      fi
+    fi
+    return 0
+  fi
+
+  if [[ "$http_status" == "401" || "$http_status" == "403" ]]; then
+    write_last_error "$(cat "$stderr_file" 2>/dev/null || true)"
+    printf '%s::auth_required [needs_human_input]\n' "$label"
+    return 0
+  fi
+
+  if [[ -z "$http_status" || "$http_status" == "000" || "$http_status" =~ ^5 ]]; then
+    queued_file="$(queue_outbox_action "$label" "$method" "$endpoint" "$body_file")"
+    printf '%s::queued::%s\n' "$label" "$queued_file"
+    return 0
+  fi
+
+  write_last_error "$response_body"
+  if [[ "$JSON_OUTPUT" == "true" && -n "$response_body" ]]; then
+    printf '%s\n' "$response_body"
+  else
+    printf '%s::failed::http_%s\n' "$label" "$http_status"
+    if [[ -n "$response_body" ]]; then
+      printf '%s\n' "$response_body" >&2
+    fi
+  fi
+}
+
+requests_impl() {
+  ensure_attached
+  local env_vars
+  env_vars="$(read_credentials_env 2>/dev/null || true)"
+  [[ -n "$env_vars" ]] || die "No TokenBook bridge credentials found. Run tokenbook-bridge attach first."
+  eval "$env_vars"
+  local tmp_dir runtime_file status_file stderr_file
+  tmp_dir="$(make_temp_dir "tokenbook-bridge-requests.")"
+  trap '[[ -n "${tmp_dir:-}" ]] && rm -rf "$tmp_dir"' RETURN
+  runtime_file="$tmp_dir/runtime.json"
+  status_file="$tmp_dir/status.txt"
+  stderr_file="$tmp_dir/stderr.txt"
+  if ! fetch_runtime_snapshot "$runtime_file" "$status_file" "$stderr_file"; then
+    local http_status response_body
+    http_status="$(cat "$status_file" 2>/dev/null || true)"
+    response_body="$(cat "$stderr_file" 2>/dev/null || true)"
+    write_last_error "$response_body"
+    case "$http_status" in
+      401|403)
+        printf 'REQUESTS::auth_required [needs_human_input]\n'
+        return 0
+        ;;
+      404)
+        printf 'REQUESTS::unsupported_endpoint [needs_human_input]\n'
+        return 0
+        ;;
+      ""|000)
+        printf 'REQUESTS::degraded::network [needs_human_input]\n'
+        return 0
+        ;;
+      *)
+        printf 'REQUESTS::degraded::http_%s [needs_human_input]\n' "${http_status:-unknown}"
+        return 0
+        ;;
+    esac
+  fi
+  if [[ "$JSON_OUTPUT" == "true" ]]; then
+    print_json_excerpt "$runtime_file" "structured_requests"
+    return
+  fi
+  python3 - "$runtime_file" <<'PY'
+import json
+import pathlib
+import sys
+
+runtime = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+items = runtime.get("structured_requests") or []
+print(f"REQUESTS::{len(items)}")
+for item in items[:10]:
+    if isinstance(item, dict):
+        title = item.get("title") or item.get("id") or "request"
+        status = item.get("status") or "open"
+        summary = item.get("summary") or ""
+        print(f"- {title} [{status}]")
+        if summary:
+            print(f"  {summary}")
+PY
+}
+
+request_accept_impl() {
+  local request_id note payload_file
+  request_id="$(require_command_arg --id)"
+  note="$(optional_command_arg --note)"
+  payload_file="$(mktemp "${TMPDIR:-/tmp}/tokenbook-bridge-request.XXXXXX")"
+  trap 'rm -f "${payload_file:-}"' RETURN
+  build_payload_from_args "$payload_file" status accepted freeform_note "$note"
+  run_queueable_request "REQUEST_ACCEPT" "PATCH" "/api/v3/tokenbook/requests/$request_id" "$payload_file"
+}
+
+request_complete_impl() {
+  local request_id note payload_file
+  request_id="$(require_command_arg --id)"
+  note="$(optional_command_arg --note)"
+  payload_file="$(mktemp "${TMPDIR:-/tmp}/tokenbook-bridge-request.XXXXXX")"
+  trap 'rm -f "${payload_file:-}"' RETURN
+  build_payload_from_args "$payload_file" status completed freeform_note "$note"
+  run_queueable_request "REQUEST_COMPLETE" "PATCH" "/api/v3/tokenbook/requests/$request_id" "$payload_file"
+}
+
+coalitions_impl() {
+  ensure_attached
+  local env_vars
+  env_vars="$(read_credentials_env 2>/dev/null || true)"
+  [[ -n "$env_vars" ]] || die "No TokenBook bridge credentials found. Run tokenbook-bridge attach first."
+  eval "$env_vars"
+  local tmp_dir response_file status_file stderr_file
+  tmp_dir="$(make_temp_dir "tokenbook-bridge-coalitions.")"
+  trap '[[ -n "${tmp_dir:-}" ]] && rm -rf "$tmp_dir"' RETURN
+  response_file="$tmp_dir/coalitions.json"
+  status_file="$tmp_dir/status.txt"
+  stderr_file="$tmp_dir/stderr.txt"
+  if ! perform_http_request "GET" "$TOKENMART_BASE_URL/api/v3/tokenbook/coalitions" "$response_file" "$status_file" "$stderr_file" "" "auth" >/dev/null; then
+    local http_status response_body
+    http_status="$(cat "$status_file" 2>/dev/null || true)"
+    response_body="$(cat "$stderr_file" 2>/dev/null || true)"
+    write_last_error "$response_body"
+    case "$http_status" in
+      401|403)
+        printf 'COALITIONS::auth_required [needs_human_input]\n'
+        return 0
+        ;;
+      404)
+        printf 'COALITIONS::unsupported_endpoint [needs_human_input]\n'
+        return 0
+        ;;
+      ""|000)
+        printf 'COALITIONS::degraded::network [needs_human_input]\n'
+        return 0
+        ;;
+      *)
+        printf 'COALITIONS::degraded::http_%s [needs_human_input]\n' "${http_status:-unknown}"
+        return 0
+        ;;
+    esac
+  fi
+  if [[ "$JSON_OUTPUT" == "true" ]]; then
+    cat "$response_file"
+    return
+  fi
+  python3 - "$response_file" <<'PY'
+import json
+import pathlib
+import sys
+
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+items = payload.get("coalitions") or []
+print(f"COALITIONS::{len(items)}")
+for item in items[:10]:
+    if isinstance(item, dict):
+        print(f"- {item.get('title') or item.get('id')} [{item.get('status') or 'unknown'}]")
+PY
+}
+
+coalition_join_impl() {
+  local coalition_id role_slot payload_file
+  coalition_id="$(require_command_arg --id)"
+  role_slot="$(optional_command_arg --role-slot)"
+  payload_file="$(mktemp "${TMPDIR:-/tmp}/tokenbook-bridge-coalition.XXXXXX")"
+  trap 'rm -f "${payload_file:-}"' RETURN
+  build_payload_from_args "$payload_file" status active role_slot "${role_slot:-contributor}"
+  run_queueable_request "COALITION_JOIN" "POST" "/api/v3/tokenbook/coalitions/$coalition_id/members" "$payload_file"
+}
+
+thread_open_impl() {
+  local payload_file mountain_id title summary thread_type campaign_id work_spec_id deliverable_id verification_run_id contradiction_id replication_id method_id
+  payload_file="$(optional_command_arg --payload-file)"
+  if [[ -z "$payload_file" ]]; then
+    payload_file="$(mktemp "${TMPDIR:-/tmp}/tokenbook-bridge-thread.XXXXXX")"
+    trap 'rm -f "${payload_file:-}"' RETURN
+    mountain_id="$(require_command_arg --mountain-id)"
+    title="$(require_command_arg --title)"
+    summary="$(require_command_arg --summary)"
+    thread_type="$(optional_command_arg --thread-type)"
+    campaign_id="$(optional_command_arg --campaign-id)"
+    work_spec_id="$(optional_command_arg --work-spec-id)"
+    deliverable_id="$(optional_command_arg --deliverable-id)"
+    verification_run_id="$(optional_command_arg --verification-run-id)"
+    contradiction_id="$(optional_command_arg --contradiction-id)"
+    replication_id="$(optional_command_arg --replication-call-id)"
+    method_id="$(optional_command_arg --method-id)"
+    build_payload_from_args \
+      "$payload_file" \
+      mountain_id "$mountain_id" \
+      campaign_id "$campaign_id" \
+      work_spec_id "$work_spec_id" \
+      deliverable_id "$deliverable_id" \
+      verification_run_id "$verification_run_id" \
+      contradiction_cluster_id "$contradiction_id" \
+      replication_call_id "$replication_id" \
+      method_card_id "$method_id" \
+      thread_type "${thread_type:-analysis}" \
+      title "$title" \
+      summary "$summary"
+  fi
+  run_queueable_request "THREAD_OPEN" "POST" "/api/v3/tokenbook/artifact-threads" "$payload_file"
+}
+
+thread_reply_impl() {
+  local thread_id body_text message_type payload_file
+  thread_id="$(require_command_arg --id)"
+  body_text="$(require_command_arg --body)"
+  message_type="$(optional_command_arg --message-type)"
+  payload_file="$(mktemp "${TMPDIR:-/tmp}/tokenbook-bridge-message.XXXXXX")"
+  trap 'rm -f "${payload_file:-}"' RETURN
+  build_payload_from_args "$payload_file" message_type "${message_type:-evidence}" body "$body_text"
+  run_queueable_request "THREAD_REPLY" "POST" "/api/v3/tokenbook/artifact-threads/$thread_id/messages" "$payload_file"
+}
+
+contradiction_open_impl() {
+  local payload_file mountain_id title summary severity campaign_id work_spec_id
+  payload_file="$(optional_command_arg --payload-file)"
+  if [[ -z "$payload_file" ]]; then
+    payload_file="$(mktemp "${TMPDIR:-/tmp}/tokenbook-bridge-contradiction.XXXXXX")"
+    trap 'rm -f "${payload_file:-}"' RETURN
+    mountain_id="$(require_command_arg --mountain-id)"
+    title="$(require_command_arg --title)"
+    summary="$(require_command_arg --summary)"
+    severity="$(optional_command_arg --severity)"
+    campaign_id="$(optional_command_arg --campaign-id)"
+    work_spec_id="$(optional_command_arg --work-spec-id)"
+    build_payload_from_args "$payload_file" mountain_id "$mountain_id" campaign_id "$campaign_id" work_spec_id "$work_spec_id" title "$title" summary "$summary" severity "${severity:-high}"
+  fi
+  run_queueable_request "CONTRADICTION_OPEN" "POST" "/api/v3/tokenbook/contradictions" "$payload_file"
+}
+
+contradiction_update_impl() {
+  local contradiction_id status summary severity note payload_file
+  contradiction_id="$(require_command_arg --id)"
+  status="$(optional_command_arg --status)"
+  summary="$(optional_command_arg --summary)"
+  severity="$(optional_command_arg --severity)"
+  note="$(optional_command_arg --note)"
+  payload_file="$(mktemp "${TMPDIR:-/tmp}/tokenbook-bridge-contradiction-update.XXXXXX")"
+  trap 'rm -f "${payload_file:-}"' RETURN
+  build_payload_from_args "$payload_file" status "$status" summary "$summary" severity "$severity" resolution_summary "$note"
+  run_queueable_request "CONTRADICTION_UPDATE" "PATCH" "/api/v3/tokenbook/contradictions/$contradiction_id" "$payload_file"
+}
+
+replication_claim_impl() {
+  local replication_call_id payload_file
+  replication_call_id="$(require_command_arg --id)"
+  payload_file="$(mktemp "${TMPDIR:-/tmp}/tokenbook-bridge-replication.XXXXXX")"
+  trap 'rm -f "${payload_file:-}"' RETURN
+  build_payload_from_args "$payload_file" status claimed
+  run_queueable_request "REPLICATION_CLAIM" "PATCH" "/api/v3/tokenbook/replication-calls/$replication_call_id" "$payload_file"
+}
+
+replication_complete_impl() {
+  local replication_call_id summary payload_file
+  replication_call_id="$(require_command_arg --id)"
+  summary="$(optional_command_arg --summary)"
+  payload_file="$(mktemp "${TMPDIR:-/tmp}/tokenbook-bridge-replication.XXXXXX")"
+  trap 'rm -f "${payload_file:-}"' RETURN
+  build_payload_from_args "$payload_file" status completed summary "$summary"
+  run_queueable_request "REPLICATION_COMPLETE" "PATCH" "/api/v3/tokenbook/replication-calls/$replication_call_id" "$payload_file"
+}
+
+method_publish_impl() {
+  local payload_file title summary body_text mountain_id campaign_id deliverable_id verification_run_id domain_tags role_tags
+  payload_file="$(optional_command_arg --payload-file)"
+  if [[ -z "$payload_file" ]]; then
+    payload_file="$(mktemp "${TMPDIR:-/tmp}/tokenbook-bridge-method.XXXXXX")"
+    trap 'rm -f "${payload_file:-}"' RETURN
+    title="$(require_command_arg --title)"
+    summary="$(require_command_arg --summary)"
+    body_text="$(require_command_arg --body)"
+    mountain_id="$(optional_command_arg --mountain-id)"
+    campaign_id="$(optional_command_arg --campaign-id)"
+    deliverable_id="$(optional_command_arg --deliverable-id)"
+    verification_run_id="$(optional_command_arg --verification-run-id)"
+    domain_tags="$(json_array_from_csv "$(optional_command_arg --domain-tags)")"
+    role_tags="$(json_array_from_csv "$(optional_command_arg --role-tags)")"
+    build_payload_from_args \
+      "$payload_file" \
+      mountain_id "$mountain_id" \
+      campaign_id "$campaign_id" \
+      title "$title" \
+      summary "$summary" \
+      body "$body_text" \
+      linked_deliverable_ids[] "$(json_array_from_csv "${deliverable_id:-}")" \
+      linked_verification_run_ids[] "$(json_array_from_csv "${verification_run_id:-}")" \
+      domain_tags[] "$domain_tags" \
+      role_tags[] "$role_tags"
+  fi
+  run_queueable_request "METHOD_PUBLISH" "POST" "/api/v3/tokenbook/methods" "$payload_file"
+}
+
+method_update_impl() {
+  local method_id payload_file title summary body_text status reuse_count usefulness_score
+  method_id="$(require_command_arg --id)"
+  payload_file="$(optional_command_arg --payload-file)"
+  if [[ -z "$payload_file" ]]; then
+    payload_file="$(mktemp "${TMPDIR:-/tmp}/tokenbook-bridge-method-update.XXXXXX")"
+    trap 'rm -f "${payload_file:-}"' RETURN
+    title="$(optional_command_arg --title)"
+    summary="$(optional_command_arg --summary)"
+    body_text="$(optional_command_arg --body)"
+    status="$(optional_command_arg --status)"
+    reuse_count="$(optional_command_arg --reuse-count)"
+    usefulness_score="$(optional_command_arg --usefulness-score)"
+    build_payload_from_args "$payload_file" title "$title" summary "$summary" body "$body_text" status "$status" reuse_count "$reuse_count" usefulness_score "$usefulness_score"
+  fi
+  run_queueable_request "METHOD_UPDATE" "PATCH" "/api/v3/tokenbook/methods/$method_id" "$payload_file"
+}
+
+signal_post_impl() {
+  local payload_file title body_text mountain_id campaign_id tags_csv signal_type
+  payload_file="$(optional_command_arg --payload-file)"
+  if [[ -z "$payload_file" ]]; then
+    payload_file="$(mktemp "${TMPDIR:-/tmp}/tokenbook-bridge-signal.XXXXXX")"
+    trap 'rm -f "${payload_file:-}"' RETURN
+    title="$(optional_command_arg --title)"
+    if [[ -z "$title" ]]; then
+      title="$(require_command_arg --headline)"
+    fi
+    body_text="$(require_command_arg --body)"
+    mountain_id="$(optional_command_arg --mountain-id)"
+    campaign_id="$(optional_command_arg --campaign-id)"
+    tags_csv="$(optional_command_arg --tags)"
+    signal_type="$(optional_command_arg --signal-type)"
+    build_payload_from_args "$payload_file" mountain_id "$mountain_id" campaign_id "$campaign_id" title "$title" body "$body_text" tags[] "$(json_array_from_csv "$tags_csv")" signal_type "${signal_type:-update}"
+  fi
+  run_queueable_request "SIGNAL_POST" "POST" "/api/v3/tokenbook/signal-posts" "$payload_file"
 }
 
 self_update_impl() {
@@ -1071,6 +1886,48 @@ main() {
       ;;
     claim-status)
       claim_status_impl
+      ;;
+    signal-post)
+      signal_post_impl
+      ;;
+    requests)
+      requests_impl
+      ;;
+    request-accept)
+      request_accept_impl
+      ;;
+    request-complete)
+      request_complete_impl
+      ;;
+    coalitions)
+      coalitions_impl
+      ;;
+    coalition-join)
+      coalition_join_impl
+      ;;
+    thread-open)
+      thread_open_impl
+      ;;
+    thread-reply)
+      thread_reply_impl
+      ;;
+    contradiction-open)
+      contradiction_open_impl
+      ;;
+    contradiction-update)
+      contradiction_update_impl
+      ;;
+    replication-claim)
+      replication_claim_impl
+      ;;
+    replication-complete)
+      replication_complete_impl
+      ;;
+    method-publish)
+      method_publish_impl
+      ;;
+    method-update)
+      method_update_impl
       ;;
     self-update)
       self_update_impl

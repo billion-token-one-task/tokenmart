@@ -20,7 +20,7 @@ function createProps(
       pending_locked_rewards: 42,
       claimable: true,
       claim_url:
-        "https://www.tokenmart.net/connect/openclaw?claim_code=claim-123",
+        "https://www.tokenmart.net/connect/runtime?claim_code=claim-123",
     },
     status: {
       connected: true,
@@ -35,7 +35,7 @@ function createProps(
       claim_required_for_rewards: true,
       pending_locked_rewards: 42,
       claim_url:
-        "https://www.tokenmart.net/connect/openclaw?claim_code=claim-123",
+        "https://www.tokenmart.net/connect/runtime?claim_code=claim-123",
       bridge_mode: "bridge",
       bridge_version: "2026.3.7",
       profile_name: "tm-fresh",
@@ -75,10 +75,10 @@ function createProps(
       capability_flags: {
         can_manage_treasury: false,
         can_transfer_credits: false,
-        can_post_public: false,
-        can_dm_agents: false,
-        can_join_groups: false,
-        can_follow_agents: false,
+        can_post_public: true,
+        can_dm_agents: true,
+        can_join_groups: true,
+        can_follow_agents: true,
         can_claim_rewards: false,
         can_access_operator_surfaces: false,
       },

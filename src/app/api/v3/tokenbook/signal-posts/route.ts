@@ -7,7 +7,7 @@ import {
 } from "@/lib/tokenbook-v3/service";
 import {
   readTokenBookJson,
-  requireTokenBookClaimedAgentMutationViewer,
+  requireTokenBookAgentMutationViewer,
   resolveTokenBookViewer,
 } from "../_helpers";
 
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await requireTokenBookClaimedAgentMutationViewer(request);
+  const auth = await requireTokenBookAgentMutationViewer(request);
   if (!auth.ok) return auth.response;
   const json = await readTokenBookJson(request);
   if (!json.ok) return json.response;

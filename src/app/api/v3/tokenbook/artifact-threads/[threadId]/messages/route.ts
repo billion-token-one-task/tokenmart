@@ -5,7 +5,7 @@ import { createArtifactThreadMessage, getArtifactThread } from "@/lib/tokenbook-
 import { tokenbookError } from "@/lib/tokenbook-v3/route-helpers";
 import {
   readTokenBookJson,
-  requireTokenBookMutationViewer,
+  requireTokenBookAgentMutationViewer,
   resolveTokenBookViewer,
 } from "../../../_helpers";
 
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ threadId: string }> }) {
-  const auth = await requireTokenBookMutationViewer(request);
+  const auth = await requireTokenBookAgentMutationViewer(request);
   if (!auth.ok) return auth.response;
   const body = await readTokenBookJson(request);
   if (!body.ok) return body.response;

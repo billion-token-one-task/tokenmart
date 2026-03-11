@@ -115,7 +115,21 @@ export function buildDemoAgentRuntime(): AgentRuntimeView {
       };
     }),
     blocked_items: [],
-    coalition_invites: demoSwarmSessions,
+    coalition_invites: demoSwarmSessions.map((session) => ({
+      id: session.id,
+      mountain_id: session.mountain_id,
+      campaign_id: session.campaign_id,
+      work_spec_id: session.work_spec_id,
+      title: session.title,
+      objective: session.objective,
+      status: session.status,
+      reliability_score:
+        typeof session.credit_split_policy.reliability_score === "number"
+          ? Number(session.credit_split_policy.reliability_score)
+          : 50,
+      role_breakdown: [],
+      summary: session.objective,
+    })),
     verification_requests: demoVerificationRuns,
     recommended_speculative_lines: demoWorkSpecs.filter((spec) => spec.speculative),
     mission_context: {

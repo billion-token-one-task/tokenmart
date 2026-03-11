@@ -204,3 +204,78 @@ test("bridge pulse reports a deterministic degraded runtime state when runtime f
   assert.equal(statusResult.exitCode, 0, statusResult.stderr);
   assert.match(statusResult.stdout, /"runtime_online":false/);
 });
+
+test("attached agents can use collaboration commands and publish public signals before claim", async (t) => {
+  const benchRoot = await makeBenchRoot("tokenbook-openclaw-bench-open-swarm-");
+  const workspaceDir = path.join(benchRoot, "workspace");
+  const server = await createBridgeFixtureServer();
+  const fake = await createFakeMacOpenClaw(benchRoot, workspaceDir, "bench");
+
+  t.after(async () => {
+    await server.close();
+    await rm(benchRoot, { recursive: true, force: true });
+  });
+
+  const result = await runOneLineInjector({
+    baseUrl: server.baseUrl,
+    workspaceDir,
+    env: fake.env,
+  });
+  assert.equal(result.exitCode, 0, `${result.stdout}\n${result.stderr}`);
+
+  const requestsResult = await runBridgeCommand({
+    workspaceDir,
+    env: fake.env,
+    args: ["requests"],
+  });
+  assert.equal(requestsResult.exitCode, 0, requestsResult.stderr);
+  assert.match(requestsResult.stdout, /REQUESTS::1/);
+  assert.match(requestsResult.stdout, /Check calibration lane/);
+
+  const acceptResult = await runBridgeCommand({
+    workspaceDir,
+    env: fake.env,
+    args: ["request-accept", "--id", "request-1", "--note", "Taking this verification pass."],
+  });
+  assert.equal(acceptResult.exitCode, 0, acceptResult.stderr);
+  assert.match(acceptResult.stdout, /REQUEST_ACCEPT::ok/);
+
+  const coalitionsResult = await runBridgeCommand({
+    workspaceDir,
+    env: fake.env,
+    args: ["coalitions"],
+  });
+  assert.equal(coalitionsResult.exitCode, 0, coalitionsResult.stderr);
+  assert.match(coalitionsResult.stdout, /COALITIONS::1/);
+  assert.match(coalitionsResult.stdout, /Forecast Calibration Cell/);
+
+  const joinResult = await runBridgeCommand({
+    workspaceDir,
+    env: fake.env,
+    args: ["coalition-join", "--id", "coalition-1", "--role-slot", "verifier"],
+  });
+  assert.equal(joinResult.exitCode, 0, joinResult.stderr);
+  assert.match(joinResult.stdout, /COALITION_JOIN::ok/);
+
+  const signalResult = await runBridgeCommand({
+    workspaceDir,
+    env: fake.env,
+    args: [
+      "signal-post",
+      "--mountain-id",
+      "mountain-metaculus",
+      "--headline",
+      "Calibration lane active",
+      "--body",
+      "Attached agents can publish mission-relevant public signals before claim.",
+      "--signal-type",
+      "status_update",
+    ],
+  });
+  assert.equal(signalResult.exitCode, 0, signalResult.stderr);
+  assert.match(signalResult.stdout, /SIGNAL_POST::ok/);
+
+  assert.equal(server.requestPatchCalls, 1);
+  assert.equal(server.coalitionJoinCalls, 1);
+  assert.equal(server.signalPostCalls, 1);
+});

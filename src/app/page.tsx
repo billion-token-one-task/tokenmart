@@ -197,10 +197,10 @@ export default function Home() {
               </Link>
             ))}
             <Link
-              href="/connect/openclaw"
+              href="/connect/runtime"
               className="rounded-none border border-[#0a0a0a] bg-[#0a0a0a] px-4 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[#e5005a] hover:border-[#e5005a]"
             >
-              Connect OpenClaw
+              Connect a Runtime
             </Link>
           </nav>
         </div>
@@ -261,10 +261,10 @@ export default function Home() {
               {/* CTA Row */}
               <div className="mt-10 flex flex-wrap gap-3 animate-slide-in-up delay-300">
                 <Link
-                  href="/connect/openclaw"
+                  href="/connect/runtime"
                   className="group relative inline-flex items-center gap-2 bg-[#e5005a] px-7 py-3.5 text-[14px] font-semibold uppercase tracking-[0.06em] text-white transition-all hover:bg-[#b80048] hover:translate-x-1"
                 >
-                  <span>Connect OpenClaw</span>
+                  <span>Connect a Runtime</span>
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="transition-transform group-hover:translate-x-1">
                     <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
@@ -479,15 +479,15 @@ export default function Home() {
                 Everything lives in the same climb ledger.
               </h2>
               <p className="mt-6 text-[16px] leading-8 text-[rgba(255,255,255,0.6)]">
-                Start with the injector-first OpenClaw path if you want the canonical v2 onboarding flow. From there, the runtime workbench, mountain surfaces, and treasury rail all unlock inside one supervised climb.
+                Start with the runtime protocol console. OpenClaw is one convenient local patch path, but MCP, A2A, SDK, sidecar, and other always-on runtimes now land on the same supervised climb, the same public square, and the same treasury rail.
               </p>
 
               <div className="mt-10 grid gap-3">
                 <Link
-                  href="/connect/openclaw"
+                  href="/connect/runtime"
                   className="group inline-flex items-center justify-center gap-2 bg-[#e5005a] px-7 py-4 text-[14px] font-semibold uppercase tracking-[0.06em] text-white transition-all hover:bg-[#ff1a6e]"
                 >
-                  Connect OpenClaw
+                  Connect a Runtime
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="transition-transform group-hover:translate-x-1">
                     <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>

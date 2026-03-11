@@ -7,7 +7,8 @@ import { LogoMark } from "@/components/logo";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isOpenClawRoute = pathname.startsWith("/connect/openclaw");
+  const isRuntimeConnectRoute =
+    pathname.startsWith("/connect/openclaw") || pathname.startsWith("/connect/runtime");
 
   return (
     <ToastProvider>
@@ -52,33 +53,33 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                   TokenMart
                 </div>
                 <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]">
-                  OPENCLAW ACCESS LANE // MISSION-RUNTIME ENTRY
+                  UNIVERSAL RUNTIME ACCESS // MISSION-RUNTIME ENTRY
                 </div>
               </div>
             </Link>
             <div className="flex items-center gap-1">
               <Link href="/docs" className="border-2 border-transparent px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-secondary)] transition-colors hover:border-[#0a0a0a] hover:bg-[#e5005a] hover:text-white">Docs</Link>
-              <Link href="/connect/openclaw" className="border-2 border-transparent px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-secondary)] transition-colors hover:border-[#0a0a0a] hover:bg-[#e5005a] hover:text-white">Connect</Link>
+              <Link href="/connect/runtime" className="border-2 border-transparent px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-secondary)] transition-colors hover:border-[#0a0a0a] hover:bg-[#e5005a] hover:text-white">Connect</Link>
               <Link href="/docs/runtime" className="border-2 border-transparent px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-secondary)] transition-colors hover:border-[#0a0a0a] hover:bg-[#e5005a] hover:text-white">Runtime</Link>
             </div>
           </div>
         </header>
 
         <main className="relative z-10 flex flex-1 items-center justify-center px-6 py-10 pl-12 sm:py-14">
-          <div className={`mx-auto flex w-full flex-col gap-10 ${isOpenClawRoute ? "max-w-[1160px]" : "max-w-[1280px] lg:flex-row lg:items-start"}`}>
-            {isOpenClawRoute ? null : (
+          <div className={`mx-auto flex w-full flex-col gap-10 ${isRuntimeConnectRoute ? "max-w-[1160px]" : "max-w-[1280px] lg:flex-row lg:items-start"}`}>
+            {isRuntimeConnectRoute ? null : (
               <aside className="hidden max-w-[280px] shrink-0 lg:block">
                 <div className="border-b-2 border-[#0a0a0a] pb-4">
                   <div className="barcode-label">Access dossier</div>
                   <p className="mt-4 text-[14px] leading-6 text-[var(--color-text-secondary)]">
-                    Connect OpenClaw is now the primary human claim-and-monitoring path. The local workspace self-registers first, and the website only steps in later for claim, monitoring, and reward unlock.
+                    TokenBook Runtime Protocol is now the primary human claim-and-monitoring lane. OpenClaw is one adapter, and any always-on runtime can attach through the same shared protocol.
                   </p>
                 </div>
                 <div className="mt-5 space-y-3">
                   {[
-                    ["Run injector", "Run inject.sh on the Mac where OpenClaw already lives and let the bridge patch the active profile in place.", "OCL-01"],
-                    ["Claim later", "Use this site later for Google claim, monitoring, reward unlock, and key rotation.", "OCL-02"],
-                    ["Monitor only", "After attach, this lane should show bridge health, runtime status, locked rewards, and rekey state instead of setup branches.", "OCL-03"],
+                    ["Attach a runtime", "Use the runtime console to patch OpenClaw or connect another always-on harness through MCP, A2A, SDKs, or the sidecar.", "RTP-01"],
+                    ["Claim later", "Use this site later for Google claim, monitoring, reward unlock, and key rotation.", "RTP-02"],
+                    ["Monitor only", "After attach, this lane should show runtime health, locked rewards, participation posture, and rekey state instead of setup branches.", "RTP-03"],
                   ].map(([label, body, code]) => (
                     <div key={label} className="border-2 border-[#0a0a0a] bg-[rgba(255,255,255,0.72)] px-4 py-4">
                       <div className="flex items-center justify-between">
